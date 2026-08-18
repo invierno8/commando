@@ -7,23 +7,41 @@ import UnitEmblem from "./UnitEmblem.jsx";
 
 const CATALOG = [
   { id: "VHF-07", name: 'מכשיר קשר טקטי', category: "תקשורת", qty: 42, icon: "📻",
-    desc: 'מכשיר קשר שדה טווח ארוך, עמיד למים ולזעזועים. כולל סוללה נטענת וכבל טעינה שדה.' },
+    desc: 'מכשיר קשר שדה טווח ארוך, עמיד למים ולזעזועים. כולל סוללה נטענת וכבל טעינה שדה.',
+    responsibleName: "רס״ן רוני כהן", responsiblePhone: "050-1234567",
+    addedAt: "02/03/2026", updatedAt: "15/08/2026 09:20", photoUploaded: true },
   { id: "NVG-03", name: 'משקפת ראיית לילה', category: "ראייה", qty: 17, icon: "🔭",
-    desc: 'משקפת דור 3, הגברת אור שארית. מותקנת על קסדה או מוחזקת ביד. כוללת נרתיק הגנה.' },
+    desc: 'משקפת דור 3, הגברת אור שארית. מותקנת על קסדה או מוחזקת ביד. כוללת נרתיק הגנה.',
+    responsibleName: "סרן עידן לוי", responsiblePhone: "052-2345678",
+    addedAt: "11/04/2026", updatedAt: "17/08/2026 20:22", photoUploaded: true },
   { id: "VST-09", name: 'אפוד נשיאה טקטי', category: "ציוד אישי", qty: 63, icon: "🦺",
-    desc: 'אפוד מודולרי בשיטת MOLLE, מתאים לנשיאת מגזינים, ציוד עזרה ראשונה וציוד נלווה.' },
+    desc: 'אפוד מודולרי בשיטת MOLLE, מתאים לנשיאת מגזינים, ציוד עזרה ראשונה וציוד נלווה.',
+    responsibleName: "רס״ן רוני כהן", responsiblePhone: "050-1234567",
+    addedAt: "02/03/2026", updatedAt: "10/07/2026 14:05", photoUploaded: false },
   { id: "BAT-12", name: 'סוללות ליתיום שדה', category: "אנרגיה", qty: 210, icon: "🔋",
-    desc: 'מארז סוללות ליתיום להזנת ציוד תקשורת וראייה. אחסון בטמפרטורה מבוקרת בלבד.' },
+    desc: 'מארז סוללות ליתיום להזנת ציוד תקשורת וראייה. אחסון בטמפרטורה מבוקרת בלבד.',
+    responsibleName: "רס״ר מאיה ברק", responsiblePhone: "054-3456789",
+    addedAt: "20/01/2026", updatedAt: "05/08/2026 11:40", photoUploaded: false },
   { id: "MED-04", name: 'אלונקת חילוץ קלה', category: "רפואה", qty: 9, icon: "🩺",
-    desc: 'אלונקה מתקפלת, משקל קל, מיועדת לפינוי בשטח פתוח ובמרחבים סגורים.' },
+    desc: 'אלונקה מתקפלת, משקל קל, מיועדת לפינוי בשטח פתוח ובמרחבים סגורים.',
+    responsibleName: "נועה שגיא", responsiblePhone: "053-4567890",
+    addedAt: "14/02/2026", updatedAt: "14/08/2026 09:10", photoUploaded: true },
   { id: "GEN-02", name: 'גנרטור שדה נייד', category: "אנרגיה", qty: 6, icon: "⚙️",
-    desc: 'גנרטור נייד להזנת עמדת פיקוד זמנית. כולל מתאם לטעינת ציוד תקשורת.' },
+    desc: 'גנרטור נייד להזנת עמדת פיקוד זמנית. כולל מתאם לטעינת ציוד תקשורת.',
+    responsibleName: "רס״ר מאיה ברק", responsiblePhone: "054-3456789",
+    addedAt: "20/01/2026", updatedAt: "17/08/2026 19:40", photoUploaded: false },
   { id: "TNT-06", name: 'אוהל שטח 6 מקומות', category: "לוגיסטיקה", qty: 24, icon: "⛺",
-    desc: 'אוהל שטח בעל מסגרת קלה להקמה, כולל יתדות ורצועות עיגון.' },
+    desc: 'אוהל שטח בעל מסגרת קלה להקמה, כולל יתדות ורצועות עיגון.',
+    responsibleName: "טל אשכנזי", responsiblePhone: "058-5678901",
+    addedAt: "03/05/2026", updatedAt: "16/08/2026 15:40", photoUploaded: false },
   { id: "NAV-01", name: 'מצפן דיגיטלי', category: "ניווט", qty: 55, icon: "🧭",
-    desc: 'מצפן דיגיטלי עם תאורה אחורית, עמיד למים, כולל מד גובה בסיסי.' },
+    desc: 'מצפן דיגיטלי עם תאורה אחורית, עמיד למים, כולל מד גובה בסיסי.',
+    responsibleName: "סרן עידן לוי", responsiblePhone: "052-2345678",
+    addedAt: "11/04/2026", updatedAt: "01/06/2026 08:00", photoUploaded: false },
   { id: "LGT-05", name: 'פנס טקטי לקסדה', category: "תאורה", qty: 88, icon: "🔦",
-    desc: 'פנס עם שלושה מצבי עוצמה ומצב תאורה אדומה לשמירה על ראיית לילה.' },
+    desc: 'פנס עם שלושה מצבי עוצמה ומצב תאורה אדומה לשמירה על ראיית לילה.',
+    responsibleName: "רס״ן רוני כהן", responsiblePhone: "050-1234567",
+    addedAt: "02/03/2026", updatedAt: "18/06/2026 10:15", photoUploaded: false },
 ];
 
 const UNITS = ["גדוד 71", "גדוד 84", "גדוד 12", "יחידת מטה"];
@@ -291,17 +309,43 @@ function ProductDrawer({ item, onClose }) {
     <div className="overlay" onClick={onClose}>
       <div className="drawer" onClick={(e) => e.stopPropagation()}>
         <button className="drawer-close" onClick={onClose}>✕</button>
-        <div className="drawer-icon">{item.icon}</div>
+
+        {item.photoUploaded ? (
+          <div className="drawer-photo">
+            <span className="photo-icon">🖼</span>
+            <span>תמונת מוצר מצורפת (הדגמה — תצוגה מקדימה תתווסף בשלב הבא)</span>
+          </div>
+        ) : (
+          <div className="drawer-icon">{item.icon}</div>
+        )}
+
         <div className="drawer-id">{item.id}</div>
         <h2>{item.name}</h2>
         <div className="drawer-tag">{item.category}</div>
+
         <div className="drawer-row">
           <span>כמות במלאי</span>
           <b>{item.qty}</b>
         </div>
         <p className="drawer-desc">{item.desc}</p>
-        <div className="drawer-note">
-          שדות נוספים לקלף המוצר (מיקום אחסון, סטטוס תחזוקה, קישור לדרישה) יתווספו בשלב האפיון הבא.
+
+        <div className="drawer-officer">
+          <div className="drawer-officer-title">קצין אמל״ח אחראי</div>
+          <div className="drawer-officer-row">
+            <span>{item.responsibleName}</span>
+            <a className="drawer-phone" href={`tel:${item.responsiblePhone}`}>{item.responsiblePhone}</a>
+          </div>
+        </div>
+
+        <div className="detail-grid">
+          <div className="detail-field">
+            <span>נוסף לקטלוג בתאריך</span>
+            <b>{item.addedAt}</b>
+          </div>
+          <div className="detail-field">
+            <span>עדכון אחרון</span>
+            <b>{item.updatedAt}</b>
+          </div>
         </div>
       </div>
     </div>
@@ -1002,4 +1046,18 @@ const CSS = `
 }
 .photo-icon{ font-size:22px; }
 .photo-placeholder-empty{ justify-content:center; opacity:.7; }
+
+.drawer-photo{
+  display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center;
+  background:var(--bg); border:1px dashed var(--line); border-radius:8px; padding:22px 14px;
+  font-size:11px; color:var(--text-dim); margin-bottom:4px;
+}
+.drawer-photo .photo-icon{ font-size:30px; }
+.drawer-officer{
+  margin-top:16px; background:var(--panel-raised); border:1px solid var(--line); border-radius:7px; padding:11px 13px;
+}
+.drawer-officer-title{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
+.drawer-officer-row{ display:flex; justify-content:space-between; align-items:center; font-size:13px; }
+.drawer-phone{ color:var(--amber); font-family:'IBM Plex Mono',monospace; font-size:12px; text-decoration:none; }
+.drawer-phone:hover{ text-decoration:underline; }
 `;
