@@ -30,15 +30,25 @@ const UNITS = ["גדוד 71", "גדוד 84", "גדוד 12", "יחידת מטה"]
 
 const seedTickets = [
   { id: "REQ-1042", title: 'חוסר במשקפות ראיית לילה', desc: 'נדרשות 4 יחידות נוספות לפלוגה לקראת תרגיל.', unit: "גדוד 71",
-    damatz: "damatz_nvg_1042.pdf", extras: ["תמונת_מצאי.jpg"], status: "pending", priority: null, createdAt: "היום, 08:12" },
+    damatz: "damatz_nvg_1042.pdf", extras: ["תמונת_מצאי.jpg"], status: "pending", priority: null,
+    requestedBy: "רס״ל דניאל אור", createdAt: "היום, 08:12", submittedAt: "18/08/2026 08:12", decidedAt: null,
+    dueDate: "", photoUploaded: true },
   { id: "REQ-1041", title: 'תקלה בגנרטור שדה', desc: 'הגנרטור בעמדת הפיקוד אינו מניע עומס מלא.', unit: "גדוד 84",
-    damatz: "damatz_gen_1041.pdf", extras: [], status: "approved", priority: "yellow", createdAt: "אתמול, 19:40" },
+    damatz: "damatz_gen_1041.pdf", extras: [], status: "approved", priority: "yellow",
+    requestedBy: "סמל עידן לוי", createdAt: "אתמול, 19:40", submittedAt: "17/08/2026 19:40", decidedAt: "17/08/2026 20:05",
+    dueDate: "25/08/2026", photoUploaded: false },
   { id: "REQ-1039", title: 'בקשה לאוהלי שטח נוספים', desc: 'הרחבת מוצב זמני, נדרשים 3 אוהלים.', unit: "גדוד 12",
-    damatz: "damatz_tent_1039.pdf", extras: ["תרשים_מוצב.pdf"], status: "approved", priority: "green", createdAt: "לפני יומיים" },
+    damatz: "damatz_tent_1039.pdf", extras: ["תרשים_מוצב.pdf"], status: "approved", priority: "green",
+    requestedBy: "רס״ר מאיה ברק", createdAt: "לפני יומיים", submittedAt: "16/08/2026 11:20", decidedAt: "16/08/2026 15:40",
+    dueDate: "30/08/2026", photoUploaded: false },
   { id: "REQ-1037", title: 'סוללות שדה — מלאי נמוך', desc: 'מלאי הסוללות ליחידת התקשורת עומד להיגמר.', unit: "גדוד 71",
-    damatz: "damatz_bat_1037.pdf", extras: [], status: "rejected", priority: null, createdAt: "לפני 3 ימים", daysLeft: 27 },
+    damatz: "damatz_bat_1037.pdf", extras: [], status: "rejected", priority: null,
+    requestedBy: "טל אשכנזי", createdAt: "לפני 3 ימים", submittedAt: "15/08/2026 09:00", decidedAt: "15/08/2026 14:22",
+    dueDate: "", photoUploaded: false, daysLeft: 27 },
   { id: "REQ-1033", title: 'אלונקת חילוץ פגומה', desc: 'רצועת נשיאה קרועה, נדרש חילוף מיידי.', unit: "יחידת מטה",
-    damatz: "damatz_med_1033.pdf", extras: ["תמונה_נזק.jpg"], status: "approved", priority: "red", createdAt: "לפני 4 ימים" },
+    damatz: "damatz_med_1033.pdf", extras: ["תמונה_נזק.jpg"], status: "approved", priority: "red",
+    requestedBy: "נועה שגיא", createdAt: "לפני 4 ימים", submittedAt: "14/08/2026 07:55", decidedAt: "14/08/2026 09:10",
+    dueDate: "19/08/2026", photoUploaded: true },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -69,8 +79,15 @@ export default function TacticalSystem() {
   const [tab, setTab] = useState("catalog");
   const [tickets, setTickets] = useState(seedTickets);
   const [product, setProduct] = useState(null);
+  const [detailTicket, setDetailTicket] = useState(null);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [toast, setToast] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  function nowStamp() {
+    const d = new Date();
+    return d.toLocaleDateString("he-IL") + " " + d.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" });
+  }
 
   function flash(msg) {
     setToast(msg);
@@ -80,29 +97,40 @@ export default function TacticalSystem() {
 
   function submitTicket(data) {
     const id = "REQ-" + Math.floor(1050 + Math.random() * 900);
+    const stamp = nowStamp();
     const t = {
       id, title: data.title, desc: data.desc, unit: data.unit || UNITS[0],
       damatz: data.damatz, extras: data.extras, status: "pending", priority: null,
-      createdAt: "עכשיו",
+      requestedBy: "משתמש נוכחי (הדגמה)", createdAt: "עכשיו", submittedAt: stamp, decidedAt: null,
+      dueDate: "", photoUploaded: (data.extras || []).some((f) => /\.(jpg|jpeg|png)$/i.test(f)),
     };
     setTickets((prev) => [t, ...prev]);
     setShowTicketModal(false);
+    setLastUpdated(new Date());
     flash(`הדרישה ${id} נפתחה ונשלחה לקצין האמל״ח ביחידה`);
   }
 
   function decide(id, decision) {
+    const stamp = nowStamp();
     setTickets((prev) =>
       prev.map((t) =>
         t.id === id
-          ? { ...t, status: decision, daysLeft: decision === "rejected" ? 30 : undefined }
+          ? { ...t, status: decision, decidedAt: stamp, daysLeft: decision === "rejected" ? 30 : undefined }
           : t
       )
     );
+    setLastUpdated(new Date());
     flash(decision === "approved" ? `${id} אושר והועבר לחטיבה` : `${id} סורב — יימחק בעוד 30 ימים`);
   }
 
   function setPriority(id, priority) {
     setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, priority } : t)));
+    setLastUpdated(new Date());
+  }
+
+  function setDueDate(id, dueDate) {
+    setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, dueDate } : t)));
+    setLastUpdated(new Date());
   }
 
   const pendingForUnit = useMemo(() => tickets.filter((t) => t.status === "pending"), [tickets]);
@@ -127,6 +155,9 @@ export default function TacticalSystem() {
       <div className="classbar">
         <span className="classbar-scan" aria-hidden="true" />
         <span>מערכת ניטור אמל״ח ובקרת דרישות — סביבת פיתוח / דמו</span>
+        <span className="classbar-update">
+          עדכון אחרון: {lastUpdated.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+        </span>
         <span className="classbar-tag">לא לשימוש מבצעי</span>
       </div>
 
@@ -183,28 +214,35 @@ export default function TacticalSystem() {
           )}
 
           {tab === "myTickets" && (
-            <TicketListView title="הדרישות שנפתחו על ידך" tickets={tickets} showUnit={false} />
+            <TicketListView title="הדרישות שנפתחו על ידך" tickets={tickets} showUnit={false} onOpen={setDetailTicket} />
           )}
 
           {tab === "queue" && (
-            <ApprovalQueueView tickets={pendingForUnit} onDecide={decide} />
+            <ApprovalQueueView tickets={pendingForUnit} onDecide={decide} onOpen={setDetailTicket} />
           )}
 
           {tab === "approvedFolder" && (
-            <TicketListView title="תיקיית אושרו" tickets={approvedFolder} showUnit />
+            <TicketListView title="תיקיית אושרו" tickets={approvedFolder} showUnit onOpen={setDetailTicket} />
           )}
 
           {tab === "rejectedFolder" && (
-            <TicketListView title="תיקיית סורבו" tickets={rejectedFolder} showUnit showExpiry />
+            <TicketListView title="תיקיית סורבו" tickets={rejectedFolder} showUnit showExpiry onOpen={setDetailTicket} />
           )}
 
           {tab === "dashboard" && (
-            <BrigadeDashboard tickets={approvedFolder} onPriority={setPriority} />
+            <BrigadeDashboard tickets={approvedFolder} onPriority={setPriority} onOpen={setDetailTicket} />
           )}
         </main>
       </div>
 
       {product && <ProductDrawer item={product} onClose={() => setProduct(null)} />}
+      {detailTicket && (
+        <TicketDetailModal
+          ticket={tickets.find((t) => t.id === detailTicket.id) || detailTicket}
+          onClose={() => setDetailTicket(null)}
+          onSetDueDate={setDueDate}
+        />
+      )}
       {showTicketModal && (
         <DamatzBotModal onClose={() => setShowTicketModal(false)} onSubmit={submitTicket} />
       )}
@@ -274,9 +312,13 @@ function ProductDrawer({ item, onClose }) {
 /* Ticket list / cards                                                 */
 /* ------------------------------------------------------------------ */
 
-function TicketCard({ t, showUnit, showExpiry, footer, delay = 0 }) {
+function TicketCard({ t, showUnit, showExpiry, footer, delay = 0, onOpen }) {
   return (
-    <div className="ticket-card" style={{ animationDelay: `${delay}ms` }}>
+    <div
+      className="ticket-card ticket-card-clickable"
+      style={{ animationDelay: `${delay}ms` }}
+      onClick={() => onOpen && onOpen(t)}
+    >
       <div className="ticket-top">
         <div>
           <div className="ticket-id">{t.id}</div>
@@ -293,35 +335,37 @@ function TicketCard({ t, showUnit, showExpiry, footer, delay = 0 }) {
           </span>
         )}
         <span>נפתח: {t.createdAt}</span>
+        {t.dueDate && <span className="ticket-due">תג״ב: {t.dueDate}</span>}
+        {t.photoUploaded && <span>📷 תמונה מצורפת</span>}
         <span>קובץ דמ״ץ: {t.damatz}</span>
         {t.extras?.length > 0 && <span>קבצים נוספים: {t.extras.length}</span>}
       </div>
       {showExpiry && (
         <div className="ticket-expiry">יימחק אוטומטית בעוד {t.daysLeft ?? 30} ימים</div>
       )}
-      {footer}
+      {footer && <div onClick={(e) => e.stopPropagation()}>{footer}</div>}
     </div>
   );
 }
 
-function TicketListView({ title, tickets, showUnit, showExpiry }) {
+function TicketListView({ title, tickets, showUnit, showExpiry, onOpen }) {
   return (
     <div>
       <div className="view-head">
         <h1>{title}</h1>
-        <p>{tickets.length} דרישות</p>
+        <p>{tickets.length} דרישות — לחיצה על דרישה פותחת פרטים מלאים</p>
       </div>
       <div className="ticket-list">
         {tickets.length === 0 && <div className="empty">אין דרישות להצגה כרגע.</div>}
         {tickets.map((t, idx) => (
-          <TicketCard key={t.id} t={t} showUnit={showUnit} showExpiry={showExpiry} delay={idx * 60} />
+          <TicketCard key={t.id} t={t} showUnit={showUnit} showExpiry={showExpiry} delay={idx * 60} onOpen={onOpen} />
         ))}
       </div>
     </div>
   );
 }
 
-function ApprovalQueueView({ tickets, onDecide }) {
+function ApprovalQueueView({ tickets, onDecide, onOpen }) {
   return (
     <div>
       <div className="view-head">
@@ -336,6 +380,7 @@ function ApprovalQueueView({ tickets, onDecide }) {
             t={t}
             showUnit
             delay={idx * 60}
+            onOpen={onOpen}
             footer={
               <div className="ticket-actions">
                 <button className="btn-approve" onClick={() => onDecide(t.id, "approved")}>
@@ -357,7 +402,7 @@ function ApprovalQueueView({ tickets, onDecide }) {
 /* Brigade dashboard                                                   */
 /* ------------------------------------------------------------------ */
 
-function BrigadeDashboard({ tickets, onPriority }) {
+function BrigadeDashboard({ tickets, onPriority, onOpen }) {
   const order = { red: 0, yellow: 1, green: 2, null: 3 };
   const sorted = [...tickets].sort((a, b) => (order[a.priority] ?? 3) - (order[b.priority] ?? 3));
 
@@ -384,7 +429,7 @@ function BrigadeDashboard({ tickets, onPriority }) {
         </div>
         {sorted.length === 0 && <div className="empty">אין דרישות מאושרות עדיין.</div>}
         {sorted.map((t) => (
-          <div className="dash-row" key={t.id}>
+          <div className="dash-row dash-row-clickable" key={t.id} onClick={() => onOpen && onOpen(t)}>
             <span><PriorityDot p={t.priority} /></span>
             <span>
               <div className="ticket-id">{t.id}</div>
@@ -395,7 +440,7 @@ function BrigadeDashboard({ tickets, onPriority }) {
               {t.unit}
             </span>
             <span className="dim">{t.createdAt}</span>
-            <span className="prio-picker">
+            <span className="prio-picker" onClick={(e) => e.stopPropagation()}>
               {["green", "yellow", "red"].map((p) => (
                 <button
                   key={p}
@@ -407,6 +452,91 @@ function BrigadeDashboard({ tickets, onPriority }) {
             </span>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Ticket detail modal — פרטים מלאים על דרישה בודדת                    */
+/* ------------------------------------------------------------------ */
+
+function TicketDetailModal({ ticket, onClose, onSetDueDate }) {
+  const t = ticket;
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="modal detail-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="drawer-close" onClick={onClose}>✕</button>
+
+        <div className="modal-head">
+          <div className="detail-id-row">
+            <span className="ticket-id">{t.id}</span>
+            <StatusPill status={t.status} />
+          </div>
+          <h2>{t.title}</h2>
+          <div className="ticket-unit-tag">
+            <UnitEmblem name={t.unit} size={18} showRing={false} />
+            {t.unit}
+          </div>
+        </div>
+
+        <p className="detail-desc">{t.desc}</p>
+
+        <div className="detail-grid">
+          <div className="detail-field">
+            <span>נפתח על ידי</span>
+            <b>{t.requestedBy || "לא ידוע"}</b>
+          </div>
+          <div className="detail-field">
+            <span>תאריך ושעת פתיחה</span>
+            <b>{t.submittedAt || t.createdAt}</b>
+          </div>
+          <div className="detail-field">
+            <span>תאריך ושעת החלטה</span>
+            <b>{t.decidedAt || "טרם התקבלה החלטה"}</b>
+          </div>
+          <div className="detail-field">
+            <span>עדיפות</span>
+            <b><PriorityDot p={t.priority} /></b>
+          </div>
+        </div>
+
+        <label className="due-date-field">
+          <span>תג״ב — תאריך גמר ביצוע</span>
+          <input
+            type="text"
+            value={t.dueDate || ""}
+            placeholder="לדוגמה: 30/08/2026"
+            onChange={(e) => onSetDueDate(t.id, e.target.value)}
+          />
+        </label>
+
+        <div className="detail-files">
+          <div className="detail-files-title">קבצים מצורפים</div>
+          <div className="detail-file-row">
+            <span className="file-chip">📄 {t.damatz}</span>
+          </div>
+          {t.extras?.length > 0 && (
+            <div className="detail-file-row">
+              {t.extras.map((f) => (
+                <span className="file-chip" key={f}>📎 {f}</span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {t.photoUploaded ? (
+          <div className="photo-placeholder">
+            <span className="photo-icon">🖼</span>
+            <span>תמונה מצורפת לדרישה (הדגמה — תצוגה מקדימה תתווסף בשלב הבא)</span>
+          </div>
+        ) : (
+          <div className="photo-placeholder photo-placeholder-empty">לא הועלתה תמונה לדרישה זו</div>
+        )}
+
+        {t.status === "rejected" && (
+          <div className="ticket-expiry">יימחק אוטומטית בעוד {t.daysLeft ?? 30} ימים</div>
+        )}
       </div>
     </div>
   );
@@ -583,6 +713,7 @@ const CSS = `
   transition:box-shadow .25s ease;
 }
 .classbar-tag:hover{ box-shadow:0 0 8px rgba(201,162,39,.5); }
+.classbar-update{ font-size:10px; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; }
 
 .shell{ display:flex; min-height:560px; }
 
@@ -839,4 +970,36 @@ const CSS = `
   .nav{ flex-direction:row; flex-wrap:wrap; }
   .dash-row{ grid-template-columns:40px 1fr; row-gap:6px; }
 }
+
+.ticket-card-clickable{ cursor:pointer; }
+.ticket-due{ color:var(--amber); }
+.dash-row-clickable{ cursor:pointer; }
+
+.detail-modal{ width:480px; }
+.detail-id-row{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+.detail-modal h2{ font-family:'Rajdhani',sans-serif; font-size:21px; margin:2px 0 8px; }
+.detail-desc{ font-size:13px; color:var(--text-dim); line-height:1.6; margin:14px 0; }
+.detail-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;
+}
+.detail-field{
+  background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:9px 11px;
+  display:flex; flex-direction:column; gap:4px; font-size:11px; color:var(--text-dim);
+}
+.detail-field b{ font-size:13px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-weight:500; }
+.due-date-field{ display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--text-dim); margin-bottom:16px; }
+.due-date-field input{
+  background:var(--bg); border:1px solid var(--amber); border-radius:5px; color:var(--amber);
+  padding:9px 10px; font-family:'IBM Plex Mono',monospace; font-size:13px;
+}
+.due-date-field input:focus{ outline:none; box-shadow:0 0 0 3px rgba(201,162,39,.15); }
+.detail-files{ margin-bottom:14px; }
+.detail-files-title{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
+.detail-file-row{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+.photo-placeholder{
+  display:flex; align-items:center; gap:10px; background:var(--bg); border:1px dashed var(--line);
+  border-radius:7px; padding:14px; font-size:12px; color:var(--text-dim); margin-bottom:6px;
+}
+.photo-icon{ font-size:22px; }
+.photo-placeholder-empty{ justify-content:center; opacity:.7; }
 `;
