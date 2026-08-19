@@ -3,9 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>אמל״ח־נט — פרוטוטייפ מקומי</title>
+    <title>האנגר — פרוטוטייפ מקומי</title>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("hangar-theme");
+          document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      })();
+    </script>
     <style>
-      body { margin: 0; background: #0c0e0a; }
+      body { margin: 0; background: #F2EFE5; }
+      [data-theme="dark"] body { background: #14170F; }
     </style>
   </head>
   <body>

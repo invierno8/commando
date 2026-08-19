@@ -60,21 +60,22 @@ export const SCOPE_PICKER_CSS = `
 .scope-picker{ position:relative; }
 .scope-picker-trigger{
   display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--line);
-  border-radius:6px; padding:7px 12px; cursor:pointer; color:var(--text); font-family:'Rajdhani',sans-serif;
-  font-weight:600; font-size:14px; transition:border-color .18s ease;
+  border-radius:5px; padding:7px 12px; cursor:pointer; color:var(--text); font-family:var(--font-sans);
+  font-weight:600; font-size:14px; transition:border-color .15s ease, background .15s ease;
 }
-.scope-picker-trigger:hover{ border-color:var(--amber); }
+.scope-picker-trigger:hover{ border-color:var(--accent); }
 .scope-picker-arrow{ color:var(--text-dim); font-size:11px; transition:transform .18s ease; }
-.scope-picker-arrow.open{ transform:rotate(180deg); color:var(--amber); }
+.scope-picker-arrow.open{ transform:rotate(180deg); color:var(--accent); }
 .scope-picker-menu{
   position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:50; min-width:190px;
-  background:var(--panel-raised); border:1px solid var(--line); border-radius:7px;
-  box-shadow:0 12px 28px rgba(0,0,0,.45); padding:6px; animation:fadeSlideUp .16s ease;
+  background:var(--panel); border:1px solid var(--line); border-radius:6px;
+  box-shadow:var(--shadow-md); padding:6px; animation:fadeSlideUp .14s ease;
 }
 .scope-picker-item{
   width:100%; display:flex; align-items:center; gap:9px; background:transparent; border:none;
-  color:var(--text); padding:8px; border-radius:5px; cursor:pointer; font-size:13px; text-align:right;
+  color:var(--text); padding:8px; border-radius:4px; cursor:pointer; font-size:13px; text-align:right;
+  font-family:var(--font-sans);
 }
-.scope-picker-item:hover{ background:rgba(255,255,255,.05); }
-.scope-picker-item.active{ background:rgba(201,162,39,.12); color:var(--amber); }
+.scope-picker-item:hover{ background:var(--panel-raised); }
+.scope-picker-item.active{ background:var(--panel-raised); color:var(--accent); font-weight:600; }
 `;

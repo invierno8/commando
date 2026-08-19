@@ -12,12 +12,12 @@ import React from "react";
 /* ================================================================== */
 
 const PALETTE = [
-  { fill: "#C9A227", tone: "amber" },
-  { fill: "#5C8A3A", tone: "green" },
-  { fill: "#D4A72C", tone: "yellow" },
-  { fill: "#8B6B3C", tone: "bronze" },
-  { fill: "#7A8471", tone: "olive" },
-  { fill: "#B23A2E", tone: "rust" },
+  { fill: "#2E6E96", tone: "blue" },
+  { fill: "#2E7D74", tone: "teal" },
+  { fill: "#5B6B7D", tone: "slate" },
+  { fill: "#4A5578", tone: "indigo" },
+  { fill: "#3E7A52", tone: "green" },
+  { fill: "#8C3A32", tone: "rust" },
 ];
 
 function hashStr(str) {
@@ -87,13 +87,13 @@ export default function UnitEmblem({ name = "", size = 36, showRing = true }) {
       viewBox="0 0 40 40"
       className={showRing ? "unit-emblem unit-emblem-ring" : "unit-emblem"}
     >
-      <path d={shapePath(shape)} fill="#1A1F16" stroke={palette.fill} strokeWidth="2" />
+      <path d={shapePath(shape)} style={{ fill: "var(--panel-raised)" }} stroke={palette.fill} strokeWidth="2" />
       {known ? (
         <KnownMotif name={name} color={palette.fill} />
       ) : (
         <text
           x="20" y="26" textAnchor="middle"
-          fontFamily="Rajdhani, sans-serif" fontWeight="700" fontSize="15"
+          style={{ fontFamily: "var(--font-sans)" }} fontWeight="700" fontSize="15"
           fill={palette.fill}
         >
           {initial}

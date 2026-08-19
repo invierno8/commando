@@ -1,6 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { X } from "lucide-react";
 import UnitEmblem from "./UnitEmblem.jsx";
 import ScopePicker, { ALL_SCOPE, SCOPE_PICKER_CSS } from "./ScopePicker.jsx";
+import Loading from "./Loading.jsx";
+import { STRUCTURAL_ROLES } from "./roles.js";
+import { fetchBrigadeUnits, fetchBrigadeRoster } from "./brigadeStore.js";
 
 /* ================================================================== */
 /* LEGO BLOCK — access model. זהה בדיוק למה שהוגדר באשף ההתקנה,        */
@@ -21,39 +25,6 @@ const ACCESS_LABELS = {
     [TICKET_ACCESS.REQUESTER]: "דורש — דרישות אישיות",
     [TICKET_ACCESS.MANAGER]: "מנהל דרישות מלא",
   },
-};
-
-const UNITS = ["מגלן", "דובדבן", "אגוז", "יחידת מטה"];
-
-/* ================================================================== */
-/* LEGO BLOCK — mock data                                              */
-/* ================================================================== */
-
-const seedUnitOfficers = [
-  { id: "uo-1", unit: "מגלן", name: "רוני כהן", email: "roni.cohen@example.mil" },
-  { id: "uo-2", unit: "דובדבן", name: "עידן לוי", email: "idan.levi@example.mil" },
-  { id: "uo-3", unit: "אגוז", name: "מאיה ברק", email: "maya.barak@example.mil" },
-  { id: "uo-4", unit: "יחידת מטה", name: "טל אשכנזי", email: "tal.ash@example.mil" },
-];
-
-const seedBrigadeStaff = [
-  { id: "bs-1", name: "נועה שגיא", email: "noa.sagi@example.mil",
-    catalogAccess: CATALOG_ACCESS.MANAGER, ticketAccess: TICKET_ACCESS.MANAGER },
-];
-
-const seedUnitPeople = {
-  "מגלן": [
-    { id: "p-1", name: "דניאל אור", email: "daniel.or@example.mil",
-      catalogAccess: CATALOG_ACCESS.EDITOR, ticketAccess: TICKET_ACCESS.REQUESTER },
-    { id: "p-2", name: "אביב שמש", email: "aviv.shemesh@example.mil",
-      catalogAccess: CATALOG_ACCESS.READ, ticketAccess: TICKET_ACCESS.NONE },
-  ],
-  "דובדבן": [
-    { id: "p-3", name: "יובל נחמן", email: "yuval.nachman@example.mil",
-      catalogAccess: CATALOG_ACCESS.READ, ticketAccess: TICKET_ACCESS.REQUESTER },
-  ],
-  "אגוז": [],
-  "יחידת מטה": [],
 };
 
 /* ================================================================== */
@@ -77,8 +48,13 @@ function PersonRow({ person, onChange, onRemove, showUnit }) {
   return (
     <div className="person-row">
       <div className="person-info">
-        <div className="person-name">{person.name}</div>
-        <div className="person-email">{person.email}</div>
+        <div className="person-name">
+          <span className="person-rank">{person.rank}</span> {person.name}
+        </div>
+        <div className="person-meta">
+          <span>מ.א. {person.personalNumber}</span>
+          <span>{person.email}</span>
+        </div>
         {showUnit && (
           <div className="person-unit">
             <UnitEmblem name={person.unit} size={16} showRing={false} />
@@ -100,29 +76,50 @@ function PersonRow({ person, onChange, onRemove, showUnit }) {
         options={TICKET_ACCESS}
         labels={ACCESS_LABELS.ticket}
       />
-      <button className="person-remove" onClick={() => onRemove(person.id)} title="הסרה">✕</button>
+      <button className="person-remove" onClick={() => onRemove(person.id)} title="הסרה"><X size={14} /></button>
     </div>
   );
 }
 
-function AddPersonForm({ onAdd, extraField }) {
+export const RANK_OPTIONS = ["טוראי", "רב״ט", "סמל", "סמ״ר", "רס״ל", "סגן", "סרן", "רס״ן", "רס״ר", "סא״ל", "אל״ם"];
+
+function AddPersonForm({ onAdd }) {
+  const [rank, setRank] = useState(RANK_OPTIONS[0]);
   const [name, setName] = useState("");
+  const [personalNumber, setPersonalNumber] = useState("");
   const [email, setEmail] = useState("");
   const [catalogAccess, setCatalogAccess] = useState(CATALOG_ACCESS.READ);
   const [ticketAccess, setTicketAccess] = useState(TICKET_ACCESS.NONE);
 
-  const canAdd = name.trim() && email.trim();
+  const canAdd = name.trim() && personalNumber.trim();
 
   function submit() {
-    onAdd({ id: crypto.randomUUID(), name, email, catalogAccess, ticketAccess });
-    setName(""); setEmail("");
+    onAdd({ id: crypto.randomUUID(), rank, name, personalNumber, email, catalogAccess, ticketAccess });
+    setName(""); setPersonalNumber(""); setEmail("");
     setCatalogAccess(CATALOG_ACCESS.READ); setTicketAccess(TICKET_ACCESS.NONE);
   }
 
   return (
     <div className="add-form">
-      <input placeholder="שם מלא" value={name} onChange={(e) => setName(e.target.value)} />
-      <input placeholder="אימייל (לחיבור עתידי למשתמש)" value={email} onChange={(e) => setEmail(e.target.value)} />
+      <label className="add-form-field">
+        <span>דרגה</span>
+        <select value={rank} onChange={(e) => setRank(e.target.value)}>
+          {RANK_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+        </select>
+      </label>
+      <label className="add-form-field">
+        <span>שם מלא</span>
+        <input placeholder="שם מלא" value={name} onChange={(e) => setName(e.target.value)} />
+      </label>
+      <label className="add-form-field">
+        <span>מספר אישי</span>
+        <input placeholder="יזוהה מול OpenID בכניסה" value={personalNumber} inputMode="numeric"
+          onChange={(e) => setPersonalNumber(e.target.value.replace(/\D/g, ""))} />
+      </label>
+      <label className="add-form-field">
+        <span>אימייל (אופציונלי)</span>
+        <input placeholder="לחיבור עתידי למשתמש" value={email} onChange={(e) => setEmail(e.target.value)} />
+      </label>
       <AccessSelect label="קטלוג" value={catalogAccess} onChange={setCatalogAccess} options={CATALOG_ACCESS} labels={ACCESS_LABELS.catalog} />
       <AccessSelect label="דרישות" value={ticketAccess} onChange={setTicketAccess} options={TICKET_ACCESS} labels={ACCESS_LABELS.ticket} />
       <button className="add-btn" disabled={!canAdd} onClick={submit}>+ הוספה</button>
@@ -156,7 +153,7 @@ function UnitRoster({ unit, unitPeople, setUnitPeople }) {
       <div className="person-list">
         {people.length === 0 && <div className="empty">עדיין לא נוספו אנשים ליחידה זו.</div>}
         {people.map((p, idx) => (
-          <div key={p.id} style={{ animationDelay: `${idx * 50}ms` }} className="person-row-wrap">
+          <div key={p.id} style={{ animationDelay: `${idx * 40}ms` }} className="person-row-wrap">
             <PersonRow person={p} onChange={updatePerson} onRemove={removePerson} />
           </div>
         ))}
@@ -168,7 +165,7 @@ function UnitRoster({ unit, unitPeople, setUnitPeople }) {
   );
 }
 
-function UnitPermissionsView({ unit, setUnit, unitPeople, setUnitPeople }) {
+function UnitPermissionsView({ unit, unitPeople, setUnitPeople }) {
   return (
     <div>
       <div className="view-head">
@@ -176,15 +173,13 @@ function UnitPermissionsView({ unit, setUnit, unitPeople, setUnitPeople }) {
         <p>תצוגה מצומצמת: כל קצין אמל״ח יחידה מנהל רק את אנשי היחידה שלו.</p>
       </div>
 
-      <label className="unit-select">
-        <span>יחידה (הדגמה — בפועל נקבע לפי המשתמש המחובר)</span>
-        <div className="unit-select-row">
-          <UnitEmblem name={unit} size={30} />
-          <select value={unit} onChange={(e) => setUnit(e.target.value)}>
-            {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
-          </select>
+      <div className="unit-context">
+        <UnitEmblem name={unit} size={30} />
+        <div>
+          <div className="unit-context-label">היחידה שלך</div>
+          <div className="unit-context-value">{unit}</div>
         </div>
-      </label>
+      </div>
 
       <UnitRoster unit={unit} unitPeople={unitPeople} setUnitPeople={setUnitPeople} />
     </div>
@@ -196,7 +191,7 @@ function UnitPermissionsView({ unit, setUnit, unitPeople, setUnitPeople }) {
 /* ================================================================== */
 
 function BrigadePermissionsView({
-  unitOfficers, setUnitOfficers, brigadeStaff, setBrigadeStaff,
+  units, unitOfficers, setUnitOfficers, brigadeStaff, setBrigadeStaff,
   unitPeople, setUnitPeople,
 }) {
   const [drill, setDrill] = useState(ALL_SCOPE);
@@ -227,7 +222,7 @@ function BrigadePermissionsView({
               : `תצוגה אישית ליחידת ${drill} — נצפית דרך הרשאת החטיבה.`}
           </p>
         </div>
-        <ScopePicker scope={drill} setScope={setDrill} units={UNITS} allLabel="89 — כלל החטיבה" allEmblemName="89" />
+        <ScopePicker scope={drill} setScope={setDrill} units={units} allLabel="כלל החטיבה" allEmblemName="חטיבה" />
       </div>
 
       {drill === ALL_SCOPE ? (
@@ -235,23 +230,17 @@ function BrigadePermissionsView({
           <div className="section-title">קציני אמל״ח ביחידות</div>
           <div className="officer-list">
             {unitOfficers.map((o, idx) => (
-              <div className="officer-row" key={o.id} style={{ animationDelay: `${idx * 50}ms` }}>
+              <div className="officer-row" key={o.id} style={{ animationDelay: `${idx * 40}ms` }}>
                 <div className="officer-unit">
                   <UnitEmblem name={o.unit} size={26} />
                   {o.unit}
                 </div>
-                <input
-                  className="officer-input"
-                  value={o.name}
-                  onChange={(e) => updateOfficer(o.id, { name: e.target.value })}
-                  placeholder="שם קצין אמל״ח"
-                />
-                <input
-                  className="officer-input"
-                  value={o.email}
-                  onChange={(e) => updateOfficer(o.id, { email: e.target.value })}
-                  placeholder="אימייל"
-                />
+                <select className="officer-input officer-rank-input" value={o.rank} onChange={(e) => updateOfficer(o.id, { rank: e.target.value })}>
+                  {RANK_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+                <input className="officer-input" value={o.name} onChange={(e) => updateOfficer(o.id, { name: e.target.value })} placeholder="שם קצין אמל״ח" />
+                <input className="officer-input" value={o.personalNumber} inputMode="numeric"
+                  onChange={(e) => updateOfficer(o.id, { personalNumber: e.target.value.replace(/\D/g, "") })} placeholder="מספר אישי" />
               </div>
             ))}
           </div>
@@ -260,7 +249,7 @@ function BrigadePermissionsView({
           <div className="person-list">
             {brigadeStaff.length === 0 && <div className="empty">אין עדיין אנשי צוות חטיבתיים נוספים.</div>}
             {brigadeStaff.map((p, idx) => (
-              <div key={p.id} style={{ animationDelay: `${idx * 50}ms` }} className="person-row-wrap">
+              <div key={p.id} style={{ animationDelay: `${idx * 40}ms` }} className="person-row-wrap">
                 <PersonRow person={p} onChange={updateStaff} onRemove={removeStaff} />
               </div>
             ))}
@@ -274,8 +263,8 @@ function BrigadePermissionsView({
           {drillOfficer && (
             <div className="drill-officer-tag">
               <UnitEmblem name={drill} size={22} showRing={false} />
-              קצין אמל״ח היחידה: <b>{drillOfficer.name}</b>
-              <span className="drill-officer-email">{drillOfficer.email}</span>
+              קצין אמל״ח היחידה: <b>{drillOfficer.rank} {drillOfficer.name}</b>
+              <span className="drill-officer-email">מ.א. {drillOfficer.personalNumber}</span>
             </div>
           )}
           <UnitRoster unit={drill} unitPeople={unitPeople} setUnitPeople={setUnitPeople} />
@@ -286,39 +275,171 @@ function BrigadePermissionsView({
 }
 
 /* ================================================================== */
+/* Org tree — LEGO BLOCK. שכבה אחת מעל ומתחת למי שצופה, או התרשים המלא. */
+/* ================================================================== */
+
+function OrgNode({ title, sub, emblem, highlight, children }) {
+  return (
+    <div className={"org-node" + (highlight ? " org-node-you" : "")}>
+      <div className="org-node-card">
+        {emblem && <UnitEmblem name={emblem} size={24} showRing={false} />}
+        <div>
+          <div className="org-node-title">{title}</div>
+          {sub && <div className="org-node-sub">{sub}</div>}
+        </div>
+        {highlight && <span className="org-node-you-tag">אתה כאן</span>}
+      </div>
+      {children && children.length > 0 && (
+        <div className="org-node-children">
+          {children.map((c, i) => <React.Fragment key={i}>{c}</React.Fragment>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OrgTree({ role, brigadeName, myUnit, units, unitOfficers, brigadeStaff, unitPeople }) {
+  const personLeaf = (p) => (
+    <OrgNode key={p.id} title={`${p.rank} ${p.name}`} sub={`מ.א. ${p.personalNumber}`} />
+  );
+
+  if (role === STRUCTURAL_ROLES.UNIT_OFFICER) {
+    const officer = unitOfficers.find((o) => o.unit === myUnit);
+    const people = unitPeople[myUnit] || [];
+    return (
+      <div className="org-tree">
+        <OrgNode title={brigadeName} sub="שכבה אחת מעליך">
+          {[
+            <OrgNode
+              key="me"
+              title={myUnit}
+              emblem={myUnit}
+              sub={officer ? `${officer.rank} ${officer.name} — אתה` : undefined}
+              highlight
+            >
+              {people.map(personLeaf)}
+            </OrgNode>,
+          ]}
+        </OrgNode>
+      </div>
+    );
+  }
+
+  // brigade officer / admin — full tree
+  return (
+    <div className="org-tree">
+      <OrgNode title={brigadeName} sub={`${unitOfficers.length} יחידות · ${brigadeStaff.length} אנשי צוות חטיבתי`}>
+        {[
+          ...units.map((u) => {
+            const officer = unitOfficers.find((o) => o.unit === u);
+            const people = unitPeople[u] || [];
+            return (
+              <OrgNode
+                key={u}
+                title={u}
+                emblem={u}
+                sub={officer ? `${officer.rank} ${officer.name}` : "טרם מונה קצין"}
+              >
+                {people.map(personLeaf)}
+              </OrgNode>
+            );
+          }),
+          brigadeStaff.length > 0 && (
+            <OrgNode key="staff" title="צוות חטיבתי" sub="ישירות תחת מפקדת החטיבה">
+              {brigadeStaff.map(personLeaf)}
+            </OrgNode>
+          ),
+        ].filter(Boolean)}
+      </OrgNode>
+    </div>
+  );
+}
+
+/* ================================================================== */
 /* Root                                                                */
 /* ================================================================== */
 
-export default function PermissionsDashboard() {
-  const [scope, setScope] = useState("unit"); // unit | brigade
-  const [unit, setUnit] = useState(UNITS[0]);
-  const [unitPeople, setUnitPeople] = useState(seedUnitPeople);
-  const [unitOfficers, setUnitOfficers] = useState(seedUnitOfficers);
-  const [brigadeStaff, setBrigadeStaff] = useState(seedBrigadeStaff);
+export default function PermissionsDashboard({ role, brigadeId, brigadeName }) {
+  const [units, setUnits] = useState(null);
+  const [unitPeople, setUnitPeople] = useState({});
+  const [unitOfficers, setUnitOfficers] = useState([]);
+  const [brigadeStaff, setBrigadeStaff] = useState([]);
+  const [view, setView] = useState("list");
+
+  useEffect(() => {
+    let cancelled = false;
+    setUnits(null);
+    Promise.all([fetchBrigadeUnits(brigadeId), fetchBrigadeRoster(brigadeId)]).then(([u, roster]) => {
+      if (cancelled) return;
+      setUnits(u);
+      setUnitOfficers(roster.unitOfficers);
+      setBrigadeStaff(roster.brigadeStaff);
+      setUnitPeople(roster.unitPeople);
+    });
+    return () => { cancelled = true; };
+  }, [brigadeId]);
+
+  const isBrigadeScope = role === STRUCTURAL_ROLES.BRIGADE_OFFICER || role === STRUCTURAL_ROLES.SYSTEM_ADMIN;
+  const myUnit = units?.[0];
+
+  if (units === null) {
+    return (
+      <div dir="rtl" className="permissions-view panel-card">
+        <style>{CSS}</style>
+        <Loading />
+      </div>
+    );
+  }
+
+  if (units.length === 0) {
+    return (
+      <div dir="rtl" className="permissions-view panel-card">
+        <style>{CSS}</style>
+        <div className="empty-state">
+          לחטיבה זו עדיין אין מבנה ארגוני — היא ממתינה שקצין אמל״ח החטיבה ישלים את אשף ההתקנה.
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div dir="rtl" className="app">
+    <div dir="rtl" className="permissions-view panel-card">
       <style>{CSS}</style>
-      <div className="bg-fx" aria-hidden="true" />
 
-      <div className="scope-switch">
-        <button className={"scope-btn" + (scope === "unit" ? " active" : "")} onClick={() => setScope("unit")}>
-          קצין אמל״ח יחידה
+      <div className="pill-tabs" style={{ marginBottom: 22 }}>
+        <button className={"pill-tab" + (view === "list" ? " active" : "")} onClick={() => setView("list")}>
+          רשימה
         </button>
-        <button className={"scope-btn" + (scope === "brigade" ? " active" : "")} onClick={() => setScope("brigade")}>
-          קצין אמל״ח חטיבה
+        <button className={"pill-tab" + (view === "tree" ? " active" : "")} onClick={() => setView("tree")}>
+          עץ ארגוני
         </button>
       </div>
 
-      <div key={scope} className="scope-body">
-        {scope === "unit" ? (
-          <UnitPermissionsView unit={unit} setUnit={setUnit} unitPeople={unitPeople} setUnitPeople={setUnitPeople} />
-        ) : (
+      <div key={view} className="scope-body">
+        {view === "tree" ? (
+          <>
+            <div className="view-head">
+              <h1>מבנה ארגוני</h1>
+              <p>
+                {isBrigadeScope
+                  ? "תרשים החטיבה המלא — כלל היחידות ואנשי הצוות."
+                  : "התצוגה שלך: שכבה אחת מעליך (החטיבה) ומה שתחתיך (אנשי היחידה)."}
+              </p>
+            </div>
+            <OrgTree
+              role={role} brigadeName={brigadeName} myUnit={myUnit} units={units}
+              unitOfficers={unitOfficers} brigadeStaff={brigadeStaff} unitPeople={unitPeople}
+            />
+          </>
+        ) : isBrigadeScope ? (
           <BrigadePermissionsView
+            units={units}
             unitOfficers={unitOfficers} setUnitOfficers={setUnitOfficers}
             brigadeStaff={brigadeStaff} setBrigadeStaff={setBrigadeStaff}
             unitPeople={unitPeople} setUnitPeople={setUnitPeople}
           />
+        ) : (
+          <UnitPermissionsView unit={myUnit} unitPeople={unitPeople} setUnitPeople={setUnitPeople} />
         )}
       </div>
     </div>
@@ -330,94 +451,96 @@ export default function PermissionsDashboard() {
 /* ================================================================== */
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@keyframes fadeSlideUp{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
 
-:root{
-  --bg:#12140F; --panel:#1A1F16; --panel-raised:#212819; --line:#3A4530;
-  --text:#E9E6D8; --text-dim:#9BA28A; --amber:#C9A227; --green:#5C8A3A; --red:#C1432E;
-}
-@keyframes bgDrift{ 0%{ background-position:0 0, 0 0; } 100%{ background-position:120px 120px, -90px 60px; } }
-@keyframes fadeSlideUp{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+.permissions-view{ color:var(--text); font-family:var(--font-sans); padding:22px 24px; }
 
-.app{ position:relative; overflow:hidden; background:var(--bg); color:var(--text);
-  font-family:'Inter',sans-serif; border-radius:8px; border:1px solid var(--line); padding:28px 30px; min-height:560px; }
-.bg-fx{ position:absolute; inset:0; z-index:0; pointer-events:none;
-  background-image:linear-gradient(rgba(201,162,39,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(201,162,39,.05) 1px, transparent 1px);
-  background-size:42px 42px, 42px 42px; animation:bgDrift 26s linear infinite; }
-.app > *:not(.bg-fx){ position:relative; z-index:1; }
-
-.scope-switch{ display:flex; gap:8px; margin-bottom:24px; border-bottom:1px solid var(--line); padding-bottom:16px; }
-.scope-btn{ background:transparent; border:1px solid var(--line); color:var(--text-dim); border-radius:6px;
-  padding:9px 18px; font-family:'Rajdhani',sans-serif; font-weight:700; font-size:14px; cursor:pointer;
-  transition:border-color .2s ease, color .2s ease, background .2s ease; }
-.scope-btn:hover{ color:var(--text); }
-.scope-btn.active{ background:var(--amber); color:#161A10; border-color:var(--amber); }
-
-.scope-body{ animation:fadeSlideUp .3s ease; }
-.view-head h1{ font-family:'Rajdhani',sans-serif; font-size:24px; margin:0 0 4px; }
-.view-head p{ color:var(--text-dim); font-size:13px; margin:0 0 20px; }
-.view-head-row{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; position:relative; z-index:10; }
+.scope-body{ animation:fadeSlideUp .25s ease; }
+.view-head h1{ font-family:var(--font-sans); font-weight:700; font-size:21px; margin:0 0 4px; }
+.view-head p{ color:var(--text-dim); font-size:14px; margin:0 0 20px; }
+.view-head-row{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
 .view-head-row .view-head, .view-head-row > div{ margin:0; }
 
 ${SCOPE_PICKER_CSS}
 
+.unit-context{ display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--line);
+  border-radius:6px; padding:12px 16px; margin-bottom:20px; }
+.unit-context-label{ font-size:11.5px; color:var(--text-dim); font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.05em; }
+.unit-context-value{ font-family:var(--font-sans); font-weight:700; font-size:15px; margin-top:2px; }
+
 .drill-officer-tag{
   display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--line);
-  border-radius:7px; padding:9px 14px; font-size:12px; color:var(--text-dim); margin-bottom:18px;
+  border-radius:6px; padding:10px 14px; font-size:13px; color:var(--text-dim); margin-bottom:18px;
 }
 .drill-officer-tag b{ color:var(--text); }
-.drill-officer-email{ font-family:'IBM Plex Mono',monospace; color:var(--amber); margin-right:auto; }
+.drill-officer-email{ font-family:var(--font-mono); color:var(--accent); margin-right:auto; }
 
-.section-title{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--amber);
-  text-transform:uppercase; letter-spacing:.05em; margin:22px 0 10px; }
-
-.unit-select{ display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--text-dim); max-width:280px; margin-bottom:8px; }
-.unit-select select{ background:var(--panel); border:1px solid var(--line); border-radius:6px; color:var(--text); padding:9px 10px; font-size:13px; }
+.section-title{ font-family:var(--font-mono); font-size:12px; color:var(--accent);
+  text-transform:uppercase; letter-spacing:.06em; margin:22px 0 10px; }
 
 .person-list{ display:flex; flex-direction:column; gap:8px; }
-.person-row-wrap{ opacity:0; animation:fadeSlideUp .3s ease forwards; }
+.person-row-wrap{ opacity:0; animation:fadeSlideUp .25s ease forwards; }
 .person-row{
   display:flex; align-items:center; gap:14px; background:var(--panel); border:1px solid var(--line);
-  border-radius:7px; padding:10px 14px; transition:border-color .18s ease;
+  border-radius:6px; padding:12px 16px; transition:border-color .15s ease;
 }
-.person-row:hover{ border-color:#4b5640; }
-.person-info{ flex:1; min-width:120px; }
-.person-name{ font-family:'Rajdhani',sans-serif; font-weight:600; font-size:14px; }
-.person-email{ font-size:11px; color:var(--text-dim); font-family:'IBM Plex Mono',monospace; }
-.person-unit{ font-size:10px; color:var(--amber); margin-top:2px; display:flex; align-items:center; gap:5px; }
-.unit-select-row{ display:flex; align-items:center; gap:10px; }
-.unit-emblem{ display:block; transition:transform .2s ease, filter .2s ease; }
-.unit-emblem-ring:hover{ transform:scale(1.08); filter:drop-shadow(0 0 6px rgba(201,162,39,.4)); }
+.person-row:hover{ border-color:var(--text-dim); }
+.person-info{ flex:1; min-width:140px; }
+.person-name{ font-family:var(--font-sans); font-weight:600; font-size:15px; }
+.person-rank{ color:var(--text-dim); font-weight:500; }
+.person-meta{ display:flex; gap:12px; font-size:12px; color:var(--text-dim); font-family:var(--font-mono); margin-top:2px; }
+.person-unit{ font-size:11px; color:var(--accent); margin-top:3px; display:flex; align-items:center; gap:5px; }
+.unit-emblem{ display:block; }
 
+.access-field{ display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--text-dim); }
+.access-field select{ background:var(--bg); border:1px solid var(--line); border-radius:4px; color:var(--text);
+  padding:7px 9px; font-size:12px; min-width:155px; }
 
-.access-field{ display:flex; flex-direction:column; gap:3px; font-size:10px; color:var(--text-dim); }
-.access-field select{ background:var(--bg); border:1px solid var(--line); border-radius:5px; color:var(--text);
-  padding:6px 8px; font-size:11px; min-width:150px; }
-
-.person-remove{ background:none; border:1px solid transparent; color:var(--text-dim); border-radius:5px;
-  padding:4px 8px; cursor:pointer; transition:color .18s ease, border-color .18s ease; }
+.person-remove{ background:none; border:1px solid transparent; color:var(--text-dim); border-radius:4px;
+  padding:4px 8px; cursor:pointer; transition:color .15s ease, border-color .15s ease; }
 .person-remove:hover{ color:var(--red); border-color:var(--red); }
 
-.add-form{ display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; background:var(--panel);
-  border:1px dashed var(--line); border-radius:7px; padding:14px; }
-.add-form input{ background:var(--bg); border:1px solid var(--line); border-radius:5px; color:var(--text);
-  padding:8px 10px; font-size:12px; flex:1; min-width:140px; }
-.add-btn{ background:var(--amber); color:#161A10; border:none; border-radius:5px; padding:9px 16px;
-  font-family:'Rajdhani',sans-serif; font-weight:700; font-size:13px; cursor:pointer; transition:filter .18s ease, box-shadow .2s ease; }
-.add-btn:not(:disabled):hover{ filter:brightness(1.1); box-shadow:0 0 14px rgba(201,162,39,.4); }
+.add-form{ display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; background:var(--panel);
+  border:1px dashed var(--line); border-radius:6px; padding:16px; }
+.add-form-field{ display:flex; flex-direction:column; gap:5px; font-size:11.5px; color:var(--text-dim); }
+.add-form-field input, .add-form-field select{ background:var(--bg); border:1px solid var(--line); border-radius:4px; color:var(--text);
+  padding:9px 11px; font-size:13px; min-width:130px; }
+.add-btn{ background:var(--accent); color:var(--accent-ink); border:none; border-radius:4px; padding:10px 18px;
+  font-family:var(--font-sans); font-weight:700; font-size:14px; cursor:pointer; transition:filter .15s ease, box-shadow .15s ease; }
+.add-btn:not(:disabled):hover{ filter:brightness(1.08); box-shadow:var(--shadow-sm); }
 .add-btn:disabled{ opacity:.4; cursor:not-allowed; }
 
 .officer-list{ display:flex; flex-direction:column; gap:8px; }
 .officer-row{
-  display:grid; grid-template-columns:110px 1fr 1fr; gap:10px; align-items:center;
-  background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:10px 14px;
-  opacity:0; animation:fadeSlideUp .3s ease forwards;
+  display:grid; grid-template-columns:110px 100px 1fr 1fr; gap:10px; align-items:center;
+  background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:12px 16px;
+  opacity:0; animation:fadeSlideUp .25s ease forwards;
 }
-.officer-unit{ font-family:'Rajdhani',sans-serif; font-weight:600; color:var(--amber); font-size:13px; display:flex; align-items:center; gap:8px; }
-.officer-input{ background:var(--bg); border:1px solid var(--line); border-radius:5px; color:var(--text);
-  padding:7px 9px; font-size:12px; }
+.officer-unit{ font-family:var(--font-sans); font-weight:600; color:var(--accent); font-size:14px; display:flex; align-items:center; gap:8px; }
+.officer-input{ background:var(--bg); border:1px solid var(--line); border-radius:4px; color:var(--text);
+  padding:8px 10px; font-size:13px; }
+.officer-rank-input{ font-family:var(--font-mono); }
 
-.empty{ color:var(--text-dim); font-size:13px; padding:16px 0; }
+.empty{ color:var(--text-dim); font-size:14px; padding:16px 0; }
+
+/* org tree — nested, shaded groups read the hierarchy without fragile     */
+/* hand-drawn connector lines.                                             */
+.org-tree{ overflow-x:auto; padding-bottom:8px; }
+.org-node{ display:inline-flex; flex-direction:column; align-items:center; }
+.org-node-card{
+  position:relative; display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line);
+  border-radius:6px; padding:10px 16px; white-space:nowrap; box-shadow:var(--shadow-sm); z-index:1;
+}
+.org-node-you .org-node-card{ border-color:var(--accent); background:var(--panel-raised); }
+.org-node-title{ font-family:var(--font-sans); font-weight:700; font-size:14px; }
+.org-node-sub{ font-size:11.5px; color:var(--text-dim); margin-top:1px; }
+.org-node-you-tag{ font-family:var(--font-mono); font-size:9.5px; color:var(--accent); border:1px solid var(--accent);
+  border-radius:3px; padding:1px 6px; margin-right:4px; text-transform:uppercase; }
+.org-node-children{
+  display:flex; gap:16px; margin-top:-1px; padding:20px 20px 16px; flex-wrap:wrap; justify-content:center;
+  background:var(--panel-raised); border:1px solid var(--line); border-top:none;
+  border-radius:0 0 8px 8px;
+}
 
 @media (max-width:700px){
   .person-row{ flex-wrap:wrap; }

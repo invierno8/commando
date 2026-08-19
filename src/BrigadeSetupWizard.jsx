@@ -1,17 +1,14 @@
 import React, { useState } from "react";
+import { Shield, Star, Flag, Compass, Mountain, Target, Award, Crosshair, Swords, Anchor, Pencil, X } from "lucide-react";
 import UnitEmblem from "./UnitEmblem.jsx";
+import { STRUCTURAL_ROLES } from "./roles.js";
 
 /* ================================================================== */
 /* LEGO BLOCK 1 — Access-level data model (pure data, zero logic)      */
 /* כל שינוי בהרשאות = שינוי כאן בלבד. אין if/else מפוזרים בקומפוננטות.  */
+/* תפקידים מבניים (STRUCTURAL_ROLES) חיים ב-roles.js — מקור אמת יחיד,   */
+/* משותף גם עם מתג התפקיד ברמת האפליקציה.                              */
 /* ================================================================== */
-
-export const STRUCTURAL_ROLES = {
-  SYSTEM_ADMIN: "system_admin",           // מטמיע המערכת — לא שייך לחטיבה ספציפית
-  BRIGADE_OFFICER: "brigade_officer",     // קצין אמל״ח חטיבה
-  UNIT_OFFICER: "unit_officer",           // קצין אמל״ח יחידה
-  MEMBER: "member",                       // חייל/משתמש קצה
-};
 
 export const CATALOG_ACCESS = {
   READ: "read",       // רואה קטלוג בלבד
@@ -95,19 +92,27 @@ function Field({ label, hint, children }) {
   );
 }
 
-const ICON_OPTIONS = ["🛡️", "⚔️", "🦅", "🐆", "🐺", "🏔️", "⭐", "🔱", "🎯", "🧭"];
+export const BRIGADE_ICONS = {
+  shield: Shield, star: Star, flag: Flag, compass: Compass, mountain: Mountain,
+  target: Target, award: Award, crosshair: Crosshair, swords: Swords, anchor: Anchor,
+};
+
+export function BrigadeIcon({ iconKey, size = 22 }) {
+  const Icon = BRIGADE_ICONS[iconKey] || Shield;
+  return <Icon size={size} />;
+}
 
 function IconPicker({ value, onChange }) {
   return (
     <div className="icon-picker">
-      {ICON_OPTIONS.map((ic) => (
+      {Object.keys(BRIGADE_ICONS).map((key) => (
         <button
-          key={ic}
+          key={key}
           type="button"
-          className={"icon-opt" + (value === ic ? " active" : "")}
-          onClick={() => onChange(ic)}
+          className={"icon-opt" + (value === key ? " active" : "")}
+          onClick={() => onChange(key)}
         >
-          {ic}
+          <BrigadeIcon iconKey={key} size={18} />
         </button>
       ))}
     </div>
@@ -167,7 +172,7 @@ function UnitNamePicker({ value, onChange }) {
             className="unit-picker-item unit-picker-item-custom"
             onClick={() => { setCustomMode(true); setOpen(false); }}
           >
-            <span className="unit-picker-custom-icon">✎</span>
+            <span className="unit-picker-custom-icon"><Pencil size={13} /></span>
             <span>הזנה ידנית — שם אחר</span>
           </button>
         </div>
@@ -183,11 +188,13 @@ const steps = [
     render: () => (
       <div className="step-welcome">
         <div className="setup-mark">SETUP</div>
-        <h1>הטמעת מערכת אמל״ח־נט בחטיבה</h1>
+        <h1>הקמת החטיבה שלך בהאנגר</h1>
         <p>
+          החטיבה שלך כבר רשומה במערכת — השלב הזה משלים את הפרטים ברמת החטיבה בלבד:
           תהליך קצר בן ארבעה שלבים: פרטי החטיבה, הגדרת היחידות המשתמשות במערכת,
           ומינוי קצין אמל״ח חטיבתי. בסיום ייווצר מבנה הארגון הבסיסי, ומשם קציני
-          האמל״ח יוכלו להוסיף את האנשים שלהם ולהגדיר הרשאות.
+          האמל״ח יוכלו להוסיף את האנשים שלהם ולהגדיר הרשאות. הקמת חטיבות חדשות
+          במערכת עצמה נעשית על ידי מנהלי המערכת, לא כאן.
         </p>
       </div>
     ),
@@ -233,7 +240,7 @@ const steps = [
       const addUnit = (name = "") =>
         set((p) => ({
           ...p,
-          units: [...p.units, { id: crypto.randomUUID(), name, icon: "🛡️", officerName: "", officerEmail: "" }],
+          units: [...p.units, { id: crypto.randomUUID(), name, officerName: "", officerEmail: "" }],
         }));
       const updateUnit = (id, patch) =>
         set((p) => ({ ...p, units: p.units.map((u) => (u.id === id ? { ...u, ...patch } : u)) }));
@@ -273,7 +280,7 @@ const steps = [
                     inputMode="numeric"
                   />
                 </div>
-                <button className="unit-remove" onClick={() => removeUnit(u.id)}>✕</button>
+                <button className="unit-remove" onClick={() => removeUnit(u.id)}><X size={15} /></button>
               </div>
             ))}
           </div>
@@ -367,7 +374,7 @@ function ACCESS_LABELS_ROLE(role) {
 function MissionBar({ brigade }) {
   return (
     <div className="mission-bar">
-      <div className="mission-icon">{brigade.icon}</div>
+      <div className="mission-icon"><BrigadeIcon iconKey={brigade.icon} size={24} /></div>
       <div className="mission-text">
         <div className="mission-name">{brigade.name || "שם החטיבה"}</div>
         <div className="mission-quote">{brigade.mission || "ייעוד החטיבה יופיע כאן"}</div>
@@ -428,7 +435,7 @@ function CompletedShell({ state }) {
 
 export default function BrigadeSetupWizard() {
   const [state, setState] = useState({
-    brigade: { name: "", icon: "🛡️", mission: "" },
+    brigade: { name: "", icon: "shield", mission: "" },
     units: [],
     brigadeOfficerName: "",
     brigadeOfficerEmail: "",
@@ -436,7 +443,7 @@ export default function BrigadeSetupWizard() {
   const [done, setDone] = useState(false);
 
   return (
-    <div dir="rtl" className="app">
+    <div dir="rtl" className="wizard-view panel-card">
       <style>{CSS}</style>
       {!done ? (
         <Wizard steps={steps} state={state} setState={setState} onFinish={() => setDone(true)} />
@@ -452,140 +459,121 @@ export default function BrigadeSetupWizard() {
 /* ================================================================== */
 
 const CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+@keyframes fadeSlideUp{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
 
-:root{
-  --bg:#12140F; --panel:#1A1F16; --panel-raised:#212819; --line:#3A4530;
-  --text:#E9E6D8; --text-dim:#9BA28A; --amber:#C9A227; --green:#5C8A3A;
+.wizard-view{
+  max-width:760px; margin:0 auto;
+  color:var(--text); font-family:var(--font-sans);
+  padding:32px 36px;
 }
-@keyframes fadeSlideUp{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:translateY(0); } }
-@keyframes ledPulse{ 0%,100%{ box-shadow:0 0 4px 1px var(--amber); } 50%{ box-shadow:0 0 10px 3px var(--amber); } }
-@keyframes bgDrift{ 0%{ background-position:0 0, 0 0; } 100%{ background-position:120px 120px, -90px 60px; } }
-
-.app{
-  position:relative; overflow:hidden;
-  background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
-  border-radius:8px; border:1px solid var(--line); padding:34px; min-height:560px;
-}
-.app::before{
-  content:""; position:absolute; inset:0; z-index:0; pointer-events:none;
-  background-image:
-    linear-gradient(rgba(201,162,39,.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(201,162,39,.05) 1px, transparent 1px);
-  background-size:42px 42px, 42px 42px;
-  animation:bgDrift 26s linear infinite;
-}
-.wizard, .completed{ position:relative; z-index:1; animation:fadeSlideUp .35s ease; }
+.wizard, .completed{ animation:fadeSlideUp .3s ease; }
 
 .wizard-progress{ display:flex; gap:6px; margin-bottom:30px; }
 .wizard-dot{ flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; }
-.wizard-dot-mark{ width:100%; height:3px; background:var(--line); border-radius:2px; transition:background .3s ease, box-shadow .3s ease; }
-.wizard-dot.done .wizard-dot-mark{ background:var(--amber); box-shadow:0 0 6px rgba(201,162,39,.5); }
-.wizard-dot-label{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-dim); }
-.wizard-dot.done .wizard-dot-label{ color:var(--amber); }
+.wizard-dot-mark{ width:100%; height:3px; background:var(--line); border-radius:2px; transition:background .25s ease; }
+.wizard-dot.done .wizard-dot-mark{ background:var(--accent); }
+.wizard-dot-label{ font-family:var(--font-mono); font-size:11px; color:var(--text-dim); }
+.wizard-dot.done .wizard-dot-label{ color:var(--accent); }
 
-.setup-mark{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--amber);
-  border:1px solid var(--amber); display:inline-block; padding:2px 9px; border-radius:4px; margin-bottom:14px; }
-.step-welcome h1{ font-family:'Rajdhani',sans-serif; font-size:28px; margin:0 0 12px; }
+.setup-mark{ font-family:var(--font-mono); font-size:12px; color:var(--accent);
+  border:1px solid var(--accent); display:inline-block; padding:2px 9px; border-radius:3px; margin-bottom:14px; letter-spacing:.04em; }
+.step-welcome h1{ font-family:var(--font-sans); font-weight:700; font-size:26px; margin:0 0 12px; }
 .step-welcome p{ color:var(--text-dim); font-size:14px; line-height:1.7; max-width:560px; }
 
-.step h2{ font-family:'Rajdhani',sans-serif; font-size:22px; margin:0 0 6px; }
-.step-sub{ color:var(--text-dim); font-size:13px; margin:0 0 18px; }
+.step h2{ font-family:var(--font-sans); font-weight:700; font-size:20px; margin:0 0 6px; }
+.step-sub{ color:var(--text-dim); font-size:14px; margin:0 0 18px; }
 
-.field{ display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--text-dim); margin-bottom:16px; }
-.field input, .field textarea{ background:var(--panel); border:1px solid var(--line); border-radius:6px;
-  color:var(--text); padding:10px 12px; font-family:'Inter',sans-serif; font-size:13px; }
-.field input:focus, .field textarea:focus{ outline:1px solid var(--amber); }
+.field{ display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--text-dim); margin-bottom:16px; }
+.field input, .field textarea{ background:var(--panel); border:1px solid var(--line); border-radius:5px;
+  color:var(--text); padding:10px 12px; font-family:var(--font-sans); font-size:14px; }
+.field input:focus, .field textarea:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
 .field input:disabled{ opacity:.6; }
-.field-hint{ font-size:11px; color:var(--text-dim); opacity:.8; }
+.field-hint{ font-size:12px; color:var(--text-dim); opacity:.8; }
 
 .icon-picker{ display:flex; flex-wrap:wrap; gap:6px; }
-.icon-opt{ width:34px; height:34px; border-radius:6px; background:var(--panel); border:1px solid var(--line);
-  font-size:16px; cursor:pointer; transition:border-color .18s ease, transform .15s ease, box-shadow .2s ease; }
-.icon-opt:hover{ transform:translateY(-2px); }
-.icon-opt.active{ border-color:var(--amber); background:var(--panel-raised); box-shadow:0 0 10px rgba(201,162,39,.35); }
+.icon-opt{ width:34px; height:34px; border-radius:5px; background:var(--panel); border:1px solid var(--line);
+  color:var(--text-dim); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:border-color .15s ease, color .15s ease; }
+.icon-opt.active{ border-color:var(--accent); background:var(--panel-raised); color:var(--accent); }
 
-.suggest-row{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-dim);
+.suggest-row{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-dim);
   margin-bottom:16px; flex-wrap:wrap; }
-.chip{ background:var(--panel); border:1px solid var(--line); color:var(--amber); border-radius:20px;
-  padding:5px 12px; font-size:12px; cursor:pointer; font-family:'IBM Plex Mono',monospace;
-  transition:border-color .18s ease, box-shadow .2s ease, transform .15s ease; }
-.chip:hover{ border-color:var(--amber); box-shadow:0 0 10px rgba(201,162,39,.3); transform:translateY(-1px); }
+.chip{ background:var(--panel); border:1px solid var(--line); color:var(--accent); border-radius:4px;
+  padding:5px 12px; font-size:13px; cursor:pointer; font-family:var(--font-mono);
+  transition:border-color .15s ease; }
+.chip:hover{ border-color:var(--accent); }
 
 .unit-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
 .unit-row{ display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--line);
-  border-radius:7px; padding:10px 12px; }
+  border-radius:6px; padding:10px 12px; }
 .unit-row-icon{ position:relative; }
-.unit-hint{ font-size:11px; color:var(--text-dim); margin:-4px 0 14px; }
-.unit-emblem{ display:block; transition:transform .2s ease, filter .2s ease; }
-.unit-emblem-ring:hover{ transform:scale(1.08); filter:drop-shadow(0 0 6px rgba(201,162,39,.4)); }
+.unit-hint{ font-size:12px; color:var(--text-dim); margin:-4px 0 14px; }
+.unit-emblem{ display:block; }
 
 .unit-picker{ position:relative; flex:1; min-width:150px; }
 .unit-picker-trigger{
   width:100%; display:flex; align-items:center; gap:8px; background:var(--bg);
-  border:1px solid var(--line); border-radius:5px; padding:6px 10px; cursor:pointer; color:var(--text);
-  font-family:'Inter',sans-serif; font-size:12px; transition:border-color .18s ease;
+  border:1px solid var(--line); border-radius:4px; padding:6px 10px; cursor:pointer; color:var(--text);
+  font-family:var(--font-sans); font-size:13px; transition:border-color .15s ease;
 }
-.unit-picker-trigger:hover{ border-color:#4b5640; }
+.unit-picker-trigger:hover{ border-color:var(--text-dim); }
 .unit-picker-placeholder{ color:var(--text-dim); }
-.unit-picker-arrow{ margin-right:auto; color:var(--text-dim); font-size:11px; transition:transform .18s ease; }
-.unit-picker-arrow.open{ transform:rotate(180deg); color:var(--amber); }
+.unit-picker-arrow{ margin-right:auto; color:var(--text-dim); font-size:12px; transition:transform .18s ease; }
+.unit-picker-arrow.open{ transform:rotate(180deg); color:var(--accent); }
 .unit-picker-menu{
   position:absolute; top:calc(100% + 6px); right:0; left:0; z-index:30;
-  background:var(--panel-raised); border:1px solid var(--line); border-radius:7px;
-  box-shadow:0 12px 28px rgba(0,0,0,.45); padding:6px; max-height:260px; overflow-y:auto;
-  animation:fadeSlideUp .16s ease;
+  background:var(--panel); border:1px solid var(--line); border-radius:6px;
+  box-shadow:var(--shadow-md); padding:6px; max-height:260px; overflow-y:auto;
+  animation:fadeSlideUp .14s ease;
 }
 .unit-picker-item{
   width:100%; display:flex; align-items:center; gap:9px; background:transparent; border:none;
-  color:var(--text); padding:7px 8px; border-radius:5px; cursor:pointer; font-size:12px; text-align:right;
+  color:var(--text); padding:7px 8px; border-radius:4px; cursor:pointer; font-size:13px; text-align:right;
+  font-family:var(--font-sans);
 }
-.unit-picker-item:hover{ background:rgba(255,255,255,.05); }
+.unit-picker-item:hover{ background:var(--panel-raised); }
 .unit-picker-item-custom{ border-top:1px solid var(--line); margin-top:4px; padding-top:9px; color:var(--text-dim); }
 .unit-picker-custom-icon{ width:22px; text-align:center; }
 .unit-row-fields{ flex:1; display:flex; gap:10px; }
-.unit-row-fields input{ flex:1; background:var(--bg); border:1px solid var(--line); border-radius:5px;
-  color:var(--text); padding:8px 10px; font-size:12px; }
+.unit-row-fields input{ flex:1; background:var(--bg); border:1px solid var(--line); border-radius:4px;
+  color:var(--text); padding:8px 10px; font-size:13px; }
 .unit-remove{ background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:14px; }
-.btn-add-unit{ background:transparent; border:1px dashed var(--line); color:var(--text-dim); border-radius:6px;
-  padding:9px; width:100%; cursor:pointer; font-family:'Rajdhani',sans-serif; font-weight:600; }
-.btn-add-unit:hover{ border-color:var(--amber); color:var(--amber); }
+.btn-add-unit{ background:transparent; border:1px dashed var(--line); color:var(--text-dim); border-radius:5px;
+  padding:9px; width:100%; cursor:pointer; font-family:var(--font-sans); font-weight:600; }
+.btn-add-unit:hover{ border-color:var(--accent); color:var(--accent); }
 
 .wizard-actions{ display:flex; justify-content:space-between; margin-top:26px; border-top:1px solid var(--line); padding-top:18px; }
-.btn-ghost, .btn-primary{ border-radius:6px; padding:10px 22px; font-family:'Rajdhani',sans-serif;
-  font-weight:700; font-size:14px; cursor:pointer; transition:filter .18s ease, transform .12s ease, box-shadow .2s ease; }
+.btn-ghost, .btn-primary{ border-radius:5px; padding:10px 22px; font-family:var(--font-sans);
+  font-weight:700; font-size:14px; cursor:pointer; transition:filter .15s ease, box-shadow .15s ease; }
 .btn-ghost{ background:transparent; border:1px solid var(--line); color:var(--text-dim); }
-.btn-ghost:not(:disabled):hover{ color:var(--text); border-color:#4b5640; }
+.btn-ghost:not(:disabled):hover{ color:var(--text); border-color:var(--text-dim); }
 .btn-ghost:disabled{ opacity:.3; cursor:not-allowed; }
-.btn-primary{ background:var(--amber); border:none; color:#161A10; }
-.btn-primary:not(:disabled):hover{ filter:brightness(1.1); box-shadow:0 0 16px rgba(201,162,39,.45); transform:translateY(-1px); }
-.btn-primary:not(:disabled):active{ transform:translateY(0) scale(.98); }
+.btn-primary{ background:var(--accent); border:none; color:var(--accent-ink); }
+.btn-primary:not(:disabled):hover{ filter:brightness(1.08); box-shadow:var(--shadow-sm); }
 .btn-primary:disabled{ opacity:.35; cursor:not-allowed; }
 
-.mission-bar{ display:flex; align-items:center; gap:14px; background:var(--panel); border:1px solid var(--amber);
-  border-radius:8px; padding:14px 18px; margin-bottom:22px; animation:fadeSlideUp .35s ease; box-shadow:0 0 18px rgba(201,162,39,.12); }
-.mission-icon{ font-size:26px; }
-.mission-name{ font-family:'Rajdhani',sans-serif; font-weight:700; font-size:17px; }
-.mission-quote{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+.mission-bar{ display:flex; align-items:center; gap:14px; background:var(--panel); border:1px solid var(--line);
+  border-right:3px solid var(--accent); border-radius:6px; padding:14px 18px; margin-bottom:22px; animation:fadeSlideUp .3s ease; }
+.mission-icon{ display:flex; color:var(--accent); }
+.mission-name{ font-family:var(--font-sans); font-weight:700; font-size:16px; }
+.mission-quote{ font-size:13px; color:var(--text-dim); margin-top:2px; }
 
 .review-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; margin-top:14px; }
-.review-card{ background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:12px 14px;
-  opacity:0; animation:fadeSlideUp .35s ease forwards; transition:border-color .18s ease, transform .18s ease; }
-.review-card:hover{ border-color:#4b5640; transform:translateY(-2px); }
+.review-card{ background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:12px 14px;
+  opacity:0; animation:fadeSlideUp .3s ease forwards; transition:border-color .15s ease; }
+.review-card:hover{ border-color:var(--text-dim); }
 .review-card-unit{ display:flex; align-items:flex-start; gap:10px; }
-.review-card-title{ font-family:'Rajdhani',sans-serif; font-weight:600; font-size:14px; }
-.review-card-value{ font-size:12px; color:var(--text-dim); margin-top:4px; }
-.review-card-email{ font-size:11px; color:var(--amber); margin-top:2px; font-family:'IBM Plex Mono',monospace; }
+.review-card-title{ font-family:var(--font-sans); font-weight:600; font-size:14px; }
+.review-card-value{ font-size:13px; color:var(--text-dim); margin-top:4px; }
+.review-card-email{ font-size:12px; color:var(--accent); margin-top:2px; font-family:var(--font-mono); }
 
-.completed-badge{ display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:11px;
-  color:#0F150D; background:var(--green); padding:3px 10px; border-radius:4px; margin-bottom:10px;
-  animation:ledPulse 2s ease-in-out infinite; }
-.completed-body h2{ font-family:'Rajdhani',sans-serif; font-size:22px; margin:0 0 4px; }
+.completed-badge{ display:inline-block; font-family:var(--font-mono); font-size:12px;
+  color:#FFFFFF; background:var(--green); padding:3px 10px; border-radius:3px; margin-bottom:10px; letter-spacing:.04em; }
+.completed-body h2{ font-family:var(--font-sans); font-weight:700; font-size:20px; margin:0 0 4px; }
 
 .next-steps{ margin-top:28px; border-top:1px dashed var(--line); padding-top:18px; }
-.next-steps-title{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-dim);
-  text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px; }
-.next-card{ background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:12px 14px;
-  font-size:12px; color:var(--text-dim); line-height:1.7; margin-bottom:8px; }
+.next-steps-title{ font-family:var(--font-mono); font-size:12px; color:var(--text-dim);
+  text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px; }
+.next-card{ background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:12px 14px;
+  font-size:13px; color:var(--text-dim); line-height:1.7; margin-bottom:8px; }
 .next-card b{ color:var(--text); }
 `;
