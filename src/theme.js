@@ -111,12 +111,33 @@ html, body{ margin:0; background:var(--bg); }
 .app-sidebar.expanded .sidebar-btn{ width:100%; justify-content:flex-start; padding-inline:11px; }
 .sidebar-btn:hover{ background:var(--panel-raised); color:var(--text); }
 .sidebar-btn.active{ background:var(--accent); color:var(--accent-ink); }
-.sidebar-btn-label{ display:none; font-weight:600; font-size:13.5px; white-space:nowrap; }
-.app-sidebar.expanded .sidebar-btn-label{ display:inline; }
+.sidebar-btn-label{ display:none; font-weight:600; font-size:13.5px; white-space:nowrap; align-items:center; gap:7px; }
+.app-sidebar.expanded .sidebar-btn-label{ display:inline-flex; }
 .sidebar-btn-dev-dot{
   position:absolute; top:5px; left:5px; width:7px; height:7px; border-radius:50%; background:var(--dev);
   border:1.5px solid var(--panel);
 }
+.sidebar-btn-icon-wrap{ position:relative; display:flex; flex:none; }
+.sidebar-btn-badge{
+  position:absolute; top:-6px; left:-8px; min-width:15px; height:15px; padding:0 3px; border-radius:8px;
+  background:var(--red); color:#fff; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-mono); border:1.5px solid var(--panel);
+}
+.app-sidebar.expanded .sidebar-btn-badge{ display:none; }
+.sidebar-btn-badge-inline{
+  background:var(--red); color:#fff; font-size:10.5px; font-weight:700; min-width:18px; height:18px; padding:0 5px;
+  border-radius:9px; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono);
+  margin-inline-start:auto;
+}
+.sidebar-btn-fav{
+  display:none; align-items:center; justify-content:center; color:var(--text-dim); opacity:0; flex:none;
+  transition:opacity .15s ease, color .15s ease; padding:2px; border-radius:5px; margin-inline-start:auto;
+}
+.app-sidebar.expanded .sidebar-btn-fav{ display:flex; }
+.sidebar-btn:hover .sidebar-btn-fav{ opacity:1; }
+.sidebar-btn-fav:hover{ color:var(--yellow); }
+.sidebar-btn-fav.active{ opacity:1; color:var(--yellow); }
+.sidebar-btn-fav.active svg{ fill:var(--yellow); }
 .sidebar-spacer{ flex:1; }
 .sidebar-toggle{
   width:32px; height:32px; border-radius:8px; border:1px solid var(--line); background:var(--panel-raised);
@@ -149,6 +170,53 @@ html, body{ margin:0; background:var(--bg); }
   position:absolute; top:-2px; left:-2px; min-width:16px; height:16px; padding:0 3px; border-radius:8px;
   background:var(--red); color:#fff; font-size:9.5px; font-weight:700; display:flex; align-items:center; justify-content:center;
   font-family:var(--font-mono); border:2px solid var(--bg);
+}
+
+/* מרכז התראות — פעמון בסרגל העליון + חלונית נפתחת. כל התראה קופצת ישירות  */
+/* לפרטי הדרישה הרלוונטית (viewTicketDetail הקיים, אותו גשר crossNav       */
+/* ששימש עד כה רק למעברי קטלוג↔דרישה). הרשימה מסוננת כבר ב-App.jsx לפי     */
+/* הרשאת הצופה, כך שכל מה שמופיע כאן כבר "מותר" לו לראות.                  */
+.notif-menu{ position:relative; }
+.notif-dropdown{
+  position:absolute; top:calc(100% + 8px); left:0; z-index:60; width:360px; max-width:90vw;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow-md);
+  animation:fadeSlideUp .16s ease; overflow:hidden;
+}
+.notif-dropdown-head{
+  display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid var(--line);
+  font-family:var(--font-sans); font-weight:700; font-size:13px; color:var(--text);
+}
+.notif-mark-all{
+  display:inline-flex; align-items:center; gap:5px; background:none; border:none; color:var(--accent);
+  font-size:11.5px; font-weight:700; cursor:pointer; font-family:var(--font-sans); padding:0;
+}
+.notif-empty{ padding:26px 16px; text-align:center; color:var(--text-dim); font-size:13px; }
+.notif-list{ max-height:420px; overflow-y:auto; display:flex; flex-direction:column; }
+.notif-item{
+  position:relative; display:flex; align-items:flex-start; gap:10px; padding:11px 14px; border:none;
+  border-bottom:1px solid var(--line); background:var(--panel); cursor:pointer; text-align:right;
+  font-family:var(--font-sans); transition:background .15s ease; width:100%;
+}
+.notif-item:last-child{ border-bottom:none; }
+.notif-item:hover{ background:var(--panel-raised); }
+.notif-item.unread{ background:color-mix(in srgb, var(--accent) 5%, var(--panel)); }
+.notif-item-icon{
+  flex:none; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff;
+}
+.notif-item-icon.tone-green{ background:var(--green); }
+.notif-item-icon.tone-red{ background:var(--red); }
+.notif-item-icon.tone-yellow{ background:var(--yellow); }
+.notif-item-icon.tone-blue{ background:#2F8FCE; }
+.notif-item-icon.tone-accent{ background:var(--accent); }
+.notif-item-icon.tone-neutral{ background:var(--text-dim); }
+.notif-item-body{ display:flex; flex-direction:column; gap:4px; min-width:0; flex:1; }
+.notif-item-msg{ font-size:12.5px; color:var(--text); line-height:1.5; }
+.notif-item-meta{ display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-dim); }
+.notif-item-id{ font-family:var(--font-mono); color:var(--accent); font-style:normal; }
+.notif-item-dot{ position:absolute; top:14px; left:12px; width:7px; height:7px; border-radius:50%; background:var(--accent); flex:none; }
+
+@media (max-width:520px){
+  .notif-dropdown{ position:fixed; top:64px; left:8px; right:8px; width:auto; }
 }
 
 .theme-toggle{ display:flex; align-items:center; gap:2px; background:var(--panel-raised); border:1px solid var(--line); border-radius:9px; padding:3px; }
@@ -187,6 +255,15 @@ html, body{ margin:0; background:var(--bg); }
 }
 .env-strip-clock{ font-variant-numeric:tabular-nums; }
 .env-strip-persona{ font-size:11px; color:var(--dev); margin-inline-start:8px; padding-inline-start:8px; border-inline-start:1px solid var(--dev); }
+.env-strip-identity{
+  display:flex; align-items:center; gap:8px; font-size:11px; color:var(--dev); margin-inline-start:8px;
+  padding-inline-start:8px; border-inline-start:1px solid var(--dev);
+}
+.env-strip-identity input{
+  background:var(--bg); border:1px solid var(--dev); border-radius:5px; padding:3px 8px; width:110px;
+  color:var(--text); font-family:var(--font-mono); font-size:11px;
+}
+.env-strip-identity input:focus{ outline:none; box-shadow:0 0 0 2px color-mix(in srgb, var(--dev) 25%, transparent); }
 
 .dev-only{
   border:1px dashed var(--dev); border-radius:9px; padding:8px 10px; position:relative;
@@ -197,6 +274,24 @@ html, body{ margin:0; background:var(--bg); }
   font-family:var(--font-mono); font-size:9.5px; font-weight:700; letter-spacing:.06em;
   padding:0 6px; text-transform:uppercase;
 }
+/* בורר תפקיד/חטיבה של סביבת הפיתוח — מנוי צף בפינה הימנית-תחתונה במקום     */
+/* רצועה קבועה שתפסה מקום בראש כל מסך. נשאר מעל כל תוכן (z-index גבוה) כי   */
+/* הוא כלי דמו זמין תמיד, לא חלק מהתוכן התפעולי של המסך.                    */
+.dev-fab-wrap{ position:fixed; bottom:20px; right:20px; z-index:80; }
+.dev-fab{
+  display:flex; align-items:center; gap:6px; background:var(--panel); border:1px solid var(--dev);
+  color:var(--dev); border-radius:20px; padding:8px 14px; cursor:pointer; box-shadow:var(--shadow-md);
+  font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:.05em; transition:background .15s ease;
+}
+.dev-fab:hover{ background:color-mix(in srgb, var(--dev) 10%, var(--panel)); }
+.dev-fab-tag{ border:1px solid var(--dev); border-radius:3px; padding:1px 7px; }
+.dev-fab-arrow{ transition:transform .18s ease; }
+.dev-fab-arrow.open{ transform:rotate(-90deg); }
+.dev-fab-panel{
+  position:absolute; bottom:calc(100% + 10px); right:0; width:340px; max-width:88vw;
+  background:var(--bg); box-shadow:var(--shadow-md); animation:fadeSlideUp .16s ease;
+}
+
 .dev-badge{
   display:inline-flex; align-items:center; gap:4px; font-family:var(--font-mono); font-size:9.5px;
   font-weight:700; letter-spacing:.05em; color:var(--dev); border:1px solid var(--dev);
@@ -224,6 +319,7 @@ html, body{ margin:0; background:var(--bg); }
 .pill-green{ background:var(--green); color:#fff; }
 .pill-yellow{ background:var(--yellow); color:#fff; }
 .pill-red{ background:var(--red); color:#fff; }
+.pill-blue{ background:#2F8FCE; color:#fff; }
 .pill-neutral{ background:var(--panel-raised); color:var(--text-dim); border:1px solid var(--line); }
 .pill-outline-accent{ border:1px solid var(--accent); color:var(--accent); background:transparent; }
 
@@ -246,6 +342,68 @@ html, body{ margin:0; background:var(--bg); }
 
 .count-up{ font-variant-numeric:tabular-nums; }
 
+@keyframes fadeSlideUp{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+
+/* ------------------------------------------------------------------ */
+/* Mission bar — shared between the setup wizard's own preview (inside  */
+/* its review/completed steps) and the persistent app-chrome banner in  */
+/* App.jsx, so a brigade's mission statement is always in front of      */
+/* every user, on every screen, not just inside the wizard.             */
+/* ------------------------------------------------------------------ */
+.mission-bar{ display:flex; align-items:center; gap:14px; background:var(--panel); border:1px solid var(--line);
+  border-right:3px solid var(--accent); border-radius:6px; padding:14px 18px; animation:fadeSlideUp .3s ease; }
+.mission-icon{ display:flex; color:var(--accent); flex:none; }
+.mission-name{ font-family:var(--font-sans); font-weight:700; font-size:16px; }
+.mission-quote{ font-size:13px; color:var(--text-dim); margin-top:2px; }
+.app-mission-strip{ padding:14px 26px 0; }
+
+.search-filter-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+.search-bar{
+  display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--line);
+  border-radius:9px; padding:0 12px; flex:1; min-width:220px; height:38px; transition:border-color .15s ease;
+}
+.search-bar:focus-within{ border-color:var(--accent); }
+.search-bar-icon{ color:var(--text-dim); flex:none; }
+.search-bar input{
+  flex:1; background:none; border:none; outline:none; color:var(--text); font-family:var(--font-sans);
+  font-size:13.5px; height:100%; padding:0;
+}
+.search-bar input::placeholder{ color:var(--text-dim); }
+.search-bar-clear{
+  background:none; border:none; color:var(--text-dim); cursor:pointer; display:flex; padding:2px;
+  border-radius:5px; transition:color .15s ease; flex:none;
+}
+.search-bar-clear:hover{ color:var(--red); }
+.search-bar-filters{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.filter-select{
+  background:var(--panel); border:1px solid var(--line); border-radius:9px; color:var(--text);
+  padding:0 10px; height:38px; font-family:var(--font-sans); font-size:13px; cursor:pointer;
+  transition:border-color .15s ease;
+}
+.filter-select:hover, .filter-select:focus{ border-color:var(--accent); outline:none; }
+
+.pagination-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:20px;
+  padding-top:16px; border-top:1px solid var(--line); flex-wrap:wrap;
+}
+.pagination-summary{ font-size:12px; color:var(--text-dim); font-family:var(--font-mono); }
+.pagination-controls{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.pagination-size-select{
+  background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:6px 10px;
+  font-size:12.5px; color:var(--text); font-family:var(--font-sans); cursor:pointer; transition:border-color .15s ease;
+}
+.pagination-size-select:hover, .pagination-size-select:focus{ border-color:var(--accent); outline:none; }
+.pagination-pages{ display:flex; align-items:center; gap:4px; }
+.pagination-pages button{
+  min-width:30px; height:30px; border-radius:7px; border:1px solid var(--line); background:var(--panel);
+  color:var(--text-dim); font-family:var(--font-mono); font-size:12.5px; cursor:pointer; padding:0 6px;
+  display:flex; align-items:center; justify-content:center; transition:border-color .15s ease, color .15s ease, background .15s ease;
+}
+.pagination-pages button:hover:not(:disabled){ border-color:var(--accent); color:var(--text); }
+.pagination-pages button:disabled{ opacity:.35; cursor:not-allowed; }
+.pagination-page.active{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:700; }
+.pagination-ellipsis{ color:var(--text-dim); padding:0 2px; font-size:12px; }
+
 /* ------------------------------------------------------------------ */
 /* Loading state — every screen's data now comes through an async      */
 /* per-brigade fetch (brigadeStore.js), so every screen needs one of    */
@@ -262,6 +420,35 @@ html, body{ margin:0; background:var(--bg); }
   border:2px solid var(--line); border-top-color:var(--accent);
   animation:spin .7s linear infinite;
 }
+.unit-emblem-img{ border:1px solid var(--line); background:var(--panel); }
+.logo-upload{
+  display:flex; align-items:center; gap:12px; background:var(--panel-raised); border:1px dashed var(--line);
+  border-radius:12px; padding:12px 14px;
+}
+.logo-upload-preview{
+  width:56px; height:56px; border-radius:30%; border:1px solid var(--line); background:var(--panel);
+  display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none; color:var(--text-dim);
+}
+.logo-upload-preview img{ width:100%; height:100%; object-fit:cover; }
+.logo-upload-body{ display:flex; flex-direction:column; gap:6px; flex:1; }
+.logo-upload-label{ font-size:12.5px; color:var(--text-dim); }
+.logo-upload-actions{ display:flex; align-items:center; gap:10px; }
+.logo-upload-btn{
+  display:inline-flex; align-items:center; gap:6px; background:var(--panel); border:1px solid var(--line);
+  color:var(--text); border-radius:8px; padding:7px 14px; font-size:12.5px; font-weight:600; cursor:pointer;
+  font-family:var(--font-sans); transition:border-color .15s ease;
+}
+.logo-upload-btn:hover{ border-color:var(--accent); }
+.logo-upload-remove{
+  background:none; border:none; color:var(--text-dim); font-size:12px; cursor:pointer; text-decoration:underline;
+}
+.logo-upload-remove:hover{ color:var(--red); }
+.logo-upload input[type="file"]{ display:none; }
+.logo-upload-compact{ padding:6px; gap:8px; border-radius:9px; }
+.logo-upload-compact .logo-upload-preview{ width:34px; height:34px; border-radius:8px; }
+.logo-upload-compact .logo-upload-btn{ padding:5px 9px; font-size:11px; }
+.logo-upload-compact .logo-upload-label{ display:none; }
+
 .empty-state{
   color:var(--text-dim); font-size:13.5px; text-align:center; padding:40px 20px;
   background:var(--panel-raised); border:1px dashed var(--line); border-radius:var(--radius-card);

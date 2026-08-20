@@ -22,27 +22,36 @@ export const BRIGADE_STATUS_LABELS = {
   [BRIGADE_STATUS.ACTIVE]: "פעילה",
 };
 
+/* logo:null עד שהחטיבה מעלה תמונה אמיתית באשף ההתקנה שלה — עד אז מוצג      */
+/* פולבק ניטרלי (BrigadeIcon). unitLogos/unitMissions מתמלאים באותו אופן,   */
+/* פר יחידה — נקראים בחזרה על ידי אשף ההתקנה כדי שכניסה חוזרת לחטיבה שכבר   */
+/* הוקמה תהיה עריכה של הנתונים הקיימים, לא יצירה מאפס.                     */
 export const seedBrigades = [
   {
-    id: "brg-commando", name: "חטיבת הקומנדו", icon: "shield", mission: "חטיבת עילית רב-זרועית",
+    id: "brg-commando", name: "חטיבת הקומנדו", logo: null, unitLogos: {}, unitMissions: {}, mission: "חטיבת עילית רב-זרועית",
     status: BRIGADE_STATUS.ACTIVE, units: 4, members: 268,
     contactRank: "רס״ן", contactName: "רוני כהן", contactPersonalNumber: "7134209",
     createdAt: "01/01/2026",
   },
   {
-    id: "brg-golani", name: "חטיבת גולני", icon: "mountain", mission: "חטיבה רגלית",
-    status: BRIGADE_STATUS.ACTIVE, units: 6, members: 512,
+    id: "brg-golani", name: "חטיבת גולני", logo: null, unitLogos: {}, unitMissions: {}, mission: "חטיבה רגלית",
+    status: BRIGADE_STATUS.ACTIVE, units: 4, members: 512,
     contactRank: "אל״ם", contactName: "דורון אשל", contactPersonalNumber: "6812345",
     createdAt: "05/03/2026",
   },
   {
-    id: "brg-seven", name: "חטיבה 7", icon: "target", mission: "",
+    id: "brg-seven", name: "חטיבה 7", logo: null, unitLogos: {}, unitMissions: {}, mission: "",
     status: BRIGADE_STATUS.PENDING, units: 0, members: 0,
     contactRank: "סרן", contactName: "איתן ברוך", contactPersonalNumber: "7998211",
     createdAt: "18/08/2026",
   },
 ];
 
+// isSuperAdmin — היררכיה בתוך מנהלי המערכת עצמם: מנהל עליון אחד (או יותר)
+// שהוא היחיד שיכול לאשר סופית פעולה הרסנית (כמו מחיקת חטיבה) שמנהל מערכת
+// רגיל התחיל — ראו ה"אישור כפול" ב-SystemAdmin.jsx. זוהה לפי מספר אישי,
+// אותה זהות בדיוק שכבר משמשת להתאמה אישית של פריסת הדשבורד (userId).
 export const seedSystemAdmins = [
-  { id: "sa-1", rank: "רס״ן", name: "טל ברקאי", personalNumber: "6923456", email: "tal.barkai@hangar.mil" },
+  { id: "sa-1", rank: "רס״ן", name: "טל ברקאי", personalNumber: "6923456", email: "tal.barkai@hangar.mil", isSuperAdmin: true },
+  { id: "sa-2", rank: "סרן", name: "עומר דגן", personalNumber: "7288341", email: "omer.dagan@hangar.mil", isSuperAdmin: false },
 ];

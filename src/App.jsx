@@ -1,39 +1,148 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Home, Package, ClipboardList, Users, Settings, Bell, ChevronLeft, User, Building2 } from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Home, Package, ClipboardList, Users, Settings, Bell, ChevronLeft, User, Building2, Star,
+  Check, X, Flag, RefreshCw, UserCog, MessageSquare, CheckCheck, Inbox,
+} from "lucide-react";
 import Catalog from "./Catalog.jsx";
 import Tickets from "./Tickets.jsx";
 import PermissionsDashboard from "./PermissionsDashboard.jsx";
-import BrigadeSetupWizard from "./BrigadeSetupWizard.jsx";
+import BrigadeSetupWizard, { MissionBar } from "./BrigadeSetupWizard.jsx";
 import DevDashboard from "./DevDashboard.jsx";
 import SystemAdmin from "./SystemAdmin.jsx";
 import ThemeToggle from "./ThemeToggle.jsx";
 import { THEME_CSS, readStoredTheme, persistTheme } from "./theme.js";
 import { STRUCTURAL_ROLES, ROLE_LABELS, ROLE_ORDER } from "./roles.js";
-import { randomMemberPersona } from "./opsData.jsx";
+import { randomMemberPersona, DEFAULT_CATEGORIES } from "./opsData.jsx";
 import { seedBrigades, BRIGADE_STATUS } from "./brigadesData.js";
 import { fetchBrigadeUnits, fetchBrigadeTickets } from "./brigadeStore.js";
+import { fetchNotifications, markNotificationsRead, markAllNotificationsRead, NOTIFICATION_TYPES } from "./notificationStore.js";
+
+function ticketBadgeCount(role, tickets, persona, myUnit) {
+  switch (role) {
+    case STRUCTURAL_ROLES.MEMBER:
+      return persona ? tickets.filter((t) => t.unit === persona.unit && t.status === "pending").length : 0;
+    case STRUCTURAL_ROLES.UNIT_OFFICER:
+      return myUnit ? tickets.filter((t) => t.unit === myUnit && t.status === "pending").length : 0;
+    case STRUCTURAL_ROLES.BRIGADE_OFFICER:
+      return tickets.filter((t) => t.status === "approved" && !t.priority).length;
+    default:
+      return tickets.filter((t) => t.status === "pending").length;
+  }
+}
 
 const OFFICER_ROLES = [STRUCTURAL_ROLES.UNIT_OFFICER, STRUCTURAL_ROLES.BRIGADE_OFFICER, STRUCTURAL_ROLES.SYSTEM_ADMIN];
 
+/* התראה היא דבר אישי, לא תיבה משותפת לפי תפקיד — כל אדם רואה רק את מה      */
+/* שבאמת נוגע אליו: כותב/ת הדרישה, כל אחד מהשותפים שצורפו אליה (אם דרישה    */
+/* משוייכת לכמה אנשים, כולם מקבלים את אותה התראה — לא רק הפותח/ת), וקצין    */
+/* אמל״ח היחידה שלה. קצין אמל״ח חטיבה/מנהל מערכת רואים תמונה רחבה יותר      */
+/* (כל מה שכבר הגיע לטיפולם ברמה החטיבתית) אבל לא אירועי "הוגש" גולמיים —   */
+/* אלה עדיין לא הגיעו אליהם: קצין אמל״ח היחידה הוא זה שמקבל עדכון על הגשה,  */
+/* וקצין אמל״ח החטיבה מקבל עדכון רק אחרי שהיא כבר אושרה ודורשת ממנו פעולה.  */
+function isNotificationRelevant(n, role, persona, myUnit) {
+  const personaLabel = persona ? `${persona.rank} ${persona.name}` : null;
+  const isCollaborator = !!persona && (n.collaborators || []).some((c) => c.name === persona.name);
+  switch (role) {
+    case STRUCTURAL_ROLES.MEMBER:
+      return (!!personaLabel && n.requestedBy === personaLabel) || isCollaborator;
+    case STRUCTURAL_ROLES.UNIT_OFFICER:
+      return !!myUnit && n.unit === myUnit;
+    case STRUCTURAL_ROLES.BRIGADE_OFFICER:
+    case STRUCTURAL_ROLES.SYSTEM_ADMIN:
+      return n.type !== NOTIFICATION_TYPES.SUBMITTED;
+    default:
+      return false;
+  }
+}
+
+const NOTIF_ICON = {
+  [NOTIFICATION_TYPES.SUBMITTED]: { Icon: Inbox, tone: "neutral" },
+  [NOTIFICATION_TYPES.APPROVED]: { Icon: Check, tone: "green" },
+  [NOTIFICATION_TYPES.REJECTED]: { Icon: X, tone: "red" },
+  [NOTIFICATION_TYPES.PRIORITIZED]: { Icon: Flag, tone: "yellow" },
+  [NOTIFICATION_TYPES.STATUS_CHANGED]: { Icon: RefreshCw, tone: "blue" },
+  [NOTIFICATION_TYPES.ASSIGNED]: { Icon: UserCog, tone: "accent" },
+  [NOTIFICATION_TYPES.COMMENTED]: { Icon: MessageSquare, tone: "neutral" },
+};
+
+function timeAgo(ts) {
+  const diffSec = Math.max(0, Math.floor((Date.now() - ts) / 1000));
+  if (diffSec < 45) return "עכשיו";
+  if (diffSec < 3600) return `לפני ${Math.floor(diffSec / 60)} דק׳`;
+  if (diffSec < 86400) return `לפני ${Math.floor(diffSec / 3600)} שע׳`;
+  return `לפני ${Math.floor(diffSec / 86400)} ימ׳`;
+}
+
+/* מסך "מועדף" — עמוד הבית שכל תפקיד יראה מיד עם הכניסה, נבחר על ידי     */
+/* המשתמש עצמו (כוכב ליד פריט התפריט) ונשמר פר-תפקיד, כי אין עדיין      */
+/* זהות משתמש אמיתית — התפקיד הוא קרוב המשפחה הכי טוב שיש כרגע.          */
+function favoriteKey(role) {
+  return `hangar-favorite-view:${role}`;
+}
+function readFavorite(role) {
+  try { return localStorage.getItem(favoriteKey(role)) || null; } catch { return null; }
+}
+function writeFavorite(role, key) {
+  try {
+    if (key) localStorage.setItem(favoriteKey(role), key);
+    else localStorage.removeItem(favoriteKey(role));
+  } catch { /* private browsing / storage disabled */ }
+}
+
+/* מצב ניווט נוכחי (תפקיד/חטיבה/מסך/זהות) נשמר כדי שרענון הדפדפן ישאיר    */
+/* את המשתמש בדיוק במקום שבו הוא היה — לא קופץ למסך ברירת מחדל אחר.       */
+const NAV_STATE_KEY = "hangar-nav-state";
+function readNavState() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(NAV_STATE_KEY));
+    return raw && typeof raw === "object" ? raw : {};
+  } catch { return {}; }
+}
+function writeNavState(patch) {
+  try {
+    localStorage.setItem(NAV_STATE_KEY, JSON.stringify({ ...readNavState(), ...patch }));
+  } catch { /* ignore */ }
+}
+
+/* חטיף "extra" — כל מה שנוסף מעבר לחמשת הפרמטרים הבסיסיים (תפקיד/פרסונה/  */
+/* חטיבה/מרשם חטיבות/מזהה משתמש) מגיע כאובייקט אחד, כדי לא להנפיח את       */
+/* חתימת ה-render לעשרות פרמטרים עמדתיים. כולל את רשימת הקטגוריות הגלובלית */
+/* (מנוהלת ע״י מנהל מערכת) ואת גשר הניווט הצולב בין מוצר לדרישה —          */
+/* crossNav מחזיק כוונה חד-פעמית ("פתח דרישה על הפריט הזה" / "הצג את      */
+/* המוצר הזה" / "פתח את הדרישה הזו"), המסך היעד צורך אותה ומנקה אותה.      */
 const NAV = [
-  { key: "dashboard", label: "דשבורד", icon: Home, dev: true, visibleFor: OFFICER_ROLES, render: (role, persona, brigadeId) => <DevDashboard brigadeId={brigadeId} /> },
-  { key: "catalog", label: "קטלוג אמל״ח", icon: Package, visibleFor: [STRUCTURAL_ROLES.MEMBER], render: (role, persona, brigadeId) => <Catalog brigadeId={brigadeId} /> },
-  { key: "tickets", label: "דרישות וטיקטים", icon: ClipboardList, render: (role, persona, brigadeId) => <Tickets role={role} persona={persona} brigadeId={brigadeId} /> },
-  { key: "permissions", label: "ניהול הרשאות", icon: Users, visibleFor: OFFICER_ROLES, render: (role, persona, brigadeId, brigades) => <PermissionsDashboard role={role} brigadeId={brigadeId} brigadeName={brigades.find((b) => b.id === brigadeId)?.name} /> },
-  { key: "wizard", label: "אשף התקנה", icon: Settings, visibleFor: OFFICER_ROLES, render: (role, persona, brigadeId) => <BrigadeSetupWizard brigadeId={brigadeId} /> },
-  { key: "sysadmin", label: "ניהול מערכת", icon: Building2, visibleFor: [STRUCTURAL_ROLES.SYSTEM_ADMIN], render: (role, persona, brigadeId, brigades, setBrigades) => <SystemAdmin brigades={brigades} setBrigades={setBrigades} /> },
+  { key: "dashboard", label: "דשבורד", icon: Home, dev: true, visibleFor: OFFICER_ROLES, render: (role, persona, brigadeId, brigades, setBrigades, userId, extra) => <DevDashboard brigadeId={brigadeId} role={role} userId={userId} unitLogos={brigades.find((b) => b.id === brigadeId)?.unitLogos} categories={extra.categories} crossNav={extra.crossNav} clearCrossNav={extra.clearCrossNav} requestTicketForItem={extra.requestTicketForItem} viewTicketDetail={extra.viewTicketDetail} /> },
+  { key: "catalog", label: "קטלוג אמל״ח", icon: Package, visibleFor: [STRUCTURAL_ROLES.MEMBER, STRUCTURAL_ROLES.UNIT_OFFICER, STRUCTURAL_ROLES.BRIGADE_OFFICER], render: (role, persona, brigadeId, brigades, setBrigades, userId, extra) => <Catalog brigadeId={brigadeId} role={role} persona={persona} categories={extra.categories} crossNav={extra.crossNav} clearCrossNav={extra.clearCrossNav} requestTicketForItem={extra.requestTicketForItem} viewTicketDetail={extra.viewTicketDetail} /> },
+  { key: "tickets", label: "דרישות וטיקטים", icon: ClipboardList, render: (role, persona, brigadeId, brigades, setBrigades, userId, extra) => <Tickets role={role} persona={persona} brigadeId={brigadeId} unitLogos={brigades.find((b) => b.id === brigadeId)?.unitLogos} categories={extra.categories} crossNav={extra.crossNav} clearCrossNav={extra.clearCrossNav} viewCatalogItem={extra.viewCatalogItem} /> },
+  { key: "permissions", label: "ניהול הרשאות", icon: Users, visibleFor: OFFICER_ROLES, render: (role, persona, brigadeId, brigades) => <PermissionsDashboard role={role} brigadeId={brigadeId} brigadeName={brigades.find((b) => b.id === brigadeId)?.name} unitLogos={brigades.find((b) => b.id === brigadeId)?.unitLogos} /> },
+  { key: "wizard", label: "אשף התקנה", icon: Settings, visibleFor: [STRUCTURAL_ROLES.BRIGADE_OFFICER], render: (role, persona, brigadeId, brigades, setBrigades) => <BrigadeSetupWizard brigadeId={brigadeId} brigades={brigades} setBrigades={setBrigades} /> },
+  { key: "sysadmin", label: "ניהול מערכת", icon: Building2, visibleFor: [STRUCTURAL_ROLES.SYSTEM_ADMIN], render: (role, persona, brigadeId, brigades, setBrigades, userId, extra) => <SystemAdmin brigades={brigades} setBrigades={setBrigades} categories={extra.categories} setCategories={extra.setCategories} userId={userId} /> },
 ];
 
 export default function App() {
-  const [role, setRole] = useState(STRUCTURAL_ROLES.MEMBER);
+  const [role, setRole] = useState(() => readNavState().role || STRUCTURAL_ROLES.MEMBER);
   const [brigades, setBrigades] = useState(seedBrigades);
-  const [brigadeId, setBrigadeId] = useState(seedBrigades[0].id);
+  const [brigadeId, setBrigadeId] = useState(() => {
+    const stored = readNavState().brigadeId;
+    return stored && seedBrigades.some((b) => b.id === stored) ? stored : seedBrigades[0].id;
+  });
   const [persona, setPersona] = useState(randomMemberPersona);
-  const [view, setView] = useState("catalog");
+  const [view, setView] = useState(() => {
+    const stored = readNavState();
+    return stored.view || readFavorite(stored.role || STRUCTURAL_ROLES.MEMBER) || "catalog";
+  });
+  const [favoriteView, setFavoriteView] = useState(() => readFavorite(readNavState().role || STRUCTURAL_ROLES.MEMBER));
+  const [userId, setUserId] = useState(() => readNavState().userId || "");
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [crossNav, setCrossNav] = useState(null);
   const [theme, setTheme] = useState(readStoredTheme);
   const [now, setNow] = useState(new Date());
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [pendingCount, setPendingCount] = useState(0);
+  const [ticketsForBadge, setTicketsForBadge] = useState([]);
+  const [brigadeUnits, setBrigadeUnits] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [devPanelOpen, setDevPanelOpen] = useState(false);
 
   const currentBrigade = brigades.find((b) => b.id === brigadeId) || brigades[0];
 
@@ -52,6 +161,26 @@ export default function App() {
     if (role === STRUCTURAL_ROLES.MEMBER) rerollPersona(id);
   }
 
+  /* גשר הניווט הצולב בין מוצר לדרישה — "למה המשתמש הגיע לכאן?" הוא בדיוק  */
+  /* השאלה שהפיצ׳רים האלה עונים עליה: מתעודת הזהות של פריט אפשר לפתוח     */
+  /* ישירות דרישת תיקון/הצטיידות שכבר מקושרת אליו, ומתוך דרישה מקושרת      */
+  /* אפשר לקפוץ ישירות לתעודת הזהות של הפריט או לפרטי דרישה אחרת שנמצאה.   */
+  function requestTicketForItem(item, ticketType) {
+    setCrossNav({ kind: "ticketDraft", draft: { type: ticketType, linkedProductId: item.id, linkedProductName: item.name, linkedProductCategory: item.category } });
+    setView("tickets");
+  }
+  function viewCatalogItem(itemId) {
+    setCrossNav({ kind: "catalogItem", itemId });
+    setView("catalog");
+  }
+  function viewTicketDetail(ticketId) {
+    setCrossNav({ kind: "ticketDetail", ticketId });
+    setView("tickets");
+  }
+  function clearCrossNav() {
+    setCrossNav(null);
+  }
+
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     persistTheme(theme);
@@ -62,20 +191,80 @@ export default function App() {
     return () => clearInterval(t);
   }, []);
 
+  // אין עדיין ערוץ push אמיתי — הפעמון "מתעדכן חי" על ידי רענון קריאת
+  // ההתראות (מבנה זיכרון בלבד, ראו notificationStore.js) בכל טיק של השעון
+  // שכבר קיים למעלה, בדיוק כמו ה"עודכן לאחרונה" שמופיע בכל מסך.
   useEffect(() => {
     let cancelled = false;
-    fetchBrigadeTickets(brigadeId).then((tickets) => {
-      if (!cancelled) setPendingCount(tickets.filter((t) => t.status === "pending").length);
+    fetchNotifications(brigadeId).then((list) => { if (!cancelled) setNotifications(list); });
+    return () => { cancelled = true; };
+  }, [brigadeId, now]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([fetchBrigadeTickets(brigadeId), fetchBrigadeUnits(brigadeId)]).then(([tickets, units]) => {
+      if (cancelled) return;
+      setTicketsForBadge(tickets);
+      setBrigadeUnits(units);
     });
     return () => { cancelled = true; };
   }, [brigadeId]);
 
   const visibleNav = useMemo(() => NAV.filter((n) => !n.visibleFor || n.visibleFor.includes(role)), [role]);
+  const ticketsBadge = useMemo(
+    () => ticketBadgeCount(role, ticketsForBadge, persona, brigadeUnits[0]),
+    [role, ticketsForBadge, persona, brigadeUnits]
+  );
 
+  const myUnitForNotif = role === STRUCTURAL_ROLES.UNIT_OFFICER ? brigadeUnits[0] : persona?.unit;
+  const relevantNotifications = useMemo(
+    () => notifications.filter((n) => isNotificationRelevant(n, role, persona, myUnitForNotif)),
+    [notifications, role, persona, myUnitForNotif]
+  );
+  const unreadNotifCount = useMemo(() => relevantNotifications.filter((n) => !n.read).length, [relevantNotifications]);
+
+  function openNotification(n) {
+    markNotificationsRead(brigadeId, [n.id]).then(() => fetchNotifications(brigadeId).then(setNotifications));
+    if (n.kind === "catalogItem") viewCatalogItem(n.itemId);
+    else viewTicketDetail(n.ticketId);
+    setNotifOpen(false);
+  }
+  function markAllNotifsRead() {
+    markAllNotificationsRead(brigadeId).then(() => fetchNotifications(brigadeId).then(setNotifications));
+  }
+
+  const isFirstRoleEffect = useRef(true);
   useEffect(() => {
-    if (!visibleNav.some((n) => n.key === view)) setView("tickets");
+    const fav = readFavorite(role);
+    setFavoriteView(fav);
+    if (isFirstRoleEffect.current) {
+      // טעינה ראשונה של הדף (כולל רענון) — נשארים בדיוק על המסך שהיה שמור,
+      // לא קופצים למועדף. קופצים למועדף רק כשמחליפים תפקיד בפועל למטה.
+      isFirstRoleEffect.current = false;
+      if (!visibleNav.some((n) => n.key === view)) {
+        setView(fav && visibleNav.some((n) => n.key === fav) ? fav : (visibleNav[0]?.key || "tickets"));
+      }
+      return;
+    }
+    if (fav && visibleNav.some((n) => n.key === fav)) {
+      setView(fav);
+    } else if (!visibleNav.some((n) => n.key === view)) {
+      setView(visibleNav[0]?.key || "tickets");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role]);
+
+  useEffect(() => { writeNavState({ role }); }, [role]);
+  useEffect(() => { writeNavState({ brigadeId }); }, [brigadeId]);
+  useEffect(() => { writeNavState({ view }); }, [view]);
+  useEffect(() => { writeNavState({ userId }); }, [userId]);
+
+  function toggleFavorite(key, e) {
+    e.stopPropagation();
+    const next = favoriteView === key ? null : key;
+    setFavoriteView(next);
+    writeFavorite(role, next);
+  }
 
   const active = visibleNav.find((n) => n.key === view) || visibleNav[0];
   const currentUserName = role === STRUCTURAL_ROLES.MEMBER ? `${persona.rank} ${persona.name}` : "משתמש הדגמה";
@@ -97,8 +286,27 @@ export default function App() {
                 title={n.label}
                 onClick={() => setView(n.key)}
               >
-                <Icon size={19} />
-                <span className="sidebar-btn-label">{n.label}</span>
+                <span className="sidebar-btn-icon-wrap">
+                  <Icon size={19} />
+                  {n.key === "tickets" && ticketsBadge > 0 && (
+                    <span className="sidebar-btn-badge">{ticketsBadge > 99 ? "99+" : ticketsBadge}</span>
+                  )}
+                </span>
+                <span className="sidebar-btn-label">
+                  {n.label}
+                  {n.key === "tickets" && ticketsBadge > 0 && (
+                    <span className="sidebar-btn-badge-inline">{ticketsBadge > 99 ? "99+" : ticketsBadge}</span>
+                  )}
+                </span>
+                <span
+                  className={"sidebar-btn-fav" + (favoriteView === n.key ? " active" : "")}
+                  onClick={(e) => toggleFavorite(n.key, e)}
+                  title={favoriteView === n.key ? "הסרה מעמוד הבית" : "הגדרה כעמוד הבית"}
+                  role="button"
+                  tabIndex={-1}
+                >
+                  <Star size={13} />
+                </span>
                 {n.dev && <span className="sidebar-btn-dev-dot" title="DEV בלבד" />}
               </button>
             );
@@ -120,10 +328,47 @@ export default function App() {
           </div>
 
           <div className="app-topbar-right">
-            <button className="icon-btn" title="התראות">
-              <Bell size={16} />
-              {pendingCount > 0 && <span className="icon-btn-dot">{pendingCount}</span>}
-            </button>
+            <div className="notif-menu" tabIndex={-1} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setNotifOpen(false); }}>
+              <button className="icon-btn" title="התראות" onClick={() => setNotifOpen((v) => !v)}>
+                <Bell size={16} />
+                {unreadNotifCount > 0 && <span className="icon-btn-dot">{unreadNotifCount > 99 ? "99+" : unreadNotifCount}</span>}
+              </button>
+              {notifOpen && (
+                <div className="notif-dropdown">
+                  <div className="notif-dropdown-head">
+                    <span>התראות</span>
+                    {unreadNotifCount > 0 && (
+                      <button type="button" className="notif-mark-all" onClick={markAllNotifsRead}>
+                        <CheckCheck size={12} /> סמן הכל כנקרא
+                      </button>
+                    )}
+                  </div>
+                  {relevantNotifications.length === 0 ? (
+                    <div className="notif-empty">אין התראות חדשות כרגע.</div>
+                  ) : (
+                    <div className="notif-list">
+                      {relevantNotifications.slice(0, 20).map((n) => {
+                        const cfg = NOTIF_ICON[n.type] || NOTIF_ICON[NOTIFICATION_TYPES.COMMENTED];
+                        const Icon = cfg.Icon;
+                        return (
+                          <button type="button" key={n.id} className={"notif-item" + (n.read ? "" : " unread")} onClick={() => openNotification(n)}>
+                            <span className={"notif-item-icon tone-" + cfg.tone}><Icon size={13} /></span>
+                            <span className="notif-item-body">
+                              <span className="notif-item-msg">{n.message}</span>
+                              <span className="notif-item-meta">
+                                <i className="notif-item-id">{n.kind === "catalogItem" ? n.itemId : n.ticketId}</i>
+                                <span>· {timeAgo(n.ts)}</span>
+                              </span>
+                            </span>
+                            {!n.read && <span className="notif-item-dot" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             <ThemeToggle theme={theme} setTheme={setTheme} />
             <div className="user-chip">
               <div className="user-chip-text">
@@ -135,6 +380,12 @@ export default function App() {
           </div>
         </div>
 
+        {currentBrigade && (
+          <div className="app-mission-strip">
+            <MissionBar brigade={currentBrigade} />
+          </div>
+        )}
+
         <div className="env-strip">
           <span>
             <span className="env-strip-tag">DEV</span>{" "}
@@ -143,7 +394,21 @@ export default function App() {
           <span className="env-strip-clock">
             עדכון אחרון: {now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
           </span>
-          <div className="dev-only" style={{ padding: "5px 10px" }}>
+        </div>
+
+        <div className="app-body">
+          {active && active.render(role, persona, brigadeId, brigades, setBrigades, userId, {
+            categories, setCategories, crossNav, clearCrossNav, requestTicketForItem, viewCatalogItem, viewTicketDetail,
+          })}
+        </div>
+      </div>
+
+      {/* בורר תפקיד/חטיבה של סביבת הפיתוח — מנוי צף בפינה הימנית-תחתונה,       */}
+      {/* לא רצועה קבועה שתופסת מקום בראש כל מסך. זהו כלי דמו/פיתוח בלבד       */}
+      {/* (בפרודקשן הזהות תגיע מה-SSO), ולכן ה"dev-only" נשאר גם כאן.          */}
+      <div className="dev-fab-wrap" tabIndex={-1} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDevPanelOpen(false); }}>
+        {devPanelOpen && (
+          <div className="dev-fab-panel dev-only">
             <span className="dev-only-tag">DEV — סימולציית תפקיד וחטיבה</span>
             <div className="pill-tabs">
               {ROLE_ORDER.map((r) => (
@@ -175,10 +440,23 @@ export default function App() {
                 מחובר כ: {persona.rank} {persona.name} · {persona.unit}
               </span>
             )}
+            {role !== STRUCTURAL_ROLES.MEMBER && (
+              <label className="env-strip-identity">
+                <span>זיהוי משתמש (מ.א.) — פריסת הדשבורד האישית שלך עוברת איתך בין מכשירים</span>
+                <input
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value.replace(/\D/g, ""))}
+                  placeholder="לדוגמה: 7134209"
+                  inputMode="numeric"
+                />
+              </label>
+            )}
           </div>
-        </div>
-
-        <div className="app-body">{active && active.render(role, persona, brigadeId, brigades, setBrigades)}</div>
+        )}
+        <button type="button" className="dev-fab" onClick={() => setDevPanelOpen((v) => !v)} title="בורר תפקיד/חטיבה (DEV)">
+          <span className="dev-fab-tag">DEV</span>
+          <ChevronLeft size={14} className={"dev-fab-arrow" + (devPanelOpen ? " open" : "")} />
+        </button>
       </div>
     </div>
   );

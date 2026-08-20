@@ -1,8 +1,14 @@
-import React, { useState } from "react";
-import { X, Plus, Check, Trash2 } from "lucide-react";
-import { BRIGADE_ICONS, BrigadeIcon } from "./BrigadeSetupWizard.jsx";
+import React, { useEffect, useState } from "react";
+import { X, Plus, Check, Trash2, Tag, ShieldCheck, AlertTriangle, ScrollText } from "lucide-react";
+import { BrigadeIcon } from "./BrigadeSetupWizard.jsx";
 import { RANK_OPTIONS } from "./PermissionsDashboard.jsx";
+import SearchBar from "./SearchBar.jsx";
+import FilterSelect from "./FilterSelect.jsx";
+import { matchesSearch } from "./search.js";
 import { BRIGADE_STATUS, BRIGADE_STATUS_LABELS, seedSystemAdmins } from "./brigadesData.js";
+import { fetchPendingDeletions, requestDeletion, resolveDeletion, fetchAuditLog, logAction } from "./adminStore.js";
+
+const BRIGADE_STATUS_FILTER_OPTIONS = Object.entries(BRIGADE_STATUS_LABELS).map(([value, label]) => ({ value, label }));
 
 /* ================================================================== */
 /* LEGO BLOCK — SystemAdmin: the one screen above brigade level.        */
@@ -10,28 +16,15 @@ import { BRIGADE_STATUS, BRIGADE_STATUS_LABELS, seedSystemAdmins } from "./briga
 /* one — so this is where a system admin provisions new brigades,       */
 /* retires old ones, and manages who else holds system-admin rights.    */
 /* Visible only to STRUCTURAL_ROLES.SYSTEM_ADMIN (gated in App.jsx).    */
+/*                                                                      */
+/* A brigade provisioned here has no logo yet on purpose — a real logo  */
+/* is an uploaded image, and only the brigade's own setup wizard        */
+/* collects that (BrigadeSetupWizard's "brigade" step). Until then it   */
+/* shows BrigadeIcon's neutral fallback.                                */
 /* ================================================================== */
-
-function IconPicker({ value, onChange }) {
-  return (
-    <div className="sa-icon-picker">
-      {Object.keys(BRIGADE_ICONS).map((key) => (
-        <button
-          key={key}
-          type="button"
-          className={"sa-icon-opt" + (value === key ? " active" : "")}
-          onClick={() => onChange(key)}
-        >
-          <BrigadeIcon iconKey={key} size={16} />
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function AddBrigadeForm({ onAdd }) {
   const [name, setName] = useState("");
-  const [icon, setIcon] = useState("shield");
   const [rank, setRank] = useState(RANK_OPTIONS[0]);
   const [contactName, setContactName] = useState("");
   const [personalNumber, setPersonalNumber] = useState("");
@@ -40,12 +33,12 @@ function AddBrigadeForm({ onAdd }) {
 
   function submit() {
     onAdd({
-      id: crypto.randomUUID(), name, icon, mission: "",
+      id: crypto.randomUUID(), name, logo: null, unitLogos: {}, unitMissions: {}, mission: "",
       status: BRIGADE_STATUS.PENDING, units: 0, members: 0,
       contactRank: rank, contactName, contactPersonalNumber: personalNumber,
       createdAt: new Date().toLocaleDateString("he-IL"),
     });
-    setName(""); setContactName(""); setPersonalNumber(""); setIcon("shield"); setRank(RANK_OPTIONS[0]);
+    setName(""); setContactName(""); setPersonalNumber(""); setRank(RANK_OPTIONS[0]);
   }
 
   return (
@@ -53,10 +46,6 @@ function AddBrigadeForm({ onAdd }) {
       <label className="add-form-field">
         <span>שם החטיבה</span>
         <input placeholder="לדוגמה: חטיבת גבעתי" value={name} onChange={(e) => setName(e.target.value)} />
-      </label>
-      <label className="add-form-field">
-        <span>סמל</span>
-        <IconPicker value={icon} onChange={setIcon} />
       </label>
       <label className="add-form-field">
         <span>דרגת איש קשר ראשוני</span>
@@ -78,10 +67,94 @@ function AddBrigadeForm({ onAdd }) {
   );
 }
 
-function BrigadeRow({ b, onUpdate, onActivate, onRemove }) {
+/* פעולה הרסנית (מחיקת חטיבה/מנהל מערכת) עוברת ארבעה שלבי אישור לפני שהיא   */
+/* אפילו מתבצעת: (1) לחיצה על כפתור המחיקה, (2) אישור אזהרה מפורשת,        */
+/* (3) הקלדת השם המדויק של מה שנמחק (לא ניתן להקליק בלי לחשוב), (4) לחיצת   */
+/* אישור סופית — וגם אז, אם מי שמבצע אינו מנהל עליון, הפעולה לא מתבצעת     */
+/* בפועל אלא רק נרשמת כבקשה הממתינה לאישור כפול של מנהל עליון (ראו         */
+/* PendingDeletionsPanel למטה) — רק כשהוא מאשר, המחיקה בפועל קורית.        */
+function DestructiveConfirm({ label, targetType, targetId, targetLabel, isSuperAdmin, actorLabel, onExecute }) {
+  const [step, setStep] = useState(0);
+  const [typed, setTyped] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  function reset() { setStep(0); setTyped(""); }
+
+  async function finalConfirm() {
+    if (isSuperAdmin) {
+      onExecute();
+      await logAction({ actor: actorLabel, action: `מחיקה מיידית (מנהל עליון) — ${label}`, target: targetLabel });
+    } else {
+      await requestDeletion({ targetType, targetId, targetLabel, requestedBy: actorLabel });
+      await logAction({ actor: actorLabel, action: `בקשת מחיקה נשלחה לאישור מנהל עליון — ${label}`, target: targetLabel });
+      setSubmitted(true);
+    }
+    reset();
+  }
+
+  if (submitted) return <span className="destructive-submitted"><AlertTriangle size={12} /> נשלח לאישור מנהל עליון</span>;
+
+  if (step === 0) {
+    return <button className="person-remove" onClick={() => setStep(1)} title={label}><Trash2 size={14} /></button>;
+  }
+  return (
+    <div className="destructive-confirm-box" onClick={(e) => e.stopPropagation()}>
+      {step === 1 ? (
+        <>
+          <p><AlertTriangle size={13} /> פעולה זו אינה הפיכה. {isSuperAdmin ? "המחיקה תתבצע מיידית." : "היא תישלח לאישור מנהל עליון ותתבצע רק לאחר שיאשר."}</p>
+          <div className="destructive-actions">
+            <button type="button" className="btn-cancel" onClick={reset}>ביטול</button>
+            <button type="button" className="destructive-continue" onClick={() => setStep(2)}>המשך</button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p>הקלד/י את השם המדויק <b>"{targetLabel}"</b> כדי לאשר.</p>
+          <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={targetLabel} autoFocus />
+          <div className="destructive-actions">
+            <button type="button" className="btn-cancel" onClick={reset}>ביטול</button>
+            <button type="button" className="destructive-continue" disabled={typed.trim() !== targetLabel} onClick={finalConfirm}>
+              {isSuperAdmin ? "מחיקה סופית" : "שליחה לאישור מנהל עליון"}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// גם אישור מנהל עליון עצמו הוא שני קליקים, לא אחד — "אישור" ראשוני חושף
+// "אישור סופי, בלתי הפיך" נפרד, כדי שגם השלב האחרון בשרשרת לא יהיה טעות-קליק.
+function PendingDeletionRow({ d, onDecide }) {
+  const [confirming, setConfirming] = useState(false);
+  return (
+    <div className="brigade-row pending-deletion-row">
+      <div className="brigade-row-main">
+        <div className="pending-deletion-title">{d.targetLabel} <span className="pill pill-neutral">{d.targetType === "brigade" ? "חטיבה" : "מנהל מערכת"}</span></div>
+        <div className="brigade-row-meta">
+          <span>ביקש/ה: {d.requestedBy}</span>
+          <span>{new Date(d.requestedAt).toLocaleString("he-IL")}</span>
+        </div>
+      </div>
+      {confirming ? (
+        <div className="destructive-actions">
+          <button type="button" className="btn-cancel" onClick={() => setConfirming(false)}>ביטול</button>
+          <button type="button" className="destructive-continue" onClick={() => onDecide(d, "approved")}>אישור סופי, בלתי הפיך</button>
+        </div>
+      ) : (
+        <div className="destructive-actions">
+          <button type="button" className="btn-reject" onClick={() => onDecide(d, "rejected")}>דחייה</button>
+          <button type="button" className="destructive-continue" onClick={() => setConfirming(true)}>אישור מחיקה</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BrigadeRow({ b, onUpdate, onActivate, onRemove, isSuperAdmin, actorLabel }) {
   return (
     <div className="brigade-row">
-      <div className="brigade-row-icon"><BrigadeIcon iconKey={b.icon} size={20} /></div>
+      <div className="brigade-row-icon"><BrigadeIcon image={b.logo} size={20} /></div>
       <div className="brigade-row-main">
         <input className="brigade-name-input" value={b.name} onChange={(e) => onUpdate(b.id, { name: e.target.value })} />
         <div className="brigade-row-meta">
@@ -102,7 +175,15 @@ function BrigadeRow({ b, onUpdate, onActivate, onRemove }) {
           <Check size={14} /> הפעלה
         </button>
       )}
-      <button className="person-remove" onClick={() => onRemove(b.id)} title="הסרת חטיבה מהמערכת"><Trash2 size={14} /></button>
+      <DestructiveConfirm
+        label="מחיקת חטיבה מהמערכת"
+        targetType="brigade"
+        targetId={b.id}
+        targetLabel={b.name}
+        isSuperAdmin={isSuperAdmin}
+        actorLabel={actorLabel}
+        onExecute={() => onRemove(b.id)}
+      />
     </div>
   );
 }
@@ -121,7 +202,7 @@ function BrigadeOrgTree({ brigades }) {
           {brigades.map((b) => (
             <div className="org-node" key={b.id}>
               <div className="org-node-card">
-                <BrigadeIcon iconKey={b.icon} size={20} />
+                <BrigadeIcon image={b.logo} size={20} />
                 <div>
                   <div className="org-node-title">{b.name}</div>
                   <div className="org-node-sub">
@@ -179,12 +260,112 @@ function AddAdminForm({ onAdd }) {
 }
 
 /* ================================================================== */
+/* ניהול קטגוריות אמל״ח — הרשימה הבסיסית והאוניברסלית (לדוגמה: רחפנים    */
+/* וכטב״ם, תצפית, ציוד אישי, רובוטיקה) שמנהל מערכת מגדיר, ומשמשת גם      */
+/* לתיוג פריטי קטלוג וגם לסיווג דרישות — כדי ששני העולמות תמיד מדברים    */
+/* באותה שפה. הרשימה גלובלית (כלל-זרועית), לא פר-חטיבה, בכוונה.          */
+/* ================================================================== */
+
+function CategoryManager({ categories, setCategories }) {
+  const [newCat, setNewCat] = useState("");
+
+  function addCategory() {
+    const v = newCat.trim();
+    if (!v || categories.includes(v)) return;
+    setCategories((prev) => [...prev, v]);
+    setNewCat("");
+  }
+  function removeCategory(c) {
+    setCategories((prev) => prev.filter((x) => x !== c));
+  }
+  function renameCategory(oldVal, newVal) {
+    setCategories((prev) => prev.map((x) => (x === oldVal ? newVal : x)));
+  }
+
+  return (
+    <div className="panel-card sa-section">
+      <div className="section-title">קטגוריות אמל״ח ({categories.length})</div>
+      <p className="sa-hint">
+        רשימה אוניברסלית אחת המשותפת לכל החטיבות — משמשת גם לתיוג פריטי קטלוג וגם לסיווג דרישות בעת פתיחתן,
+        כדי ששני העולמות תמיד יתייחסו לאותה קטגוריה. שינוי כאן משפיע על הבחירות הזמינות בכל מסך.
+      </p>
+      <div className="category-list">
+        {categories.length === 0 && <div className="empty">אין עדיין קטגוריות מוגדרות.</div>}
+        {categories.map((c) => (
+          <div className="category-chip" key={c}>
+            <Tag size={12} />
+            <input
+              className="category-chip-input"
+              value={c}
+              onChange={(e) => renameCategory(c, e.target.value)}
+            />
+            <button className="category-chip-remove" onClick={() => removeCategory(c)} title="הסרת קטגוריה">
+              <X size={12} />
+            </button>
+          </div>
+        ))}
+      </div>
+      <div className="section-title">הוספת קטגוריה חדשה</div>
+      <div className="add-form" style={{ alignItems: "center" }}>
+        <label className="add-form-field" style={{ flex: 1, minWidth: 200 }}>
+          <span>שם הקטגוריה</span>
+          <input
+            placeholder="לדוגמה: רחפנים וכטב״ם"
+            value={newCat}
+            onChange={(e) => setNewCat(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addCategory()}
+          />
+        </label>
+        <button className="add-btn" disabled={!newCat.trim() || categories.includes(newCat.trim())} onClick={addCategory}>
+          <Plus size={14} /> הוספת קטגוריה
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ================================================================== */
 /* Root                                                                */
 /* ================================================================== */
 
-export default function SystemAdmin({ brigades, setBrigades }) {
+export default function SystemAdmin({ brigades, setBrigades, categories, setCategories, userId }) {
   const [admins, setAdmins] = useState(seedSystemAdmins);
   const [tab, setTab] = useState("brigades");
+  const [brigadeQuery, setBrigadeQuery] = useState("");
+  const [brigadeStatusFilter, setBrigadeStatusFilter] = useState("all");
+  const [adminQuery, setAdminQuery] = useState("");
+  const [pendingDeletions, setPendingDeletions] = useState([]);
+  const [auditLog, setAuditLog] = useState([]);
+
+  // הזהות היחידה שכבר קיימת ללא כניסת SSO אמיתית — אותו מספר אישי ששמור
+  // בבורר תפקיד/חטיבה של סביבת הפיתוח (App.jsx). אם המספר לא תואם אף מנהל
+  // מוכר, ברירת המחדל הבטוחה היא "לא מנהל עליון" — כלומר מחיקות דורשות
+  // תמיד אישור כפול, לא ההפך.
+  const currentAdmin = admins.find((a) => a.personalNumber === userId);
+  const currentIsSuperAdmin = !!currentAdmin?.isSuperAdmin;
+  const currentActorLabel = currentAdmin ? `${currentAdmin.rank} ${currentAdmin.name}` : "מנהל מערכת (לא מזוהה — נא להזין מ.א. בבורר הפיתוח)";
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = () => {
+      Promise.all([fetchPendingDeletions(), fetchAuditLog()]).then(([d, l]) => {
+        if (cancelled) return;
+        setPendingDeletions(d);
+        setAuditLog(l);
+      });
+    };
+    load();
+    const t = setInterval(load, 1500);
+    return () => { cancelled = true; clearInterval(t); };
+  }, []);
+
+  const filteredBrigades = brigades.filter(
+    (b) =>
+      matchesSearch([b.name, b.contactName, b.contactRank, b.contactPersonalNumber, b.mission], brigadeQuery) &&
+      (brigadeStatusFilter === "all" || b.status === brigadeStatusFilter)
+  );
+  const filteredAdmins = admins.filter((a) => matchesSearch([a.rank, a.name, a.personalNumber, a.email], adminQuery));
+  const openDeletions = pendingDeletions.filter((d) => d.status === "pending");
 
   function updateBrigade(id, patch) {
     setBrigades((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
@@ -205,6 +386,20 @@ export default function SystemAdmin({ brigades, setBrigades }) {
     setAdmins((prev) => prev.filter((a) => a.id !== id));
   }
 
+  // אישור סופי של מנהל עליון — רק כאן המחיקה שביקש מנהל מערכת רגיל באמת
+  // מתבצעת בפועל, ורק אחרי שהמנהל העליון לוחץ אישור בעצמו (עוד שלב אישור).
+  async function decideDeletion(d, decision) {
+    await resolveDeletion(d.id, decision, currentActorLabel);
+    if (decision === "approved") {
+      if (d.targetType === "brigade") removeBrigade(d.targetId);
+      else if (d.targetType === "admin") removeAdmin(d.targetId);
+      await logAction({ actor: currentActorLabel, action: `אישר/ה בקשת מחיקה של ${d.requestedBy} — ${d.targetLabel} נמחקה בפועל`, target: d.targetLabel });
+    } else {
+      await logAction({ actor: currentActorLabel, action: `דחה/תה בקשת מחיקה של ${d.requestedBy} — ${d.targetLabel} נשארה במערכת`, target: d.targetLabel });
+    }
+    Promise.all([fetchPendingDeletions(), fetchAuditLog()]).then(([dl, l]) => { setPendingDeletions(dl); setAuditLog(l); });
+  }
+
   return (
     <div dir="rtl" className="sysadmin-view">
       <style>{CSS}</style>
@@ -218,14 +413,25 @@ export default function SystemAdmin({ brigades, setBrigades }) {
         <button className={"pill-tab" + (tab === "brigades" ? " active" : "")} onClick={() => setTab("brigades")}>חטיבות במערכת</button>
         <button className={"pill-tab" + (tab === "tree" ? " active" : "")} onClick={() => setTab("tree")}>עץ ארגוני</button>
         <button className={"pill-tab" + (tab === "admins" ? " active" : "")} onClick={() => setTab("admins")}>מנהלי מערכת</button>
+        <button className={"pill-tab" + (tab === "categories" ? " active" : "")} onClick={() => setTab("categories")}>קטגוריות אמל״ח</button>
+        {currentIsSuperAdmin && (
+          <button className={"pill-tab" + (tab === "approvals" ? " active" : "")} onClick={() => setTab("approvals")}>
+            אישורי מחיקה{openDeletions.length > 0 ? ` (${openDeletions.length})` : ""}
+          </button>
+        )}
+        <button className={"pill-tab" + (tab === "auditLog" ? " active" : "")} onClick={() => setTab("auditLog")}>יומן פעולות</button>
       </div>
 
       {tab === "brigades" && (
         <div className="panel-card sa-section">
           <div className="section-title">חטיבות רשומות ({brigades.length})</div>
+          <SearchBar value={brigadeQuery} onChange={setBrigadeQuery} placeholder="חיפוש לפי שם חטיבה או איש קשר...">
+            <FilterSelect value={brigadeStatusFilter} onChange={setBrigadeStatusFilter} options={BRIGADE_STATUS_FILTER_OPTIONS} allLabel="כל הסטטוסים" ariaLabel="סינון לפי סטטוס" />
+          </SearchBar>
           <div className="brigade-list">
-            {brigades.map((b) => (
-              <BrigadeRow key={b.id} b={b} onUpdate={updateBrigade} onActivate={activateBrigade} onRemove={removeBrigade} />
+            {filteredBrigades.length === 0 && <div className="empty">לא נמצאו חטיבות התואמות את החיפוש.</div>}
+            {filteredBrigades.map((b) => (
+              <BrigadeRow key={b.id} b={b} onUpdate={updateBrigade} onActivate={activateBrigade} onRemove={removeBrigade} isSuperAdmin={currentIsSuperAdmin} actorLabel={currentActorLabel} />
             ))}
           </div>
           <div className="section-title">הוספת חטיבה חדשה</div>
@@ -247,20 +453,77 @@ export default function SystemAdmin({ brigades, setBrigades }) {
       {tab === "admins" && (
         <div className="panel-card sa-section">
           <div className="section-title">מנהלי מערכת ({admins.length})</div>
+          {admins.length > 0 && (
+            <SearchBar value={adminQuery} onChange={setAdminQuery} placeholder="חיפוש לפי שם, מספר אישי או אימייל..." />
+          )}
           <div className="brigade-list">
             {admins.length === 0 && <div className="empty">אין עדיין מנהלי מערכת נוספים.</div>}
-            {admins.map((a) => (
+            {admins.length > 0 && filteredAdmins.length === 0 && <div className="empty">לא נמצאו מנהלי מערכת התואמים את החיפוש.</div>}
+            {filteredAdmins.map((a) => (
               <div className="person-row" key={a.id}>
                 <div className="person-info">
-                  <div className="person-name"><span className="person-rank">{a.rank}</span> {a.name}</div>
+                  <div className="person-name">
+                    <span className="person-rank">{a.rank}</span> {a.name}
+                    {a.isSuperAdmin && <span className="pill pill-outline-accent super-admin-pill"><ShieldCheck size={11} /> מנהל עליון</span>}
+                  </div>
                   <div className="person-meta"><span>מ.א. {a.personalNumber}</span>{a.email && <span>{a.email}</span>}</div>
                 </div>
-                <button className="person-remove" onClick={() => removeAdmin(a.id)} title="הסרה"><X size={14} /></button>
+                <DestructiveConfirm
+                  label="הסרת מנהל מערכת"
+                  targetType="admin"
+                  targetId={a.id}
+                  targetLabel={a.name}
+                  isSuperAdmin={currentIsSuperAdmin}
+                  actorLabel={currentActorLabel}
+                  onExecute={() => removeAdmin(a.id)}
+                />
               </div>
             ))}
           </div>
           <div className="section-title">הוספת מנהל מערכת</div>
           <AddAdminForm onAdd={addAdmin} />
+        </div>
+      )}
+
+      {tab === "categories" && (
+        <CategoryManager categories={categories} setCategories={setCategories} />
+      )}
+
+      {tab === "approvals" && currentIsSuperAdmin && (
+        <div className="panel-card sa-section">
+          <div className="section-title">אישורי מחיקה ממתינים ({openDeletions.length})</div>
+          <p className="sa-hint">
+            כל בקשת מחיקה שמנהל מערכת רגיל (לא עליון) שלח ממתינה כאן לאישורך. רק לאחר אישור — היא מבוצעת בפועל.
+          </p>
+          {openDeletions.length === 0 ? (
+            <div className="empty">אין כרגע בקשות מחיקה הממתינות לאישור.</div>
+          ) : (
+            <div className="brigade-list">
+              {openDeletions.map((d) => (
+                <PendingDeletionRow key={d.id} d={d} onDecide={decideDeletion} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === "auditLog" && (
+        <div className="panel-card sa-section">
+          <div className="section-title"><ScrollText size={16} /> יומן פעולות מנהלי מערכת ({auditLog.length})</div>
+          <p className="sa-hint">רישום קבוע של כל פעולה משמעותית שביצעו מנהלי המערכת — בקשות מחיקה, אישורים ודחיות.</p>
+          {auditLog.length === 0 ? (
+            <div className="empty">היומן ריק כרגע.</div>
+          ) : (
+            <div className="audit-log-list">
+              {auditLog.map((l) => (
+                <div className="audit-log-row" key={l.id}>
+                  <span className="audit-log-actor">{l.actor}</span>
+                  <span className="audit-log-action">{l.action}</span>
+                  <span className="dim audit-log-stamp">{new Date(l.ts).toLocaleString("he-IL")}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -310,14 +573,6 @@ const CSS = `
 }
 .brigade-activate-btn:hover{ background:color-mix(in srgb, var(--green) 12%, transparent); }
 
-.sa-icon-picker{ display:flex; flex-wrap:wrap; gap:6px; max-width:220px; }
-.sa-icon-opt{
-  width:30px; height:30px; border-radius:7px; background:var(--bg); border:1px solid var(--line);
-  color:var(--text-dim); display:flex; align-items:center; justify-content:center; cursor:pointer;
-  transition:border-color .15s ease, color .15s ease;
-}
-.sa-icon-opt.active{ border-color:var(--accent); color:var(--accent); background:var(--panel-raised); }
-
 .add-form{ display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; background:var(--panel-raised);
   border:1px dashed var(--line); border-radius:12px; padding:16px; }
 .add-form-field{ display:flex; flex-direction:column; gap:5px; font-size:11.5px; color:var(--text-dim); }
@@ -342,6 +597,22 @@ const CSS = `
 
 .empty{ color:var(--text-dim); font-size:14px; padding:16px 0; }
 
+.category-list{ display:flex; flex-wrap:wrap; gap:9px; margin-bottom:6px; }
+.category-chip{
+  display:inline-flex; align-items:center; gap:7px; background:var(--panel-raised); border:1px solid var(--line);
+  border-radius:20px; padding:6px 8px 6px 6px; color:var(--accent);
+}
+.category-chip-input{
+  background:transparent; border:none; color:var(--text); font-family:var(--font-sans); font-size:13px;
+  font-weight:600; width:auto; min-width:40px; max-width:160px; padding:2px 2px;
+}
+.category-chip-input:focus{ outline:none; }
+.category-chip-remove{
+  flex:none; background:none; border:1px solid transparent; color:var(--text-dim); border-radius:50%;
+  padding:4px; cursor:pointer; display:flex; transition:color .15s ease, border-color .15s ease;
+}
+.category-chip-remove:hover{ color:var(--red); border-color:var(--red); }
+
 .org-tree{ overflow-x:auto; padding-bottom:8px; }
 .org-node{ display:inline-flex; flex-direction:column; align-items:center; }
 .org-node-card{
@@ -354,6 +625,49 @@ const CSS = `
   display:flex; gap:16px; margin-top:-1px; padding:20px 20px 16px; flex-wrap:wrap; justify-content:center;
   background:var(--panel-raised); border:1px solid var(--line); border-top:none; border-radius:0 0 12px 12px;
 }
+
+/* פעולה הרסנית — תיבת אישור מדורגת שמופיעה במקום כפתור המחיקה הבודד. */
+.destructive-confirm-box{
+  display:flex; flex-direction:column; gap:8px; background:var(--bg); border:1px solid var(--red);
+  border-radius:10px; padding:11px 13px; width:260px; animation:fadeSlideUp .15s ease;
+}
+.destructive-confirm-box p{ margin:0; font-size:12.5px; color:var(--text); line-height:1.5; display:flex; align-items:flex-start; gap:6px; }
+.destructive-confirm-box p svg{ flex:none; color:var(--red); margin-top:1px; }
+.destructive-confirm-box input{
+  width:100%; background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:7px 9px;
+  font-size:12.5px; font-family:var(--font-mono); color:var(--text);
+}
+.destructive-confirm-box input:focus{ outline:none; border-color:var(--red); }
+.destructive-actions{ display:flex; justify-content:flex-end; gap:6px; }
+.btn-cancel{
+  border:none; border-radius:8px; padding:7px 12px; font-family:var(--font-sans); font-weight:700; font-size:12px;
+  cursor:pointer; background:var(--panel-raised); color:var(--text-dim);
+}
+.btn-reject{
+  border:1px solid var(--red); border-radius:8px; padding:7px 12px; font-family:var(--font-sans); font-weight:700;
+  font-size:12px; cursor:pointer; background:transparent; color:var(--red);
+}
+.destructive-continue{
+  border:none; border-radius:8px; padding:7px 14px; font-family:var(--font-sans); font-weight:700; font-size:12px;
+  cursor:pointer; background:var(--red); color:#fff; transition:filter .15s ease;
+}
+.destructive-continue:hover:not(:disabled){ filter:brightness(1.08); }
+.destructive-continue:disabled{ opacity:.4; cursor:not-allowed; }
+.destructive-submitted{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:var(--yellow); font-weight:600; }
+
+.super-admin-pill{ margin-inline-start:8px; font-size:10px; padding:1px 8px; }
+.pending-deletion-row{ align-items:flex-start; flex-wrap:wrap; }
+.pending-deletion-title{ display:flex; align-items:center; gap:8px; font-family:var(--font-sans); font-weight:700; font-size:14px; }
+
+.audit-log-list{ display:flex; flex-direction:column; gap:2px; }
+.audit-log-row{
+  display:flex; align-items:center; gap:12px; padding:9px 12px; border-bottom:1px solid var(--line); font-size:12.5px;
+  flex-wrap:wrap;
+}
+.audit-log-row:last-child{ border-bottom:none; }
+.audit-log-actor{ font-weight:700; color:var(--text); flex:none; }
+.audit-log-action{ color:var(--text-dim); flex:1; min-width:200px; }
+.audit-log-stamp{ font-family:var(--font-mono); font-size:11px; flex:none; }
 
 @media (max-width:760px){
   .brigade-row{ flex-direction:column; align-items:stretch; }

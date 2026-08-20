@@ -1,10 +1,29 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import UnitEmblem from "./UnitEmblem.jsx";
 import ScopePicker, { ALL_SCOPE, SCOPE_PICKER_CSS } from "./ScopePicker.jsx";
 import Loading from "./Loading.jsx";
+import SearchBar from "./SearchBar.jsx";
+import FilterSelect from "./FilterSelect.jsx";
+import Pagination from "./Pagination.jsx";
+import { matchesSearch } from "./search.js";
 import { STRUCTURAL_ROLES } from "./roles.js";
 import { fetchBrigadeUnits, fetchBrigadeRoster } from "./brigadeStore.js";
+
+/* ================================================================== */
+/* LEGO BLOCK — usePaged: tiny shared pagination-state helper so every  */
+/* person/officer list on this screen (unit roster, brigade staff,     */
+/* unit officers) pages the same way without repeating the wiring.      */
+/* ================================================================== */
+function usePaged(items, defaultSize = 10) {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(defaultSize);
+  useEffect(() => { setPage(1); }, [items.length, pageSize]);
+  const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
+  const shownPage = Math.min(page, pageCount);
+  const paged = useMemo(() => items.slice((shownPage - 1) * pageSize, shownPage * pageSize), [items, shownPage, pageSize]);
+  return { paged, page: shownPage, pageSize, setPage, setPageSize, totalItems: items.length };
+}
 
 /* ================================================================== */
 /* LEGO BLOCK — access model. זהה בדיוק למה שהוגדר באשף ההתקנה,        */
@@ -27,6 +46,8 @@ const ACCESS_LABELS = {
   },
 };
 
+const CATALOG_ACCESS_FILTER_OPTIONS = Object.values(CATALOG_ACCESS).map((v) => ({ value: v, label: ACCESS_LABELS.catalog[v] }));
+
 /* ================================================================== */
 /* LEGO BLOCK — reusable pieces                                        */
 /* ================================================================== */
@@ -34,7 +55,7 @@ const ACCESS_LABELS = {
 function AccessSelect({ label, value, onChange, options, labels }) {
   return (
     <label className="access-field">
-      <span>{label}</span>
+      {label && <span>{label}</span>}
       <select value={value} onChange={(e) => onChange(e.target.value)}>
         {Object.values(options).map((v) => (
           <option key={v} value={v}>{labels[v]}</option>
@@ -44,33 +65,42 @@ function AccessSelect({ label, value, onChange, options, labels }) {
   );
 }
 
-function PersonRow({ person, onChange, onRemove, showUnit }) {
+function PersonTableHead({ showUnit }) {
   return (
-    <div className="person-row">
-      <div className="person-info">
-        <div className="person-name">
-          <span className="person-rank">{person.rank}</span> {person.name}
-        </div>
-        <div className="person-meta">
-          <span>מ.א. {person.personalNumber}</span>
-          <span>{person.email}</span>
-        </div>
-        {showUnit && (
-          <div className="person-unit">
-            <UnitEmblem name={person.unit} size={16} showRing={false} />
-            {person.unit}
-          </div>
-        )}
-      </div>
+    <div className={"perm-row perm-row-head" + (showUnit ? "" : " no-unit")}>
+      <span>איש צוות</span>
+      <span>פרטי קשר</span>
+      {showUnit && <span>יחידה</span>}
+      <span>הרשאת קטלוג</span>
+      <span>הרשאת דרישות</span>
+      <span></span>
+    </div>
+  );
+}
+
+function PersonRow({ person, onChange, onRemove, showUnit, unitLogos, delay = 0 }) {
+  return (
+    <div className={"perm-row" + (showUnit ? "" : " no-unit")} style={{ animationDelay: `${delay}ms` }}>
+      <span className="perm-person-name">
+        <span className="person-rank">{person.rank}</span> {person.name}
+      </span>
+      <span className="perm-person-contact">
+        <span>מ.א. {person.personalNumber}</span>
+        {person.email && <span className="perm-person-email">{person.email}</span>}
+      </span>
+      {showUnit && (
+        <span className="ticket-unit-tag">
+          <UnitEmblem name={person.unit} size={15} showRing={false} image={unitLogos?.[person.unit]} />
+          {person.unit}
+        </span>
+      )}
       <AccessSelect
-        label="קטלוג"
         value={person.catalogAccess}
         onChange={(v) => onChange({ ...person, catalogAccess: v })}
         options={CATALOG_ACCESS}
         labels={ACCESS_LABELS.catalog}
       />
       <AccessSelect
-        label="דרישות"
         value={person.ticketAccess}
         onChange={(v) => onChange({ ...person, ticketAccess: v })}
         options={TICKET_ACCESS}
@@ -131,8 +161,19 @@ function AddPersonForm({ onAdd }) {
 /* Unit officer dashboard — reduced scope: only their own unit          */
 /* ================================================================== */
 
-function UnitRoster({ unit, unitPeople, setUnitPeople }) {
+function UnitRoster({ unit, unitPeople, setUnitPeople, unitLogos }) {
   const people = unitPeople[unit] || [];
+  const [query, setQuery] = useState("");
+  const [accessFilter, setAccessFilter] = useState("all");
+
+  useEffect(() => { setQuery(""); setAccessFilter("all"); }, [unit]);
+
+  const filtered = people.filter(
+    (p) =>
+      matchesSearch([p.rank, p.name, p.personalNumber, p.email], query) &&
+      (accessFilter === "all" || p.catalogAccess === accessFilter)
+  );
+  const { paged, page, pageSize, setPage, setPageSize, totalItems } = usePaged(filtered);
 
   function addPerson(p) {
     setUnitPeople((prev) => ({ ...prev, [unit]: [...(prev[unit] || []), p] }));
@@ -150,14 +191,24 @@ function UnitRoster({ unit, unitPeople, setUnitPeople }) {
   return (
     <>
       <div className="section-title">אנשי {unit}</div>
-      <div className="person-list">
-        {people.length === 0 && <div className="empty">עדיין לא נוספו אנשים ליחידה זו.</div>}
-        {people.map((p, idx) => (
-          <div key={p.id} style={{ animationDelay: `${idx * 40}ms` }} className="person-row-wrap">
-            <PersonRow person={p} onChange={updatePerson} onRemove={removePerson} />
+      {people.length > 0 && (
+        <SearchBar value={query} onChange={setQuery} placeholder="חיפוש לפי שם, מספר אישי או אימייל...">
+          <FilterSelect value={accessFilter} onChange={setAccessFilter} options={CATALOG_ACCESS_FILTER_OPTIONS} allLabel="כל רמות הגישה" ariaLabel="סינון לפי הרשאת קטלוג" />
+        </SearchBar>
+      )}
+      {people.length === 0 && <div className="empty">עדיין לא נוספו אנשים ליחידה זו.</div>}
+      {people.length > 0 && filtered.length === 0 && <div className="empty">לא נמצאו אנשים התואמים את החיפוש.</div>}
+      {filtered.length > 0 && (
+        <>
+          <div className="perm-table">
+            <PersonTableHead />
+            {paged.map((p, idx) => (
+              <PersonRow key={p.id} person={p} onChange={updatePerson} onRemove={removePerson} unitLogos={unitLogos} delay={idx * 30} />
+            ))}
           </div>
-        ))}
-      </div>
+          <Pagination page={page} pageSize={pageSize} totalItems={totalItems} onPageChange={setPage} onPageSizeChange={setPageSize} />
+        </>
+      )}
 
       <div className="section-title">הוספת איש צוות</div>
       <AddPersonForm onAdd={addPerson} />
@@ -165,7 +216,7 @@ function UnitRoster({ unit, unitPeople, setUnitPeople }) {
   );
 }
 
-function UnitPermissionsView({ unit, unitPeople, setUnitPeople }) {
+function UnitPermissionsView({ unit, unitPeople, setUnitPeople, unitLogos }) {
   return (
     <div>
       <div className="view-head">
@@ -174,14 +225,14 @@ function UnitPermissionsView({ unit, unitPeople, setUnitPeople }) {
       </div>
 
       <div className="unit-context">
-        <UnitEmblem name={unit} size={30} />
+        <UnitEmblem name={unit} size={30} image={unitLogos?.[unit]} />
         <div>
           <div className="unit-context-label">היחידה שלך</div>
           <div className="unit-context-value">{unit}</div>
         </div>
       </div>
 
-      <UnitRoster unit={unit} unitPeople={unitPeople} setUnitPeople={setUnitPeople} />
+      <UnitRoster unit={unit} unitPeople={unitPeople} setUnitPeople={setUnitPeople} unitLogos={unitLogos} />
     </div>
   );
 }
@@ -192,9 +243,23 @@ function UnitPermissionsView({ unit, unitPeople, setUnitPeople }) {
 
 function BrigadePermissionsView({
   units, unitOfficers, setUnitOfficers, brigadeStaff, setBrigadeStaff,
-  unitPeople, setUnitPeople,
+  unitPeople, setUnitPeople, unitLogos,
 }) {
   const [drill, setDrill] = useState(ALL_SCOPE);
+  const [officerQuery, setOfficerQuery] = useState("");
+  const [staffQuery, setStaffQuery] = useState("");
+  const [staffAccessFilter, setStaffAccessFilter] = useState("all");
+
+  const filteredOfficers = unitOfficers.filter((o) =>
+    matchesSearch([o.unit, o.rank, o.name, o.personalNumber], officerQuery)
+  );
+  const filteredStaff = brigadeStaff.filter(
+    (p) =>
+      matchesSearch([p.rank, p.name, p.personalNumber, p.email], staffQuery) &&
+      (staffAccessFilter === "all" || p.catalogAccess === staffAccessFilter)
+  );
+  const officersPage = usePaged(filteredOfficers);
+  const staffPage = usePaged(filteredStaff);
 
   function updateOfficer(id, patch) {
     setUnitOfficers((prev) => prev.map((o) => (o.id === id ? { ...o, ...patch } : o)));
@@ -222,38 +287,58 @@ function BrigadePermissionsView({
               : `תצוגה אישית ליחידת ${drill} — נצפית דרך הרשאת החטיבה.`}
           </p>
         </div>
-        <ScopePicker scope={drill} setScope={setDrill} units={units} allLabel="כלל החטיבה" allEmblemName="חטיבה" />
+        <ScopePicker scope={drill} setScope={setDrill} units={units} allLabel="כלל החטיבה" allEmblemName="חטיבה" unitLogos={unitLogos} />
       </div>
 
       {drill === ALL_SCOPE ? (
         <>
           <div className="section-title">קציני אמל״ח ביחידות</div>
-          <div className="officer-list">
-            {unitOfficers.map((o, idx) => (
-              <div className="officer-row" key={o.id} style={{ animationDelay: `${idx * 40}ms` }}>
-                <div className="officer-unit">
-                  <UnitEmblem name={o.unit} size={26} />
-                  {o.unit}
-                </div>
-                <select className="officer-input officer-rank-input" value={o.rank} onChange={(e) => updateOfficer(o.id, { rank: e.target.value })}>
-                  {RANK_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
-                <input className="officer-input" value={o.name} onChange={(e) => updateOfficer(o.id, { name: e.target.value })} placeholder="שם קצין אמל״ח" />
-                <input className="officer-input" value={o.personalNumber} inputMode="numeric"
-                  onChange={(e) => updateOfficer(o.id, { personalNumber: e.target.value.replace(/\D/g, "") })} placeholder="מספר אישי" />
+          {unitOfficers.length > 3 && (
+            <SearchBar value={officerQuery} onChange={setOfficerQuery} placeholder="חיפוש לפי יחידה, שם או מספר אישי..." />
+          )}
+          {filteredOfficers.length === 0 ? (
+            <div className="empty">לא נמצאו קציני אמל״ח התואמים את החיפוש.</div>
+          ) : (
+            <>
+              <div className="officer-list">
+                {officersPage.paged.map((o, idx) => (
+                  <div className="officer-row" key={o.id} style={{ animationDelay: `${idx * 40}ms` }}>
+                    <div className="officer-unit">
+                      <UnitEmblem name={o.unit} size={26} image={unitLogos?.[o.unit]} />
+                      {o.unit}
+                    </div>
+                    <select className="officer-input officer-rank-input" value={o.rank} onChange={(e) => updateOfficer(o.id, { rank: e.target.value })}>
+                      {RANK_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                    <input className="officer-input" value={o.name} onChange={(e) => updateOfficer(o.id, { name: e.target.value })} placeholder="שם קצין אמל״ח" />
+                    <input className="officer-input" value={o.personalNumber} inputMode="numeric"
+                      onChange={(e) => updateOfficer(o.id, { personalNumber: e.target.value.replace(/\D/g, "") })} placeholder="מספר אישי" />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+              <Pagination page={officersPage.page} pageSize={officersPage.pageSize} totalItems={officersPage.totalItems} onPageChange={officersPage.setPage} onPageSizeChange={officersPage.setPageSize} />
+            </>
+          )}
 
           <div className="section-title">צוות חטיבתי נוסף</div>
-          <div className="person-list">
-            {brigadeStaff.length === 0 && <div className="empty">אין עדיין אנשי צוות חטיבתיים נוספים.</div>}
-            {brigadeStaff.map((p, idx) => (
-              <div key={p.id} style={{ animationDelay: `${idx * 40}ms` }} className="person-row-wrap">
-                <PersonRow person={p} onChange={updateStaff} onRemove={removeStaff} />
+          {brigadeStaff.length > 0 && (
+            <SearchBar value={staffQuery} onChange={setStaffQuery} placeholder="חיפוש לפי שם, מספר אישי או אימייל...">
+              <FilterSelect value={staffAccessFilter} onChange={setStaffAccessFilter} options={CATALOG_ACCESS_FILTER_OPTIONS} allLabel="כל רמות הגישה" ariaLabel="סינון לפי הרשאת קטלוג" />
+            </SearchBar>
+          )}
+          {brigadeStaff.length === 0 && <div className="empty">אין עדיין אנשי צוות חטיבתיים נוספים.</div>}
+          {brigadeStaff.length > 0 && filteredStaff.length === 0 && <div className="empty">לא נמצאו אנשי צוות התואמים את החיפוש.</div>}
+          {filteredStaff.length > 0 && (
+            <>
+              <div className="perm-table">
+                <PersonTableHead />
+                {staffPage.paged.map((p, idx) => (
+                  <PersonRow key={p.id} person={p} onChange={updateStaff} onRemove={removeStaff} unitLogos={unitLogos} delay={idx * 30} />
+                ))}
               </div>
-            ))}
-          </div>
+              <Pagination page={staffPage.page} pageSize={staffPage.pageSize} totalItems={staffPage.totalItems} onPageChange={staffPage.setPage} onPageSizeChange={staffPage.setPageSize} />
+            </>
+          )}
 
           <div className="section-title">הוספת איש צוות חטיבתי</div>
           <AddPersonForm onAdd={addStaff} />
@@ -262,12 +347,12 @@ function BrigadePermissionsView({
         <>
           {drillOfficer && (
             <div className="drill-officer-tag">
-              <UnitEmblem name={drill} size={22} showRing={false} />
+              <UnitEmblem name={drill} size={22} showRing={false} image={unitLogos?.[drill]} />
               קצין אמל״ח היחידה: <b>{drillOfficer.rank} {drillOfficer.name}</b>
               <span className="drill-officer-email">מ.א. {drillOfficer.personalNumber}</span>
             </div>
           )}
-          <UnitRoster unit={drill} unitPeople={unitPeople} setUnitPeople={setUnitPeople} />
+          <UnitRoster unit={drill} unitPeople={unitPeople} setUnitPeople={setUnitPeople} unitLogos={unitLogos} />
         </>
       )}
     </div>
@@ -278,11 +363,11 @@ function BrigadePermissionsView({
 /* Org tree — LEGO BLOCK. שכבה אחת מעל ומתחת למי שצופה, או התרשים המלא. */
 /* ================================================================== */
 
-function OrgNode({ title, sub, emblem, highlight, children }) {
+function OrgNode({ title, sub, emblem, emblemImage, highlight, children }) {
   return (
     <div className={"org-node" + (highlight ? " org-node-you" : "")}>
       <div className="org-node-card">
-        {emblem && <UnitEmblem name={emblem} size={24} showRing={false} />}
+        {emblem && <UnitEmblem name={emblem} size={24} showRing={false} image={emblemImage} />}
         <div>
           <div className="org-node-title">{title}</div>
           {sub && <div className="org-node-sub">{sub}</div>}
@@ -298,7 +383,7 @@ function OrgNode({ title, sub, emblem, highlight, children }) {
   );
 }
 
-function OrgTree({ role, brigadeName, myUnit, units, unitOfficers, brigadeStaff, unitPeople }) {
+function OrgTree({ role, brigadeName, myUnit, units, unitOfficers, brigadeStaff, unitPeople, unitLogos }) {
   const personLeaf = (p) => (
     <OrgNode key={p.id} title={`${p.rank} ${p.name}`} sub={`מ.א. ${p.personalNumber}`} />
   );
@@ -314,6 +399,7 @@ function OrgTree({ role, brigadeName, myUnit, units, unitOfficers, brigadeStaff,
               key="me"
               title={myUnit}
               emblem={myUnit}
+              emblemImage={unitLogos?.[myUnit]}
               sub={officer ? `${officer.rank} ${officer.name} — אתה` : undefined}
               highlight
             >
@@ -338,6 +424,7 @@ function OrgTree({ role, brigadeName, myUnit, units, unitOfficers, brigadeStaff,
                 key={u}
                 title={u}
                 emblem={u}
+                emblemImage={unitLogos?.[u]}
                 sub={officer ? `${officer.rank} ${officer.name}` : "טרם מונה קצין"}
               >
                 {people.map(personLeaf)}
@@ -359,7 +446,7 @@ function OrgTree({ role, brigadeName, myUnit, units, unitOfficers, brigadeStaff,
 /* Root                                                                */
 /* ================================================================== */
 
-export default function PermissionsDashboard({ role, brigadeId, brigadeName }) {
+export default function PermissionsDashboard({ role, brigadeId, brigadeName, unitLogos }) {
   const [units, setUnits] = useState(null);
   const [unitPeople, setUnitPeople] = useState({});
   const [unitOfficers, setUnitOfficers] = useState([]);
@@ -428,7 +515,7 @@ export default function PermissionsDashboard({ role, brigadeId, brigadeName }) {
             </div>
             <OrgTree
               role={role} brigadeName={brigadeName} myUnit={myUnit} units={units}
-              unitOfficers={unitOfficers} brigadeStaff={brigadeStaff} unitPeople={unitPeople}
+              unitOfficers={unitOfficers} brigadeStaff={brigadeStaff} unitPeople={unitPeople} unitLogos={unitLogos}
             />
           </>
         ) : isBrigadeScope ? (
@@ -436,10 +523,10 @@ export default function PermissionsDashboard({ role, brigadeId, brigadeName }) {
             units={units}
             unitOfficers={unitOfficers} setUnitOfficers={setUnitOfficers}
             brigadeStaff={brigadeStaff} setBrigadeStaff={setBrigadeStaff}
-            unitPeople={unitPeople} setUnitPeople={setUnitPeople}
+            unitPeople={unitPeople} setUnitPeople={setUnitPeople} unitLogos={unitLogos}
           />
         ) : (
-          <UnitPermissionsView unit={myUnit} unitPeople={unitPeople} setUnitPeople={setUnitPeople} />
+          <UnitPermissionsView unit={myUnit} unitPeople={unitPeople} setUnitPeople={setUnitPeople} unitLogos={unitLogos} />
         )}
       </div>
     </div>
@@ -478,23 +565,31 @@ ${SCOPE_PICKER_CSS}
 .section-title{ font-family:var(--font-mono); font-size:12px; color:var(--accent);
   text-transform:uppercase; letter-spacing:.06em; margin:22px 0 10px; }
 
-.person-list{ display:flex; flex-direction:column; gap:8px; }
-.person-row-wrap{ opacity:0; animation:fadeSlideUp .25s ease forwards; }
-.person-row{
-  display:flex; align-items:center; gap:14px; background:var(--panel); border:1px solid var(--line);
-  border-radius:6px; padding:12px 16px; transition:border-color .15s ease;
-}
-.person-row:hover{ border-color:var(--text-dim); }
-.person-info{ flex:1; min-width:140px; }
-.person-name{ font-family:var(--font-sans); font-weight:600; font-size:15px; }
 .person-rank{ color:var(--text-dim); font-weight:500; }
-.person-meta{ display:flex; gap:12px; font-size:12px; color:var(--text-dim); font-family:var(--font-mono); margin-top:2px; }
-.person-unit{ font-size:11px; color:var(--accent); margin-top:3px; display:flex; align-items:center; gap:5px; }
-.unit-emblem{ display:block; }
 
-.access-field{ display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--text-dim); }
-.access-field select{ background:var(--bg); border:1px solid var(--line); border-radius:4px; color:var(--text);
-  padding:7px 9px; font-size:12px; min-width:155px; }
+.perm-table{ display:flex; flex-direction:column; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.perm-row{
+  display:grid; grid-template-columns:1.3fr 1.3fr 130px 1fr 1fr 34px;
+  align-items:center; gap:10px; padding:9px 14px; background:var(--panel); border-bottom:1px solid var(--line);
+  opacity:0; animation:fadeSlideUp .2s ease forwards;
+}
+.perm-row.no-unit{ grid-template-columns:1.3fr 1.3fr 1fr 1fr 34px; }
+.perm-row:last-child{ border-bottom:none; }
+.perm-row:hover{ background:var(--panel-raised); }
+.perm-row-head{
+  background:var(--panel-raised); font-family:var(--font-mono); font-size:11px; color:var(--text-dim);
+  text-transform:uppercase; letter-spacing:.05em; padding:9px 14px; opacity:1; animation:none;
+}
+.perm-row-head:hover{ background:var(--panel-raised); }
+.perm-person-name{ font-family:var(--font-sans); font-weight:600; font-size:13.5px; }
+.perm-person-contact{ display:flex; flex-direction:column; gap:1px; font-size:11.5px; color:var(--text-dim); font-family:var(--font-mono); }
+.perm-person-email{ opacity:.85; }
+
+.access-field{ display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--text-dim); min-width:0; }
+.add-form .access-field{ min-width:150px; }
+.access-field select{ background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--text);
+  padding:7px 9px; font-size:12px; width:100%; transition:border-color .15s ease; }
+.access-field select:hover, .access-field select:focus{ border-color:var(--accent); outline:none; }
 
 .person-remove{ background:none; border:1px solid transparent; color:var(--text-dim); border-radius:4px;
   padding:4px 8px; cursor:pointer; transition:color .15s ease, border-color .15s ease; }
@@ -542,8 +637,12 @@ ${SCOPE_PICKER_CSS}
   border-radius:0 0 8px 8px;
 }
 
+@media (max-width:900px){
+  .perm-row{ grid-template-columns:1fr 1fr 34px; }
+  .perm-row > *:nth-child(3):not(:last-child), .perm-row > *:nth-child(4), .perm-row > *:nth-child(5){ display:none; }
+  .perm-row-head > *:nth-child(3), .perm-row-head > *:nth-child(4), .perm-row-head > *:nth-child(5){ display:none; }
+}
 @media (max-width:700px){
-  .person-row{ flex-wrap:wrap; }
   .officer-row{ grid-template-columns:1fr; }
 }
 `;

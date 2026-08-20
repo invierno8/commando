@@ -72,7 +72,20 @@ function KnownMotif({ name, color }) {
   return null;
 }
 
-export default function UnitEmblem({ name = "", size = 36, showRing = true }) {
+export default function UnitEmblem({ name = "", size = 36, showRing = true, image }) {
+  if (image) {
+    return (
+      <img
+        src={image}
+        alt={name}
+        width={size}
+        height={size}
+        className={showRing ? "unit-emblem unit-emblem-ring unit-emblem-img" : "unit-emblem unit-emblem-img"}
+        style={{ width: size, height: size, borderRadius: "30%", objectFit: "cover", flex: "none" }}
+      />
+    );
+  }
+
   const hash = hashStr(name || "?");
   const palette = PALETTE[hash % PALETTE.length];
   const shapes = ["hex", "diamond", "shield"];

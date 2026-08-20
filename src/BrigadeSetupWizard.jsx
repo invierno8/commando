@@ -1,7 +1,10 @@
-import React, { useState } from "react";
-import { Shield, Star, Flag, Compass, Mountain, Target, Award, Crosshair, Swords, Anchor, Pencil, X } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Building2, Pencil, X } from "lucide-react";
 import UnitEmblem from "./UnitEmblem.jsx";
+import LogoUpload from "./LogoUpload.jsx";
+import Loading from "./Loading.jsx";
 import { STRUCTURAL_ROLES } from "./roles.js";
+import { fetchBrigadeUnits, fetchBrigadeRoster, saveBrigadeSetup } from "./brigadeStore.js";
 
 /* ================================================================== */
 /* LEGO BLOCK 1 — Access-level data model (pure data, zero logic)      */
@@ -92,31 +95,16 @@ function Field({ label, hint, children }) {
   );
 }
 
-export const BRIGADE_ICONS = {
-  shield: Shield, star: Star, flag: Flag, compass: Compass, mountain: Mountain,
-  target: Target, award: Award, crosshair: Crosshair, swords: Swords, anchor: Anchor,
-};
-
-export function BrigadeIcon({ iconKey, size = 22 }) {
-  const Icon = BRIGADE_ICONS[iconKey] || Shield;
-  return <Icon size={size} />;
-}
-
-function IconPicker({ value, onChange }) {
-  return (
-    <div className="icon-picker">
-      {Object.keys(BRIGADE_ICONS).map((key) => (
-        <button
-          key={key}
-          type="button"
-          className={"icon-opt" + (value === key ? " active" : "")}
-          onClick={() => onChange(key)}
-        >
-          <BrigadeIcon iconKey={key} size={18} />
-        </button>
-      ))}
-    </div>
-  );
+/* לוגו חטיבה/יחידה הוא תמיד תמונה אמיתית שהועלתה באשף ההתקנה — לא אימוג׳י   */
+/* ולא סמל מתוך רשימה. כל עוד לא הועלה לוגו, זה הפולבק הנייטרלי היחיד.      */
+export function BrigadeIcon({ image, size = 22 }) {
+  if (image) {
+    return (
+      <img src={image} alt="" width={size} height={size}
+        style={{ width: size, height: size, borderRadius: "30%", objectFit: "cover" }} />
+    );
+  }
+  return <Building2 size={size} />;
 }
 
 /* ================================================================== */
@@ -214,10 +202,11 @@ const steps = [
             placeholder="לדוגמה: חטיבת הקומנדו"
           />
         </Field>
-        <Field label="לוגו / סמל" hint="בחירה זמנית מתוך סמלייה — בפרודקשן: העלאת קובץ לוגו">
-          <IconPicker
-            value={s.brigade.icon}
-            onChange={(icon) => set((p) => ({ ...p, brigade: { ...p.brigade, icon } }))}
+        <Field label="לוגו החטיבה" hint="תמונה אמיתית של סמל החטיבה — תוצג בכל מסכי המערכת">
+          <LogoUpload
+            value={s.brigade.logo}
+            onChange={(logo) => set((p) => ({ ...p, brigade: { ...p.brigade, logo } }))}
+            fallback={<Building2 size={22} />}
           />
         </Field>
         <Field label="ייעוד / משימת החטיבה" hint="יופיע קבוע בראש המערכת עבור כלל המשתמשים">
@@ -240,7 +229,7 @@ const steps = [
       const addUnit = (name = "") =>
         set((p) => ({
           ...p,
-          units: [...p.units, { id: crypto.randomUUID(), name, officerName: "", officerEmail: "" }],
+          units: [...p.units, { id: crypto.randomUUID(), name, logo: null, mission: "", officerName: "", officerEmail: "" }],
         }));
       const updateUnit = (id, patch) =>
         set((p) => ({ ...p, units: p.units.map((u) => (u.id === id ? { ...u, ...patch } : u)) }));
@@ -266,8 +255,23 @@ const steps = [
           <div className="unit-list">
             {s.units.map((u) => (
               <div className="unit-row" key={u.id}>
-                <div className="unit-row-fields">
+                <div className="unit-row-top">
+                  <LogoUpload
+                    compact
+                    value={u.logo}
+                    onChange={(logo) => updateUnit(u.id, { logo })}
+                    fallback={<UnitEmblem name={u.name} size={24} showRing={false} />}
+                  />
                   <UnitNamePicker value={u.name} onChange={(name) => updateUnit(u.id, { name })} />
+                  <button className="unit-remove" onClick={() => removeUnit(u.id)} title="הסרת יחידה"><X size={15} /></button>
+                </div>
+                <div className="unit-row-bottom">
+                  <input
+                    className="unit-mission-input"
+                    value={u.mission}
+                    onChange={(e) => updateUnit(u.id, { mission: e.target.value })}
+                    placeholder="ייעוד / משימת היחידה (אופציונלי)"
+                  />
                   <input
                     value={u.officerName}
                     onChange={(e) => updateUnit(u.id, { officerName: e.target.value })}
@@ -280,11 +284,10 @@ const steps = [
                     inputMode="numeric"
                   />
                 </div>
-                <button className="unit-remove" onClick={() => removeUnit(u.id)}><X size={15} /></button>
               </div>
             ))}
           </div>
-          <p className="unit-hint">התג לצד שם היחידה נוצר אוטומטית מהשם — אין צורך להעלות לוגו.</p>
+          <p className="unit-hint">אפשר להעלות לוגו אמיתי לכל יחידה; ליחידה שעדיין ללא לוגו יוצג תג זמני אוטומטי.</p>
 
           <button className="btn-add-unit" onClick={() => addUnit("")}>+ הוספת יחידה</button>
         </div>
@@ -342,9 +345,10 @@ const steps = [
           </div>
           {s.units.map((u) => (
             <div className="review-card review-card-unit" key={u.id}>
-              <UnitEmblem name={u.name} size={30} />
+              <UnitEmblem name={u.name} size={30} image={u.logo} />
               <div>
                 <div className="review-card-title">{u.name}</div>
+                {u.mission && <div className="review-card-mission">{u.mission}</div>}
                 <div className="review-card-value">
                   קצין אמל״ח: {u.officerName || "טרם הוגדר"}
                 </div>
@@ -371,10 +375,10 @@ function ACCESS_LABELS_ROLE(role) {
 /* Persistent mission bar — לגו-בלוק בפני עצמו, ישמש בכל מסכי המערכת   */
 /* ================================================================== */
 
-function MissionBar({ brigade }) {
+export function MissionBar({ brigade }) {
   return (
     <div className="mission-bar">
-      <div className="mission-icon"><BrigadeIcon iconKey={brigade.icon} size={24} /></div>
+      <div className="mission-icon"><BrigadeIcon image={brigade.logo} size={24} /></div>
       <div className="mission-text">
         <div className="mission-name">{brigade.name || "שם החטיבה"}</div>
         <div className="mission-quote">{brigade.mission || "ייעוד החטיבה יופיע כאן"}</div>
@@ -402,7 +406,7 @@ function CompletedShell({ state }) {
           </div>
           {state.units.map((u) => (
             <div className="review-card review-card-unit" key={u.id}>
-              <UnitEmblem name={u.name} size={30} />
+              <UnitEmblem name={u.name} size={30} image={u.logo} />
               <div>
                 <div className="review-card-title">{u.name}</div>
                 <div className="review-card-value">קצין אמל״ח: {u.officerName}</div>
@@ -433,20 +437,89 @@ function CompletedShell({ state }) {
 /* Root                                                                */
 /* ================================================================== */
 
-export default function BrigadeSetupWizard() {
-  const [state, setState] = useState({
-    brigade: { name: "", icon: "shield", mission: "" },
-    units: [],
-    brigadeOfficerName: "",
-    brigadeOfficerEmail: "",
-  });
+export default function BrigadeSetupWizard({ brigadeId, brigades, setBrigades }) {
+  const [state, setState] = useState(null);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setDone(false);
+    setState(null);
+    const registryBrigade = brigades?.find((b) => b.id === brigadeId);
+
+    Promise.all([fetchBrigadeUnits(brigadeId), fetchBrigadeRoster(brigadeId)]).then(([units, roster]) => {
+      if (cancelled) return;
+      setState({
+        brigade: {
+          name: registryBrigade?.name || "",
+          logo: registryBrigade?.logo || null,
+          mission: registryBrigade?.mission || "",
+        },
+        // חטיבה שכבר השלימה הקמה מגיעה לכאן עם היחידות והקצינים האמיתיים שלה
+        // מהדאטהסט התפעולי — עריכה, לא יצירה מחדש. חטיבה חדשה/ממתינה, שעדיין
+        // אין לה יחידות אמיתיות, מקבלת רשימה ריקה — בדיוק כמו קודם.
+        units: units.map((name) => {
+          const officer = roster.unitOfficers.find((o) => o.unit === name);
+          return {
+            id: crypto.randomUUID(),
+            name,
+            logo: registryBrigade?.unitLogos?.[name] || null,
+            mission: registryBrigade?.unitMissions?.[name] || "",
+            officerName: officer?.name || "",
+            officerEmail: officer?.personalNumber || "",
+          };
+        }),
+        brigadeOfficerName: registryBrigade?.contactName || "",
+        brigadeOfficerEmail: registryBrigade?.contactPersonalNumber || "",
+      });
+    });
+
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brigadeId]);
+
+  function finish() {
+    if (setBrigades && brigadeId) {
+      const unitLogos = {};
+      const unitMissions = {};
+      state.units.forEach((u) => {
+        if (u.logo) unitLogos[u.name] = u.logo;
+        if (u.mission) unitMissions[u.name] = u.mission;
+      });
+      setBrigades((prev) => prev.map((b) => (
+        b.id === brigadeId
+          ? {
+              ...b,
+              name: state.brigade.name || b.name,
+              logo: state.brigade.logo || b.logo,
+              mission: state.brigade.mission || b.mission,
+              unitLogos: { ...b.unitLogos, ...unitLogos },
+              unitMissions: { ...b.unitMissions, ...unitMissions },
+              contactName: state.brigadeOfficerName || b.contactName,
+              contactPersonalNumber: state.brigadeOfficerEmail || b.contactPersonalNumber,
+              units: state.units.length,
+            }
+          : b
+      )));
+    }
+    if (brigadeId) saveBrigadeSetup(brigadeId, { units: state.units });
+    setDone(true);
+  }
+
+  if (!state) {
+    return (
+      <div dir="rtl" className="wizard-view panel-card">
+        <style>{CSS}</style>
+        <Loading />
+      </div>
+    );
+  }
 
   return (
     <div dir="rtl" className="wizard-view panel-card">
       <style>{CSS}</style>
       {!done ? (
-        <Wizard steps={steps} state={state} setState={setState} onFinish={() => setDone(true)} />
+        <Wizard steps={steps} state={state} setState={setState} onFinish={finish} />
       ) : (
         <CompletedShell state={state} />
       )}
@@ -503,8 +576,11 @@ const CSS = `
 .chip:hover{ border-color:var(--accent); }
 
 .unit-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
-.unit-row{ display:flex; align-items:center; gap:12px; background:var(--panel); border:1px solid var(--line);
+.unit-row{ display:flex; flex-direction:column; gap:9px; background:var(--panel); border:1px solid var(--line);
   border-radius:6px; padding:10px 12px; }
+.unit-row-top{ display:flex; align-items:center; gap:12px; }
+.unit-row-bottom{ display:flex; gap:10px; padding-inline-start:44px; }
+.unit-mission-input{ flex:1.3; }
 .unit-row-icon{ position:relative; }
 .unit-hint{ font-size:12px; color:var(--text-dim); margin:-4px 0 14px; }
 .unit-emblem{ display:block; }
@@ -533,10 +609,10 @@ const CSS = `
 .unit-picker-item:hover{ background:var(--panel-raised); }
 .unit-picker-item-custom{ border-top:1px solid var(--line); margin-top:4px; padding-top:9px; color:var(--text-dim); }
 .unit-picker-custom-icon{ width:22px; text-align:center; }
-.unit-row-fields{ flex:1; display:flex; gap:10px; }
-.unit-row-fields input{ flex:1; background:var(--bg); border:1px solid var(--line); border-radius:4px;
+.unit-row-bottom input{ flex:1; background:var(--bg); border:1px solid var(--line); border-radius:4px;
   color:var(--text); padding:8px 10px; font-size:13px; }
-.unit-remove{ background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:14px; }
+.unit-remove{ background:none; border:1px solid transparent; color:var(--text-dim); cursor:pointer; border-radius:6px; padding:6px; display:flex; transition:color .15s ease, border-color .15s ease; }
+.unit-remove:hover{ color:var(--red); border-color:var(--red); }
 .btn-add-unit{ background:transparent; border:1px dashed var(--line); color:var(--text-dim); border-radius:5px;
   padding:9px; width:100%; cursor:pointer; font-family:var(--font-sans); font-weight:600; }
 .btn-add-unit:hover{ border-color:var(--accent); color:var(--accent); }
@@ -551,12 +627,6 @@ const CSS = `
 .btn-primary:not(:disabled):hover{ filter:brightness(1.08); box-shadow:var(--shadow-sm); }
 .btn-primary:disabled{ opacity:.35; cursor:not-allowed; }
 
-.mission-bar{ display:flex; align-items:center; gap:14px; background:var(--panel); border:1px solid var(--line);
-  border-right:3px solid var(--accent); border-radius:6px; padding:14px 18px; margin-bottom:22px; animation:fadeSlideUp .3s ease; }
-.mission-icon{ display:flex; color:var(--accent); }
-.mission-name{ font-family:var(--font-sans); font-weight:700; font-size:16px; }
-.mission-quote{ font-size:13px; color:var(--text-dim); margin-top:2px; }
-
 .review-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; margin-top:14px; }
 .review-card{ background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:12px 14px;
   opacity:0; animation:fadeSlideUp .3s ease forwards; transition:border-color .15s ease; }
@@ -564,6 +634,7 @@ const CSS = `
 .review-card-unit{ display:flex; align-items:flex-start; gap:10px; }
 .review-card-title{ font-family:var(--font-sans); font-weight:600; font-size:14px; }
 .review-card-value{ font-size:13px; color:var(--text-dim); margin-top:4px; }
+.review-card-mission{ font-size:12px; color:var(--accent); margin-top:3px; line-height:1.5; }
 .review-card-email{ font-size:12px; color:var(--accent); margin-top:2px; font-family:var(--font-mono); }
 
 .completed-badge{ display:inline-block; font-family:var(--font-mono); font-size:12px;

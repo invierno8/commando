@@ -11,7 +11,7 @@ export const ALL_SCOPE = "__all__";
 
 export default function ScopePicker({
   scope, setScope, units,
-  allLabel = "כלל החטיבה", allEmblemName = "חטיבה",
+  allLabel = "כלל החטיבה", allEmblemName = "חטיבה", unitLogos,
 }) {
   const [open, setOpen] = useState(false);
   const current = scope === ALL_SCOPE ? allLabel : scope;
@@ -23,7 +23,7 @@ export default function ScopePicker({
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false); }}
     >
       <button type="button" className="scope-picker-trigger" onClick={() => setOpen((o) => !o)}>
-        <UnitEmblem name={scope === ALL_SCOPE ? allEmblemName : scope} size={26} showRing={false} />
+        <UnitEmblem name={scope === ALL_SCOPE ? allEmblemName : scope} size={26} showRing={false} image={scope !== ALL_SCOPE ? unitLogos?.[scope] : undefined} />
         <span>{current}</span>
         <span className={"scope-picker-arrow" + (open ? " open" : "")}>▾</span>
       </button>
@@ -45,7 +45,7 @@ export default function ScopePicker({
               className={"scope-picker-item" + (scope === u ? " active" : "")}
               onClick={() => { setScope(u); setOpen(false); }}
             >
-              <UnitEmblem name={u} size={22} showRing={false} />
+              <UnitEmblem name={u} size={22} showRing={false} image={unitLogos?.[u]} />
               <span>{u}</span>
             </button>
           ))}
