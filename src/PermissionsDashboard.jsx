@@ -946,7 +946,10 @@ function OrgTree({
       >
         {team.subteams.map((s) => {
           const dropKey = `subteam:${s.id}`;
-          const canDropHere = !!dragPerson && manageable;
+          // גרירה בין יחידות אינה נתמכת בכוונה — שיוך ליחידה יתנהל בעתיד דרך
+          // הרשמה מבוססת SSO/כרטיס אישי, לא בגרירה ידנית. לכן היעד תקף רק אם
+          // האדם כבר שייך לאותה יחידה שהצוות שייך אליה.
+          const canDropHere = !!dragPerson && manageable && dragPerson.fromUnit === team.unit;
           return (
             <OrgNode
               key={s.id} title={s.name} sub={`${s.members.length} חברים`}
@@ -975,14 +978,14 @@ function OrgTree({
     canManageUnit?.(u) ? <OrgNode key="add-team" title="+ צוות חדש" sub="לחיצה ליצירה" dashed onClick={() => onCreateTeam(u)} /> : null;
 
   // ענף "אנשי אמל״ח היחידה" (אנשים ישירים) וענף "צוותים" — שני ענפים נפרדים
-  // תחת כל יחידה, לא שורה אחת מעורבת של אנשים וצוותים זה לצד זה. יחידת הענף
-  // עצמה (ולא צומת היחידה) היא יעד הגרירה ל"הוצאה מצוות בחזרה לאמל״ח הכללי",
-  // וצומת היחידה עצמו הוא יעד הגרירה למעבר יחידה שלמה.
+  // תחת כל יחידה, לא שורה אחת מעורבת של אנשים וצוותים זה לצד זה. יעד הגרירה
+  // כאן הוא "הוצאה מצוות בחזרה לאמל״ח הכללי" בלבד — לא מעבר יחידה. שיוך
+  // ליחידה ינוהל בעתיד דרך הרשמה מבוססת SSO/כרטיס אישי, לא גרירה ידנית.
   function unitBranches(u) {
     const people = unitPeople[u] || [];
     const teamsInUnit = teamsForUnit(u);
     const peopleDropKey = `people:${u}`;
-    const canDropOnPeople = !!dragPerson && canManageUnit?.(u);
+    const canDropOnPeople = !!dragPerson && canManageUnit?.(u) && dragPerson.fromUnit === u;
     const peopleBranch = people.length > 0 && (
       <OrgNode
         key="people-group" title="אנשי אמל״ח היחידה" sub={`${people.length} אנשים`} group
@@ -1009,7 +1012,9 @@ function OrgTree({
   if (role === STRUCTURAL_ROLES.UNIT_OFFICER) {
     const officer = unitOfficers.find((o) => o.unit === myUnit);
     const meDropKey = `unit:${myUnit}`;
-    const canDropOnMe = !!dragPerson;
+    // תמיד אותה יחידה כאן (העץ של קצין אמל״ח יחידה מציג רק את היחידה שלו) —
+    // התנאי המפורש שומר על אותה הגבלה "לא לחצות יחידות" בעקביות עם שאר העץ.
+    const canDropOnMe = !!dragPerson && dragPerson.fromUnit === myUnit;
     return (
       <div className="org-tree">
         <OrgNode title={brigadeName} sub="שכבה אחת מעליך">
@@ -1047,7 +1052,10 @@ function OrgTree({
           ...units.map((u) => {
             const officer = unitOfficers.find((o) => o.unit === u);
             const dropKey = `unit:${u}`;
-            const canDropHere = !!dragPerson && canManageUnit?.(u);
+            // אין מעבר בין יחידות דרך גרירה — רק שינוי שיוך צוותי בתוך אותה
+            // יחידה שהאדם כבר בה. שיוך ליחידה עצמה מנוהל היום דרך unitPeople
+            // (מרשם ידני), ובעתיד יעבור להרשמה מבוססת SSO/כרטיס אישי.
+            const canDropHere = !!dragPerson && canManageUnit?.(u) && dragPerson.fromUnit === u;
             return (
               <OrgNode
                 key={u}
@@ -1635,6 +1643,10 @@ export default function PermissionsDashboard({ role, brigadeId, brigadeName, uni
   // ארגוני אחר מהעץ.
   async function executeMove() {
     const { person, fromUnit, toUnit, toTeamId, toSubteamId, fromLabel, toLabel } = pendingMove;
+    // כרגע כל יעדי הגרירה בעץ (ראו OrgTree) חוסמים מראש מעבר בין יחידות —
+    // fromUnit/toUnit תמיד שווים בפועל. סעיף זה נשאר כאן בכוונה, לא נגרר:
+    // שיוך ליחידה עצמו עתיד לעבור ניהול נפרד (הרשמה מבוססת SSO/כרטיס אישי,
+    // כולל אפשרות שיוך לכמה יחידות/חטיבות), לא גרירה ידנית בעץ הארגוני.
     if (fromUnit !== toUnit) {
       setUnitPeople((prev) => ({
         ...prev,
