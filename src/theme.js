@@ -101,6 +101,20 @@ html, body{ margin:0; background:var(--bg); }
   font-size:12px; flex:none; margin-bottom:14px;
 }
 .app-sidebar.expanded .sidebar-mark{ margin-inline:auto; }
+
+/* חטיבה → יחידה → צוות, בערימה אחת מתחת ללוגו — כל שכבה מוצגת רק אם     */
+/* יש מה להציג (יחידה רק לתפקיד ששייך ליחידה אחת, צוות רק אם יש לו לוגו). */
+/* כשהסיידבר פתוח (.expanded) כל פריט "נמתח" ומקבל תווית טקסט לצידו.      */
+.sidebar-identity{ display:flex; flex-direction:column; align-items:center; gap:9px; width:100%; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--line); }
+.app-sidebar.expanded .sidebar-identity{ align-items:stretch; }
+.sidebar-identity-item{ display:flex; align-items:center; gap:9px; justify-content:center; min-width:0; }
+.app-sidebar.expanded .sidebar-identity-item{ justify-content:flex-start; }
+.sidebar-identity-team-img{ width:19px; height:19px; border-radius:6px; object-fit:cover; flex:none; }
+.app-sidebar.expanded .sidebar-identity-team-img{ width:22px; height:22px; }
+.sidebar-identity-label{
+  font-size:11.5px; color:var(--text-dim); font-weight:600; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap; min-width:0;
+}
 .sidebar-nav{ display:flex; flex-direction:column; gap:4px; width:100%; align-items:center; }
 .app-sidebar.expanded .sidebar-nav{ align-items:stretch; }
 .sidebar-btn{
@@ -238,6 +252,18 @@ html, body{ margin:0; background:var(--bg); }
 
 .app-body{ padding:24px 26px 40px; position:relative; z-index:1; flex:1; }
 
+.blocked-gate{
+  max-width:480px; margin:60px auto; padding:36px 32px; text-align:center; display:flex; flex-direction:column;
+  align-items:center; gap:10px; color:var(--red);
+}
+.blocked-gate h2{ color:var(--text); font-family:var(--font-sans); font-size:19px; margin:6px 0 0; }
+.blocked-gate p{ color:var(--text-dim); font-size:14px; margin:0; }
+.blocked-gate-reason{
+  background:var(--panel-raised); border:1px solid var(--line); border-radius:8px; padding:10px 16px;
+  color:var(--text); font-size:13px; margin-top:6px;
+}
+.blocked-gate-hint{ color:var(--text-dim); font-size:11.5px; margin-top:14px; }
+
 /* ------------------------------------------------------------------ */
 /* Environment strip — dev/demo indicator + role simulator, now a      */
 /* compact bar under the top bar instead of a loud banner.             */
@@ -264,6 +290,14 @@ html, body{ margin:0; background:var(--bg); }
   color:var(--text); font-family:var(--font-mono); font-size:11px;
 }
 .env-strip-identity input:focus{ outline:none; box-shadow:0 0 0 2px color-mix(in srgb, var(--dev) 25%, transparent); }
+.env-strip-member-block{ display:flex; flex-direction:column; gap:6px; margin-inline-start:8px; padding-inline-start:8px; border-inline-start:1px solid var(--dev); }
+.member-identity-tabs{ margin:0; }
+.member-identity-tabs .pill-tab{ padding:4px 9px !important; font-size:10.5px !important; }
+.env-strip-hint{ font-size:10.5px; color:var(--text-dim); font-style:italic; max-width:220px; }
+.officer-unit-pick select{
+  background:var(--bg); border:1px solid var(--dev); border-radius:5px; padding:3px 8px;
+  color:var(--text); font-family:var(--font-sans); font-size:11px; cursor:pointer;
+}
 
 .dev-only{
   border:1px dashed var(--dev); border-radius:9px; padding:8px 10px; position:relative;

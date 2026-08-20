@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import {
   X, Camera, FileText, Paperclip, Image as ImageIcon, Wrench, PackagePlus, Lightbulb, ShoppingCart,
   ExternalLink, ArrowUpRight, ShieldAlert, UserCog, MessageSquare, ChevronDown, ChevronUp, RefreshCw as RefreshCwIcon, Archive,
+  AlertTriangle, Save,
 } from "lucide-react";
 import UnitEmblem from "./UnitEmblem.jsx";
 import CountUp from "./CountUp.jsx";
@@ -15,7 +16,9 @@ import { parseStamp } from "./analytics.js";
 import { StatusPill, PriorityDot, TICKET_TYPES, TICKET_TYPE_LABELS, PROGRESS_STATUS, PROGRESS_STATUS_LABELS, ProgressStatusPill } from "./opsData.jsx";
 import { fetchBrigadeTickets, fetchBrigadeUnits, fetchBrigadeCatalog, fetchBrigadeRoster } from "./brigadeStore.js";
 import { pushNotification, NOTIFICATION_TYPES } from "./notificationStore.js";
+import { fetchDraft, saveDraft, clearDraft } from "./draftStore.js";
 import { STRUCTURAL_ROLES } from "./roles.js";
+import { requiresTeamLeadApproval } from "./teamStore.js";
 
 const TICKET_TYPE_ICONS = { idea: Lightbulb, procurement: ShoppingCart, repair: Wrench, equip: PackagePlus };
 
@@ -63,9 +66,14 @@ const ROLE_HEAD = {
   [STRUCTURAL_ROLES.SYSTEM_ADMIN]: { title: "דרישות וטיקטים — תצוגת מנהל מערכת", sub: "תצוגה מלאה על כלל הדרישות במערכת" },
 };
 
-export default function Tickets({ role, persona, brigadeId, unitLogos, categories, crossNav, clearCrossNav, viewCatalogItem }) {
-  const tabs = ROLE_TABS[role] || ROLE_TABS[STRUCTURAL_ROLES.MEMBER];
+export default function Tickets({ role, persona, brigadeId, officerUnit, userId, effectiveMemberId, ledTeam, unitLogos, categories, crossNav, clearCrossNav, viewCatalogItem }) {
+  const isTeamLead = role === STRUCTURAL_ROLES.MEMBER && !!ledTeam;
+  const tabs = useMemo(() => {
+    const base = ROLE_TABS[role] || ROLE_TABS[STRUCTURAL_ROLES.MEMBER];
+    return isTeamLead ? [...base, ["teamGate", "אישורי ראש צוות"]] : base;
+  }, [role, isTeamLead]);
   const [tab, setTab] = useState(tabs[0][0]);
+  const [myGateTeam, setMyGateTeam] = useState(null);
   const [tickets, setTickets] = useState(null);
   const [units, setUnits] = useState([]);
   const [catalog, setCatalog] = useState([]);
@@ -126,7 +134,7 @@ export default function Tickets({ role, persona, brigadeId, unitLogos, categorie
   // ביחידה הראשונה של החטיבה, אותה מוסכמה שכבר קיימת ב-Catalog.jsx וב-DevDashboard.jsx.
   const isUnitOfficer = role === STRUCTURAL_ROLES.UNIT_OFFICER;
   const isBrigadeOfficerPlus = role === STRUCTURAL_ROLES.BRIGADE_OFFICER || role === STRUCTURAL_ROLES.SYSTEM_ADMIN;
-  const myUnit = isUnitOfficer ? units[0] : persona?.unit;
+  const myUnit = isUnitOfficer ? (officerUnit || units[0]) : persona?.unit;
   const currentActorLabel = isBrigadeOfficerPlus
     ? "קצין אמל״ח חטיבה (הדגמה)"
     : isUnitOfficer
@@ -134,6 +142,22 @@ export default function Tickets({ role, persona, brigadeId, unitLogos, categorie
     : persona
     ? `${persona.rank} ${persona.name}`
     : "משתמש נוכחי (הדגמה)";
+  // מזהה שמור לטיוטות — חבר יחידה מזוהה לפי המספר האישי של הפרסונה המדומה
+  // שלו (יש לו כזה תמיד), תפקידי קצונה לפי userId (הזיהוי שכבר קיים לצורך
+  // פריסת הדשבורד האישית) — אותו רעיון בדיוק, מוחל גם על טיוטות.
+  const draftIdentity = role === STRUCTURAL_ROLES.MEMBER ? persona?.personalNumber : userId;
+
+  // שער אישור ראש צוות — נבדק מראש (לא בזמן ההגשה עצמה, כדי ש-submitTicket
+  // יישאר סינכרוני) עבור חבר יחידה רגיל בלבד: אם השייכות שלו לתת-צוות כלשהו
+  // מסומנת requireLeadApproval, הדרישה החדשה שלו "נתקעת" אצל ראש הצוות לפני
+  // שהיא בכלל נכנסת לתור האישורים של קצין אמל״ח היחידה (ראו pendingForUnit).
+  useEffect(() => {
+    let cancelled = false;
+    if (role !== STRUCTURAL_ROLES.MEMBER) { setMyGateTeam(null); return; }
+    const identity = { personalNumber: effectiveMemberId || persona?.personalNumber, fullName: persona ? `${persona.rank} ${persona.name}` : null };
+    requiresTeamLeadApproval(brigadeId, identity).then((t) => { if (!cancelled) setMyGateTeam(t); });
+    return () => { cancelled = true; };
+  }, [brigadeId, role, effectiveMemberId, persona]);
 
   // מועמדים לתפקיד "גורם אחראי" — כל מי שמופיע במרשם החטיבה (קציני יחידה,
   // סגל חטיבתי, אנשי יחידות), כדי שקצין אמל״ח חטיבה יוכל לבחור מרשימה ולא
@@ -191,16 +215,49 @@ export default function Tickets({ role, persona, brigadeId, unitLogos, categorie
       decidedAt: isUnitOfficer ? stamp : null, decidedBy: isUnitOfficer ? currentActorLabel : null, prioritizedAt: null,
       dueDate: "", photoUploaded: (data.extras || []).some((f) => /\.(jpg|jpeg|png)$/i.test(f)),
       collaborators: [], progressStatus: null, progressNote: "", assignee: null, progressLog: [], rejectionReason: null, archived: false,
+      teamLeadGate: myGateTeam ? "pending" : null, gateTeamId: myGateTeam?.id || null,
     };
     setTickets((prev) => [t, ...prev]);
     setShowTicketModal(false);
     setTicketDraft(null);
     setLastUpdated(new Date());
-    flash(isUnitOfficer ? `הדרישה ${id} נפתחה ואושרה — הועברה ישירות לקצין האמל״ח החטיבתי` : `הדרישה ${id} נפתחה ונשלחה לקצין האמל״ח ביחידה`);
     if (isUnitOfficer) {
+      flash(`הדרישה ${id} נפתחה ואושרה — הועברה ישירות לקצין האמל״ח החטיבתי`);
       notify(t, NOTIFICATION_TYPES.APPROVED, `${currentActorLabel} פתח/ה ואישר/ה ישירות את "${t.title}" — הועברה לתיעדוף החטיבה`);
+    } else if (myGateTeam) {
+      flash(`הדרישה ${id} נפתחה — ממתינה לאישור ראש/ת ${myGateTeam.name} לפני שתעבור לקצין האמל״ח ביחידה`);
     } else {
+      flash(`הדרישה ${id} נפתחה ונשלחה לקצין האמל״ח ביחידה`);
       notify(t, NOTIFICATION_TYPES.SUBMITTED, `${currentActorLabel} פתח/ה דרישה חדשה — "${t.title}" — הממתינה להחלטתך`);
+    }
+  }
+
+  // הכרעת ראש צוות על דרישה שנתקעה בשער האישור שלו (myGateTeam) — אישור
+  // משחרר אותה לתור הרגיל של קצין אמל״ח היחידה (ורק אז הוא מקבל עליה
+  // התראה — לא בזמן ההגשה המקורית, כי עד עכשיו היא לא הייתה שלו לטפל בה).
+  // סירוב נועל אותה ישירות כ"סורבה", עם נימוק, בדיוק כמו סירוב רגיל.
+  function decideTeamGate(id, decision, reason) {
+    const stamp = nowStamp();
+    let updated = null;
+    setTickets((prev) =>
+      prev.map((t) => {
+        if (t.id !== id) return t;
+        updated =
+          decision === "approved"
+            ? { ...t, teamLeadGate: "approved" }
+            : { ...t, teamLeadGate: "rejected", status: "rejected", decidedAt: stamp, decidedBy: `${ledTeam.leadRank} ${ledTeam.leadName} (ראש צוות)`, rejectionReason: reason, daysLeft: 30 };
+        return updated;
+      })
+    );
+    setLastUpdated(new Date());
+    if (updated) {
+      if (decision === "approved") {
+        flash(`${id} אושר/ה על ידך והועבר/ה לתור קצין האמל״ח ביחידה`);
+        notify(updated, NOTIFICATION_TYPES.SUBMITTED, `${updated.requestedBy} פתח/ה דרישה חדשה — "${updated.title}" — אושרה על ידי ראש/ת הצוות והממתינה להחלטתך`);
+      } else {
+        flash(`${id} סורב/ה על ידך`);
+        notify(updated, NOTIFICATION_TYPES.REJECTED, `"${updated.title}" סורבה על ידי ראש/ת הצוות שלך: ${reason}`);
+      }
     }
   }
 
@@ -349,7 +406,11 @@ export default function Tickets({ role, persona, brigadeId, unitLogos, categorie
     [tickets, query, unitFilter, priorityFilter]
   );
 
-  const pendingForUnit = useMemo(() => searchFiltered.filter((t) => t.status === "pending"), [searchFiltered]);
+  const pendingForUnit = useMemo(() => searchFiltered.filter((t) => t.status === "pending" && t.teamLeadGate !== "pending"), [searchFiltered]);
+  const teamGateQueue = useMemo(
+    () => (isTeamLead ? (tickets || []).filter((t) => t.teamLeadGate === "pending" && t.gateTeamId === ledTeam.id) : []),
+    [tickets, isTeamLead, ledTeam]
+  );
   const approvedFolder = useMemo(() => searchFiltered.filter((t) => t.status === "approved" && !t.archived), [searchFiltered]);
   // "כל הדרישות" — לשונית אחת דינמית במקום תיקיית-אושרו/תיקיית-סורבו קבועות,
   // עם פילטר סטטוס (ברירת מחדל: מה שאושר) ומיון (הכי חדש שהוגש / לפי דחיפות).
@@ -441,6 +502,9 @@ export default function Tickets({ role, persona, brigadeId, unitLogos, categorie
       {tab === "queue" && (
         <ApprovalQueueView tickets={pendingForUnit} onDecide={decide} onOpen={setDetailTicket} unitLogos={unitLogos} />
       )}
+      {tab === "teamGate" && (
+        <ApprovalQueueView tickets={teamGateQueue} onDecide={decideTeamGate} onOpen={setDetailTicket} unitLogos={unitLogos} title="אישורי ראש צוות" />
+      )}
       {tab === "list" && (
         <TicketListView title="כל הדרישות" subtitle="דרישות שכבר הוכרעו — מסונן וממוין לפי הבחירה למעלה" tickets={historyList} showUnit onOpen={setDetailTicket} unitLogos={unitLogos} />
       )}
@@ -476,6 +540,7 @@ export default function Tickets({ role, persona, brigadeId, unitLogos, categorie
           categories={categories}
           catalog={catalog}
           initialDraft={ticketDraft}
+          draftUserId={draftIdentity}
         />
       )}
       {toast && <div className="toast">{toast}</div>}
@@ -502,6 +567,7 @@ function TicketRow({ t, showUnit = true, footer, hidePriority, hideStatus, delay
     >
       <div className="ticket-row-line1">
         {!hideStatus && <StatusPill status={t.status} />}
+        {t.teamLeadGate === "pending" && <span className="team-gate-tag">ממתין לראש צוות</span>}
         {!hidePriority && <PriorityDot p={t.priority} label />}
         <span className="ticket-id">{t.id}</span>
         <span className="ticket-row-title">
@@ -595,10 +661,10 @@ function RejectWithReason({ onReject }) {
   );
 }
 
-function ApprovalQueueView({ tickets, onDecide, onOpen, unitLogos }) {
+function ApprovalQueueView({ tickets, onDecide, onOpen, unitLogos, title = "תור אישורים" }) {
   return (
     <TicketListView
-      title="תור אישורים"
+      title={title}
       subtitle="דרישות ממתינות להחלטה"
       tickets={tickets}
       showUnit
@@ -619,6 +685,38 @@ function ApprovalQueueView({ tickets, onDecide, onOpen, unitLogos }) {
 /* Brigade dashboard                                                   */
 /* ------------------------------------------------------------------ */
 
+// עיגול אחד שמציג את העדיפות הנוכחית (או "טרם" אם אין) — לחיצה עליו פותחת
+// רשימה נפתחת מעוצבת לבחירת עדיפות, במקום שלושה כפתורים תמיד-גלויים לצידו.
+const PRIORITY_ORDER = ["red", "yellow", "green"];
+function PriorityPickerMenu({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="prio-picker-menu" tabIndex={-1} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false); }}>
+      <button
+        type="button"
+        className={"prio-picker-trigger" + (value ? " prio-picker-trigger-" + value : " prio-picker-trigger-none")}
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        title={value ? `עדיפות נוכחית: ${PRIORITY_LABEL[value]} — לחיצה לשינוי` : "טרם תועדף — לחיצה לקביעת עדיפות"}
+      />
+      {open && (
+        <div className="prio-picker-dropdown" onClick={(e) => e.stopPropagation()}>
+          {PRIORITY_ORDER.map((p) => (
+            <button
+              type="button"
+              key={p}
+              className={"prio-picker-item" + (value === p ? " active" : "")}
+              onClick={() => { onChange(p); setOpen(false); }}
+            >
+              <i className={"prio-dot prio-" + p} />
+              {PRIORITY_LABEL[p]}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function BrigadeDashboard({ tickets, onPriority, onOpen, unitLogos }) {
   const order = { red: 0, yellow: 1, green: 2, null: 3 };
   const sorted = [...tickets].sort((a, b) => (order[a.priority] ?? 3) - (order[b.priority] ?? 3));
@@ -635,18 +733,7 @@ function BrigadeDashboard({ tickets, onPriority, onOpen, unitLogos }) {
         unitLogos={unitLogos}
         hidePriority
         hideStatus
-        footer={(t) => (
-          <span className="prio-picker">
-            {["green", "yellow", "red"].map((p) => (
-              <button
-                key={p}
-                className={`prio-pick prio-pick-${p}` + (t.priority === p ? " active" : "")}
-                onClick={() => onPriority(t.id, p)}
-                title={PRIORITY_LABEL[p]}
-              />
-            ))}
-          </span>
-        )}
+        footer={(t) => <PriorityPickerMenu value={t.priority} onChange={(p) => onPriority(t.id, p)} />}
       />
     </>
   );
@@ -1102,7 +1189,7 @@ const TICKET_TYPE_HINTS = {
   equip: "הצטיידות בפריט קיים — יש לקשר לפריט הקטלוג הרלוונטי.",
 };
 
-function DamatzBotModal({ onClose, onSubmit, defaultUnit, categories, catalog, initialDraft }) {
+function DamatzBotModal({ onClose, onSubmit, defaultUnit, categories, catalog, initialDraft, draftUserId }) {
   const productLocked = !!initialDraft?.linkedProductId;
   const [type, setType] = useState(initialDraft?.type || TICKET_TYPES.IDEA);
   const [title, setTitle] = useState(
@@ -1118,18 +1205,71 @@ function DamatzBotModal({ onClose, onSubmit, defaultUnit, categories, catalog, i
   const [linkedProductId, setLinkedProductId] = useState(initialDraft?.linkedProductId || "");
   const [estimatedPrice, setEstimatedPrice] = useState("");
   const [purchaseLink, setPurchaseLink] = useState("");
+  const [attempted, setAttempted] = useState(false);
+
+  // טיוטה — לא נבדקת בכלל כשהגענו עם initialDraft (הקשר צולב עם כוונה     */
+  // מפורשת כבר, למשל "דיווח תקלה" מתעודת זהות של פריט); אחרת, אם יש טיוטה */
+  // שמורה מפעם קודמת שלא הושלמה, מציעים להמשיך אותה במקום להתחיל מאפס.    */
+  const [savedDraft, setSavedDraft] = useState(undefined); // undefined=טוען, null=אין, אובייקט=יש
+  const [draftResolved, setDraftResolved] = useState(!!initialDraft);
+  useEffect(() => {
+    if (initialDraft) return;
+    let cancelled = false;
+    fetchDraft(draftUserId, "ticket").then((d) => { if (!cancelled) setSavedDraft(d); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function resumeDraft() {
+    const d = savedDraft.data;
+    setType(d.type || TICKET_TYPES.IDEA);
+    setTitle(d.title || "");
+    setDesc(d.desc || "");
+    setCategory(d.category || "");
+    setDamatz(d.damatz || null);
+    setExtras(d.extras || []);
+    setLinkedProductId(d.linkedProductId || "");
+    setEstimatedPrice(d.estimatedPrice || "");
+    setPurchaseLink(d.purchaseLink || "");
+    setDraftResolved(true);
+  }
+  function discardDraft() {
+    clearDraft(draftUserId, "ticket");
+    setDraftResolved(true);
+  }
+
+  // שמירה אוטומטית עם דיליי קטן, רק אחרי שהוכרע אם ממשיכים טיוטה קיימת או  */
+  // לא — אחרת נדרוס את הטיוטה השמורה עוד לפני שהמשתמש הספיק להחליט.       */
+  useEffect(() => {
+    if (!draftResolved && savedDraft !== null) return;
+    const t = setTimeout(() => {
+      saveDraft(draftUserId, "ticket", { type, title, desc, category, damatz, extras, linkedProductId, estimatedPrice, purchaseLink });
+    }, 500);
+    return () => clearTimeout(t);
+  }, [draftResolved, savedDraft, draftUserId, type, title, desc, category, damatz, extras, linkedProductId, estimatedPrice, purchaseLink]);
 
   const needsProduct = type === TICKET_TYPES.REPAIR || type === TICKET_TYPES.EQUIP;
   const linkedProductName = productLocked
     ? initialDraft.linkedProductName
     : catalog?.find((it) => it.id === linkedProductId)?.name;
 
-  const canSubmit =
-    title.trim() && desc.trim() && damatz && category
-    && (type !== TICKET_TYPES.PROCUREMENT || String(estimatedPrice).trim())
-    && (!needsProduct || linkedProductId);
+  // כל שדה חובה מחזיק את הבדיקה שלו כדי שאפשר יהיה גם לדעת אם אפשר לשלוח
+  // וגם — ברגע שניסו לשלוח ונכשלו — בדיוק אילו שדות להאדים באדום, במקום
+  // שהמשתמש יתקע בלי לדעת מה חסר (ראו attempted וה-field-error למטה).
+  const missing = {
+    title: !title.trim(),
+    desc: !desc.trim(),
+    category: !category,
+    damatz: !damatz,
+    estimatedPrice: type === TICKET_TYPES.PROCUREMENT && !String(estimatedPrice).trim(),
+    linkedProduct: needsProduct && !linkedProductId,
+  };
+  const canSubmit = !Object.values(missing).some(Boolean);
+  function errClass(key) { return attempted && missing[key] ? " field-error" : ""; }
 
   function submit() {
+    if (!canSubmit) { setAttempted(true); return; }
+    clearDraft(draftUserId, "ticket");
     onSubmit({
       title, desc, category, unit, damatz, extras, type,
       estimatedPrice: type === TICKET_TYPES.PROCUREMENT ? Number(estimatedPrice) || null : null,
@@ -1149,6 +1289,22 @@ function DamatzBotModal({ onClose, onSubmit, defaultUnit, categories, catalog, i
           <p>מלא/י את הפרטים. הבקשה תישלח לאישור קצין האמל״ח ביחידתך.</p>
         </div>
 
+        {!draftResolved && savedDraft && (
+          <div className="draft-resume-banner">
+            <Save size={16} />
+            <div className="draft-resume-text">
+              <b>נמצאה טיוטה שמורה</b>
+              <span>מ-{new Date(savedDraft.savedAt).toLocaleString("he-IL")} — להמשיך למלא אותה?</span>
+            </div>
+            <div className="draft-resume-actions">
+              <button type="button" className="btn-cancel" onClick={discardDraft}>התחלה חדשה</button>
+              <button type="button" className="btn-submit" onClick={resumeDraft}>המשך טיוטה</button>
+            </div>
+          </div>
+        )}
+
+        {(draftResolved || savedDraft === null) && (
+        <>
         <label className="field">
           <span>סוג הדרישה</span>
           <div className="ticket-type-pick-row">
@@ -1170,7 +1326,7 @@ function DamatzBotModal({ onClose, onSubmit, defaultUnit, categories, catalog, i
         </label>
 
         {needsProduct && (
-          <label className="field">
+          <label className={"field" + errClass("linkedProduct")}>
             <span>פריט קטלוג מקושר (חובה)</span>
             {productLocked ? (
               <div className="file-chip locked-product-chip">{linkedProductName}</div>
@@ -1180,14 +1336,16 @@ function DamatzBotModal({ onClose, onSubmit, defaultUnit, categories, catalog, i
                 {(catalog || []).map((it) => <option key={it.id} value={it.id}>{it.name} — {it.id}</option>)}
               </select>
             )}
+            {attempted && missing.linkedProduct && <span className="field-error-msg">יש לבחור פריט מהקטלוג</span>}
           </label>
         )}
 
         {type === TICKET_TYPES.PROCUREMENT && (
           <>
-            <label className="field">
+            <label className={"field" + errClass("estimatedPrice")}>
               <span>עלות משוערת בש״ח (חובה)</span>
               <input type="number" min="0" value={estimatedPrice} onChange={(e) => setEstimatedPrice(e.target.value)} placeholder="לדוגמה: 4200" />
+              {attempted && missing.estimatedPrice && <span className="field-error-msg">שדה חובה</span>}
             </label>
             <label className="field">
               <span>קישור לרכישה (אופציונלי)</span>
@@ -1201,28 +1359,32 @@ function DamatzBotModal({ onClose, onSubmit, defaultUnit, categories, catalog, i
           <input value={unit} disabled />
         </label>
 
-        <label className="field">
+        <label className={"field" + errClass("title")}>
           <span>כותרת הדרישה</span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="לדוגמה: חוסר בסוללות שדה" />
+          {attempted && missing.title && <span className="field-error-msg">שדה חובה</span>}
         </label>
 
-        <label className="field">
+        <label className={"field" + errClass("desc")}>
           <span>תיאור</span>
           <textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={4} placeholder="פרט/י את הצורך, הכמות והדחיפות" />
+          {attempted && missing.desc && <span className="field-error-msg">שדה חובה</span>}
         </label>
 
-        <label className="field">
+        <label className={"field" + errClass("category")}>
           <span>קטגוריה (חובה)</span>
           <select value={category} onChange={(e) => setCategory(e.target.value)}>
             <option value="" disabled>בחר/י קטגוריה</option>
             {(categories || []).map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
+          {attempted && missing.category && <span className="field-error-msg">יש לבחור קטגוריה</span>}
         </label>
 
-        <label className="field">
+        <label className={"field" + errClass("damatz")}>
           <span>קובץ דמ״ץ (חובה)</span>
           <input type="file" onChange={(e) => setDamatz(e.target.files?.[0]?.name ?? null)} />
           {damatz && <span className="file-chip">{damatz}</span>}
+          {attempted && missing.damatz && <span className="field-error-msg">יש לצרף קובץ דמ״ץ</span>}
         </label>
 
         <label className="field">
@@ -1231,12 +1393,17 @@ function DamatzBotModal({ onClose, onSubmit, defaultUnit, categories, catalog, i
           {extras.length > 0 && <span className="file-chip">{extras.length} קבצים נבחרו</span>}
         </label>
 
+        {attempted && !canSubmit && (
+          <div className="form-error-banner"><AlertTriangle size={14} /> יש למלא את כל השדות המסומנים באדום לפני השליחה.</div>
+        )}
         <div className="modal-actions">
           <button className="btn-cancel" onClick={onClose}>ביטול</button>
-          <button className="btn-submit" disabled={!canSubmit} onClick={submit}>
+          <button className={"btn-submit" + (!canSubmit ? " btn-submit-pending" : "")} onClick={submit}>
             שליחה לאישור
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>,
     document.body
@@ -1328,6 +1495,10 @@ const CSS = `
 /* pill הסטטוס/עדיפות שכבר תופסים תשומת לב באותה שורה.                     */
 .ticket-row.officer-raised{ border-inline-start:3px solid var(--red); background:color-mix(in srgb, var(--red) 4%, var(--panel)); }
 .officer-raised-icon{ color:var(--red); flex:none; margin-inline-end:5px; vertical-align:-2px; }
+.team-gate-tag{
+  font-family:var(--font-mono); font-size:9.5px; color:var(--accent); border:1px solid var(--accent);
+  border-radius:3px; padding:1px 6px; text-transform:uppercase; flex:none;
+}
 
 @media (max-width:900px){
   .ticket-row-line2{ display:none; }
@@ -1355,13 +1526,31 @@ const CSS = `
 .prio-inline-green{ color:var(--green); }
 .prio-inline.prio-none{ color:var(--text-dim); font-weight:600; }
 
-.prio-picker{ display:flex; gap:6px; }
-.prio-pick{ width:16px; height:16px; border-radius:50%; border:1px solid var(--line); cursor:pointer; opacity:.5; transition:opacity .15s ease; }
-.prio-pick:hover{ opacity:.85; }
-.prio-pick.active{ opacity:1; border-color:var(--text); }
-.prio-pick-green{ background:var(--green); }
-.prio-pick-yellow{ background:var(--yellow); }
-.prio-pick-red{ background:var(--red); }
+/* עיגול תעדוף יחיד + רשימה נפתחת — במקום שלושה כפתורים תמיד-גלויים.       */
+.prio-picker-menu{ position:relative; }
+.prio-picker-trigger{
+  width:22px; height:22px; border-radius:50%; cursor:pointer; flex:none;
+  border:2px solid var(--panel); box-shadow:0 0 0 1.5px var(--line); transition:box-shadow .15s ease, transform .12s ease;
+}
+.prio-picker-trigger:hover{ transform:scale(1.1); box-shadow:0 0 0 1.5px var(--accent); }
+.prio-picker-trigger-red{ background:var(--red); }
+.prio-picker-trigger-yellow{ background:var(--yellow); }
+.prio-picker-trigger-green{ background:var(--green); }
+.prio-picker-trigger-none{ background:var(--panel-raised); border-style:dashed; box-shadow:0 0 0 1.5px var(--line); }
+.prio-picker-dropdown{
+  position:absolute; top:calc(100% + 6px); left:50%; transform:translateX(-50%); z-index:60; min-width:130px;
+  background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow-md);
+  padding:6px; animation:fadeSlideUp .14s ease; display:flex; flex-direction:column; gap:2px;
+}
+.prio-picker-item{
+  width:100%; display:flex; align-items:center; gap:9px; background:transparent; border:none;
+  color:var(--text); padding:8px 10px; border-radius:7px; cursor:pointer; font-size:12.5px; text-align:right;
+  font-family:var(--font-sans); font-weight:600; transition:background .15s ease;
+}
+.prio-picker-item:hover{ background:var(--panel-raised); }
+.prio-picker-item.active{ background:var(--panel-raised); }
+.prio-picker-item.active::after{ content:"✓"; margin-inline-start:auto; color:var(--accent); font-weight:700; }
+.prio-picker-item i.prio-dot{ width:9px; height:9px; flex:none; }
 
 .overlay{ position:fixed; inset:0; background:rgba(6,8,10,.6); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; z-index:200; padding:24px; animation:overlayIn .15s ease; }
 .modal{
@@ -1379,6 +1568,32 @@ const CSS = `
 .field{ display:flex; flex-direction:column; gap:6px; margin-bottom:15px; font-size:13px; color:var(--text-dim); }
 .field input, .field select, .field textarea{ background:var(--bg); border:1px solid var(--line); border-radius:8px; color:var(--text); padding:10px 11px; font-family:var(--font-sans); font-size:14px; resize:vertical; transition:border-color .15s ease, box-shadow .15s ease; }
 .field input:focus, .field select:focus, .field textarea:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+
+/* מסמן באדום רק אחרי ניסיון שליחה כושל (attempted) — לא על טופס נקי,      */
+/* כדי שלא "יצעק" על שדות שהמשתמש עוד לא הגיע אליהם. הכפתור עצמו תמיד       */
+/* לחיץ (לא disabled אמיתי) בדיוק כדי שלחיצה עליו כשמשהו חסר תחשוף מה חסר —*/
+/* כפתור disabled לא שולח אירוע click בכלל, אז זו הדרך היחידה "להיתקע" פחות.*/
+.field.field-error input, .field.field-error select, .field.field-error textarea{
+  border-color:var(--red); box-shadow:0 0 0 2px color-mix(in srgb, var(--red) 14%, transparent);
+}
+.field.field-error > span:first-child{ color:var(--red); }
+.field-error-msg{ font-size:11.5px; color:var(--red); font-weight:600; }
+.form-error-banner{
+  display:flex; align-items:center; gap:8px; background:color-mix(in srgb, var(--red) 10%, transparent);
+  border:1px solid var(--red); color:var(--red); border-radius:9px; padding:9px 13px; font-size:12.5px;
+  font-weight:600; margin-bottom:8px;
+}
+.btn-submit-pending{ opacity:.55; }
+
+.draft-resume-banner{
+  display:flex; align-items:center; gap:12px; background:color-mix(in srgb, var(--accent) 8%, transparent);
+  border:1px solid var(--accent); border-radius:10px; padding:12px 14px; margin-bottom:16px;
+}
+.draft-resume-banner svg{ color:var(--accent); flex:none; }
+.draft-resume-text{ display:flex; flex-direction:column; gap:2px; flex:1; font-size:12.5px; color:var(--text); }
+.draft-resume-text b{ font-size:13.5px; }
+.draft-resume-text span{ color:var(--text-dim); font-size:11.5px; }
+.draft-resume-actions{ display:flex; gap:8px; flex:none; }
 .file-chip{ display:inline-flex; align-items:center; gap:5px; align-self:flex-start; font-size:12px; background:var(--panel-raised); border:1px solid var(--line); border-radius:20px; padding:3px 10px; color:var(--text); font-family:var(--font-mono); }
 .locked-product-chip{ font-family:var(--font-sans); font-weight:600; }
 

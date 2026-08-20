@@ -1,13 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
   X, Camera, Images, ZoomIn, Pencil, Trash2, Check, Ban, Wrench, PackagePlus, AlertTriangle,
-  Building2, UserRound, FolderOpen, ArrowUpRight, Link2, Sparkles, Heart,
+  Building2, UserRound, FolderOpen, ArrowUpRight, Link2, Sparkles, Heart, Save,
 } from "lucide-react";
 import PhotoTile from "./PhotoTile.jsx";
 import MediaGallery from "./MediaGallery.jsx";
 import MediaEditor from "./MediaEditor.jsx";
 import { StatusPill, TICKET_TYPE_LABELS, CATALOG_ORIGINS, CATALOG_ORIGIN_LABELS } from "./opsData.jsx";
+import { fetchDraft, saveDraft, clearDraft } from "./draftStore.js";
 
 /* ================================================================== */
 /* LEGO BLOCK — ProductDossier: a presentation-ready equipment record, */
@@ -39,7 +40,7 @@ function nowStamp() {
 export default function ProductDossier({
   item, onClose, canEdit, canEditOrigin, onSave, onDelete, availableUnits, isNew, onReopen,
   categories, linkedTickets, relatedItems, onRequestTicket, onSelectRelated, onViewTicket,
-  onToggleInterest, currentActor,
+  onToggleInterest, currentActor, draftUserId,
 }) {
   const [galleryIndex, setGalleryIndex] = useState(null);
   const [editing, setEditing] = useState(!!isNew);
@@ -47,11 +48,49 @@ export default function ProductDossier({
   const [reopening, setReopening] = useState(false);
   const [reopenName, setReopenName] = useState(item.name);
   const [reopenDesc, setReopenDesc] = useState(item.desc);
+  const [attempted, setAttempted] = useState(false);
+
+  // טיוטת "פריט חדש" — רק שדות טקסט/מטא-דאטה נשמרים (לא media: תמונות
+  // מקודדות ל-base64 עלולות לחרוג ממכסת localStorage בקלות, ואת המדיה
+  // ממילא סביר להעלות מחדש כשחוזרים לטיוטה). אותו רעיון בדיוק כמו טיוטת
+  // דרישה ב-Tickets.jsx — DamatzBotModal — משוכפל כי כל מסך כאן עצמאי.
+  const [savedDraft, setSavedDraft] = useState(undefined);
+  const [draftResolved, setDraftResolved] = useState(!isNew || !draftUserId);
+  useEffect(() => {
+    if (!isNew || !draftUserId) return;
+    let cancelled = false;
+    fetchDraft(draftUserId, "catalogItem").then((d) => { if (!cancelled) setSavedDraft(d); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  function resumeDraft() {
+    const d = savedDraft.data;
+    setDraft((p) => ({ ...p, ...d }));
+    setDraftResolved(true);
+  }
+  function discardDraft() {
+    clearDraft(draftUserId, "catalogItem");
+    setDraftResolved(true);
+  }
+  useEffect(() => {
+    if (!isNew || !draftUserId || !draft) return;
+    if (!draftResolved && savedDraft !== null) return;
+    const t = setTimeout(() => {
+      saveDraft(draftUserId, "catalogItem", {
+        name: draft.name, category: draft.category, qty: draft.qty, desc: draft.desc,
+        notes: draft.notes, equipInstructions: draft.equipInstructions,
+      });
+    }, 500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNew, draftUserId, draftResolved, savedDraft, draft?.name, draft?.category, draft?.qty, draft?.desc, draft?.notes, draft?.equipInstructions]);
 
   const view = editing && draft ? draft : item;
   const media = view.media || [];
   const hasMedia = media.length > 0;
-  const canSave = editing && draft.name.trim() && draft.desc.trim() && draft.category.trim();
+  const missing = editing && draft ? { name: !draft.name.trim(), desc: !draft.desc.trim(), category: !draft.category.trim() } : {};
+  const canSave = editing && !missing.name && !missing.desc && !missing.category;
+  function errClass(key) { return attempted && missing[key] ? " field-error" : ""; }
   const categoryOptions = categories?.includes(view.category) || !view.category ? categories : [...(categories || []), view.category];
   const repairCount = (linkedTickets || []).filter((t) => t.type === "repair").length;
   const interestedList = view.interested || [];
@@ -69,10 +108,12 @@ export default function ProductDossier({
     setDraft(null);
   }
   function save() {
-    if (!canSave) return;
+    if (!canSave) { setAttempted(true); return; }
+    if (isNew && draftUserId) clearDraft(draftUserId, "catalogItem");
     onSave({ ...draft, qty: Math.max(0, Number(draft.qty) || 0), updatedAt: nowStamp(), updatedBy: "קצין אמל״ח (הדגמה)" });
     setEditing(false);
     setDraft(null);
+    setAttempted(false);
   }
   function patch(field, value) {
     setDraft((p) => ({ ...p, [field]: value }));
@@ -101,8 +142,22 @@ export default function ProductDossier({
   return createPortal(
     <div className="overlay" onClick={onClose}>
       <style>{CSS}</style>
-      <div className="dossier" onClick={(e) => e.stopPropagation()}>
+      <div className={"dossier" + (!draftResolved && savedDraft ? " dossier-draft-pending" : "")} onClick={(e) => e.stopPropagation()}>
         <button className="drawer-close" onClick={onClose}><X size={16} /></button>
+
+        {!draftResolved && savedDraft && (
+          <div className="draft-resume-banner">
+            <Save size={16} />
+            <div className="draft-resume-text">
+              <b>נמצאה טיוטה שמורה</b>
+              <span>מ-{new Date(savedDraft.savedAt).toLocaleString("he-IL")} — להמשיך למלא אותה?</span>
+            </div>
+            <div className="draft-resume-actions">
+              <button type="button" className="dossier-btn dossier-btn-ghost" onClick={discardDraft}>התחלה חדשה</button>
+              <button type="button" className="dossier-btn dossier-btn-primary" onClick={resumeDraft}>המשך טיוטה</button>
+            </div>
+          </div>
+        )}
 
         <div className="dossier-toprow">
           <div className="dossier-eyebrow">{isNew ? "פריט חדש בקטלוג — מילוי פרטים" : "תעודת זהות ציוד — להצגה בפורום דיון"}</div>
@@ -127,7 +182,7 @@ export default function ProductDossier({
                     <button type="button" className="dossier-btn dossier-btn-ghost" onClick={cancelEdit}>
                       <Ban size={13} /> ביטול
                     </button>
-                    <button type="button" className="dossier-btn dossier-btn-primary" disabled={!canSave} onClick={save}>
+                    <button type="button" className={"dossier-btn dossier-btn-primary" + (!canSave ? " dossier-btn-pending" : "")} onClick={save}>
                       <Check size={13} /> שמירה
                     </button>
                   </>
@@ -164,17 +219,21 @@ export default function ProductDossier({
           <div className="dossier-head-text">
             <div className="dossier-id">{item.id}</div>
             {editing && canEdit ? (
-              <input className="dossier-name-input" value={draft.name} onChange={(e) => patch("name", e.target.value)} placeholder="שם הפריט" />
+              <>
+                <input className={"dossier-name-input" + errClass("name")} value={draft.name} onChange={(e) => patch("name", e.target.value)} placeholder="שם הפריט" />
+                {attempted && missing.name && <span className="field-error-msg">שדה חובה</span>}
+              </>
             ) : (
               <h2>{view.name}</h2>
             )}
             <div className="dossier-tags">
               {editing && canEdit ? (
                 <>
-                  <select className="dossier-tag-select" value={draft.category} onChange={(e) => patch("category", e.target.value)}>
+                  <select className={"dossier-tag-select" + errClass("category")} value={draft.category} onChange={(e) => patch("category", e.target.value)}>
                     <option value="" disabled>בחר/י קטגוריה</option>
                     {(categoryOptions || []).map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
+                  {attempted && missing.category && <span className="field-error-msg">יש לבחור קטגוריה</span>}
                   <label className="dossier-qty-edit">
                     <span>במלאי</span>
                     <input type="number" min="0" value={draft.qty} onChange={(e) => patch("qty", e.target.value)} />
@@ -205,7 +264,10 @@ export default function ProductDossier({
         </div>
 
         {editing && canEdit ? (
-          <textarea className="dossier-desc-input" value={draft.desc} onChange={(e) => patch("desc", e.target.value)} rows={3} placeholder="תיאור הפריט" />
+          <>
+            <textarea className={"dossier-desc-input" + errClass("desc")} value={draft.desc} onChange={(e) => patch("desc", e.target.value)} rows={3} placeholder="תיאור הפריט" />
+            {attempted && missing.desc && <span className="field-error-msg">שדה חובה</span>}
+          </>
         ) : (
           <p className="dossier-desc">{view.desc}</p>
         )}
@@ -565,6 +627,23 @@ const CSS = `
 .dossier-desc-input:focus, .dossier-name-input:focus, .dossier-tag-input:focus, .dossier-qty-edit input:focus{
   outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
 }
+
+/* מסומן אדום רק אחרי ניסיון שמירה כושל — לא בטופס נקי. הכפתור עצמו תמיד    */
+/* לחיץ (לא disabled) כדי שהלחיצה תוכל לחשוף מה חסר במקום פשוט לא לקרות.   */
+.field-error{ border-color:var(--red) !important; box-shadow:0 0 0 2px color-mix(in srgb, var(--red) 14%, transparent) !important; }
+.field-error-msg{ display:block; font-size:11.5px; color:var(--red); font-weight:600; margin-top:4px; }
+.dossier-btn-pending{ opacity:.55; }
+
+.draft-resume-banner{
+  display:flex; align-items:center; gap:12px; background:color-mix(in srgb, var(--accent) 8%, transparent);
+  border:1px solid var(--accent); border-radius:10px; padding:12px 14px; margin-bottom:18px;
+}
+.draft-resume-banner svg{ color:var(--accent); flex:none; }
+.draft-resume-text{ display:flex; flex-direction:column; gap:2px; flex:1; font-size:12.5px; color:var(--text); }
+.draft-resume-text b{ font-size:13.5px; }
+.draft-resume-text span{ color:var(--text-dim); font-size:11.5px; }
+.draft-resume-actions{ display:flex; gap:8px; flex:none; }
+.dossier-draft-pending > *:not(.draft-resume-banner):not(.drawer-close){ opacity:.35; pointer-events:none; filter:blur(1px); }
 
 .equip-path-title{ display:flex; align-items:center; gap:7px; }
 .equip-path-title svg{ color:var(--accent); }

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Home, Package, ClipboardList, Users, Settings, Bell, ChevronLeft, User, Building2, Star,
-  Check, X, Flag, RefreshCw, UserCog, MessageSquare, CheckCheck, Inbox,
+  Check, X, Flag, RefreshCw, UserCog, MessageSquare, CheckCheck, Inbox, ShieldOff, Network,
 } from "lucide-react";
 import Catalog from "./Catalog.jsx";
 import Tickets from "./Tickets.jsx";
@@ -16,13 +16,16 @@ import { randomMemberPersona, DEFAULT_CATEGORIES } from "./opsData.jsx";
 import { seedBrigades, BRIGADE_STATUS } from "./brigadesData.js";
 import { fetchBrigadeUnits, fetchBrigadeTickets } from "./brigadeStore.js";
 import { fetchNotifications, markNotificationsRead, markAllNotificationsRead, NOTIFICATION_TYPES } from "./notificationStore.js";
+import { getLedTeam, getMemberTeamInfo, fetchBrigadeTeams } from "./teamStore.js";
+import { isBlocked as fetchIsBlocked } from "./blockStore.js";
+import UnitEmblem from "./UnitEmblem.jsx";
 
 function ticketBadgeCount(role, tickets, persona, myUnit) {
   switch (role) {
     case STRUCTURAL_ROLES.MEMBER:
       return persona ? tickets.filter((t) => t.unit === persona.unit && t.status === "pending").length : 0;
     case STRUCTURAL_ROLES.UNIT_OFFICER:
-      return myUnit ? tickets.filter((t) => t.unit === myUnit && t.status === "pending").length : 0;
+      return myUnit ? tickets.filter((t) => t.unit === myUnit && t.status === "pending" && t.teamLeadGate !== "pending").length : 0;
     case STRUCTURAL_ROLES.BRIGADE_OFFICER:
       return tickets.filter((t) => t.status === "approved" && !t.priority).length;
     default:
@@ -42,6 +45,14 @@ const OFFICER_ROLES = [STRUCTURAL_ROLES.UNIT_OFFICER, STRUCTURAL_ROLES.BRIGADE_O
 function isNotificationRelevant(n, role, persona, myUnit) {
   const personaLabel = persona ? `${persona.rank} ${persona.name}` : null;
   const isCollaborator = !!persona && (n.collaborators || []).some((c) => c.name === persona.name);
+  // בקשת ארגון צוות (kind: "teamRequest") רלוונטית לראש הצוות שהגיש אותה
+  // (מזוהה לפי requestedBy, לא persona אקראית) ולקצין אמל״ח היחידה שצריך
+  // להחליט עליה — לא לקצין אמל״ח חטיבה, בדיוק כמו הגשת דרישה/פריט קטלוג רגילה.
+  if (n.kind === "teamRequest") {
+    if (role === STRUCTURAL_ROLES.UNIT_OFFICER) return !!myUnit && n.unit === myUnit && n.type === NOTIFICATION_TYPES.SUBMITTED;
+    if (role === STRUCTURAL_ROLES.MEMBER) return n.type !== NOTIFICATION_TYPES.SUBMITTED;
+    return false;
+  }
   switch (role) {
     case STRUCTURAL_ROLES.MEMBER:
       return (!!personaLabel && n.requestedBy === personaLabel) || isCollaborator;
@@ -111,10 +122,10 @@ function writeNavState(patch) {
 /* crossNav מחזיק כוונה חד-פעמית ("פתח דרישה על הפריט הזה" / "הצג את      */
 /* המוצר הזה" / "פתח את הדרישה הזו"), המסך היעד צורך אותה ומנקה אותה.      */
 const NAV = [
-  { key: "dashboard", label: "דשבורד", icon: Home, dev: true, visibleFor: OFFICER_ROLES, render: (role, persona, brigadeId, brigades, setBrigades, userId, extra) => <DevDashboard brigadeId={brigadeId} role={role} userId={userId} unitLogos={brigades.find((b) => b.id === brigadeId)?.unitLogos} categories={extra.categories} crossNav={extra.crossNav} clearCrossNav={extra.clearCrossNav} requestTicketForItem={extra.requestTicketForItem} viewTicketDetail={extra.viewTicketDetail} /> },
-  { key: "catalog", label: "קטלוג אמל״ח", icon: Package, visibleFor: [STRUCTURAL_ROLES.MEMBER, STRUCTURAL_ROLES.UNIT_OFFICER, STRUCTURAL_ROLES.BRIGADE_OFFICER], render: (role, persona, brigadeId, brigades, setBrigades, userId, extra) => <Catalog brigadeId={brigadeId} role={role} persona={persona} categories={extra.categories} crossNav={extra.crossNav} clearCrossNav={extra.clearCrossNav} requestTicketForItem={extra.requestTicketForItem} viewTicketDetail={extra.viewTicketDetail} /> },
-  { key: "tickets", label: "דרישות וטיקטים", icon: ClipboardList, render: (role, persona, brigadeId, brigades, setBrigades, userId, extra) => <Tickets role={role} persona={persona} brigadeId={brigadeId} unitLogos={brigades.find((b) => b.id === brigadeId)?.unitLogos} categories={extra.categories} crossNav={extra.crossNav} clearCrossNav={extra.clearCrossNav} viewCatalogItem={extra.viewCatalogItem} /> },
-  { key: "permissions", label: "ניהול הרשאות", icon: Users, visibleFor: OFFICER_ROLES, render: (role, persona, brigadeId, brigades) => <PermissionsDashboard role={role} brigadeId={brigadeId} brigadeName={brigades.find((b) => b.id === brigadeId)?.name} unitLogos={brigades.find((b) => b.id === brigadeId)?.unitLogos} /> },
+  { key: "dashboard", label: "דשבורד", icon: Home, dev: true, visibleFor: OFFICER_ROLES, render: (role, persona, brigadeId, brigades, setBrigades, userId, extra) => <DevDashboard brigadeId={brigadeId} role={role} userId={userId} officerUnit={extra.officerUnit} unitLogos={brigades.find((b) => b.id === brigadeId)?.unitLogos} categories={extra.categories} crossNav={extra.crossNav} clearCrossNav={extra.clearCrossNav} requestTicketForItem={extra.requestTicketForItem} viewTicketDetail={extra.viewTicketDetail} /> },
+  { key: "catalog", label: "קטלוג אמל״ח", icon: Package, visibleFor: [STRUCTURAL_ROLES.MEMBER, STRUCTURAL_ROLES.UNIT_OFFICER, STRUCTURAL_ROLES.BRIGADE_OFFICER], render: (role, persona, brigadeId, brigades, setBrigades, userId, extra) => <Catalog brigadeId={brigadeId} role={role} persona={persona} userId={userId} officerUnit={extra.officerUnit} effectiveMemberId={extra.effectiveMemberId} ledTeam={extra.ledTeam} categories={extra.categories} crossNav={extra.crossNav} clearCrossNav={extra.clearCrossNav} requestTicketForItem={extra.requestTicketForItem} viewTicketDetail={extra.viewTicketDetail} /> },
+  { key: "tickets", label: "דרישות וטיקטים", icon: ClipboardList, render: (role, persona, brigadeId, brigades, setBrigades, userId, extra) => <Tickets role={role} persona={persona} brigadeId={brigadeId} userId={userId} officerUnit={extra.officerUnit} effectiveMemberId={extra.effectiveMemberId} ledTeam={extra.ledTeam} unitLogos={brigades.find((b) => b.id === brigadeId)?.unitLogos} categories={extra.categories} crossNav={extra.crossNav} clearCrossNav={extra.clearCrossNav} viewCatalogItem={extra.viewCatalogItem} /> },
+  { key: "permissions", label: "ניהול הרשאות", icon: Users, visibleFor: OFFICER_ROLES, render: (role, persona, brigadeId, brigades, setBrigades, userId, extra) => <PermissionsDashboard role={role} brigadeId={brigadeId} brigadeName={brigades.find((b) => b.id === brigadeId)?.name} unitLogos={brigades.find((b) => b.id === brigadeId)?.unitLogos} officerUnit={extra.officerUnit} persona={persona} effectiveMemberId={extra.effectiveMemberId} ledTeam={extra.ledTeam} viewTicketDetail={extra.viewTicketDetail} viewCatalogItem={extra.viewCatalogItem} /> },
   { key: "wizard", label: "אשף התקנה", icon: Settings, visibleFor: [STRUCTURAL_ROLES.BRIGADE_OFFICER], render: (role, persona, brigadeId, brigades, setBrigades) => <BrigadeSetupWizard brigadeId={brigadeId} brigades={brigades} setBrigades={setBrigades} /> },
   { key: "sysadmin", label: "ניהול מערכת", icon: Building2, visibleFor: [STRUCTURAL_ROLES.SYSTEM_ADMIN], render: (role, persona, brigadeId, brigades, setBrigades, userId, extra) => <SystemAdmin brigades={brigades} setBrigades={setBrigades} categories={extra.categories} setCategories={extra.setCategories} userId={userId} /> },
 ];
@@ -140,15 +151,47 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [ticketsForBadge, setTicketsForBadge] = useState([]);
   const [brigadeUnits, setBrigadeUnits] = useState([]);
+  // באיזו יחידה "מחזיק" קצין אמל״ח היחידה המדומה — ניתן לבחירה ולא קבוע
+  // תמיד ליחידה הראשונה, כי חבר/ת יחידה מדומה מקבל/ת יחידה אקראית בכל
+  // הגרלה מחדש (rerollPersona), ובלי בורר כאן, לרוב הן פשוט לא מתאימות —
+  // וזו בדיוק הסיבה שקצין יחידה "לא רואה" בקשות שחברי היחידה שלו פתחו.
+  const [officerUnit, setOfficerUnit] = useState("");
   const [notifications, setNotifications] = useState([]);
   const [notifOpen, setNotifOpen] = useState(false);
   const [devPanelOpen, setDevPanelOpen] = useState(false);
+  const [ledTeam, setLedTeam] = useState(null);
+  const [myTeamInfo, setMyTeamInfo] = useState(null);
+  const [myBlock, setMyBlock] = useState(null);
+  const [devTeams, setDevTeams] = useState([]);
+  // מצב הזהות של חבר יחידה בבורר הפיתוח — "random" (הגרלה רגילה, ברירת
+  // המחדל), "lead" (התחזות לראש צוות קיים) או "teamMember" (התחזות לחבר
+  // תת-צוות קיים) — ראו ה"בורר תפקיד/חטיבה" למטה. מתאפס ל-random בכל הגרלה
+  // אוטומטית (rerollPersona) כדי שלא יישאר "תקוע" על זהות מדומה מהתפקיד הקודם.
+  const [memberIdentityMode, setMemberIdentityMode] = useState("random");
 
   const currentBrigade = brigades.find((b) => b.id === brigadeId) || brigades[0];
 
   async function rerollPersona(forBrigadeId) {
     const units = await fetchBrigadeUnits(forBrigadeId);
     setPersona(randomMemberPersona(units));
+    setMemberIdentityMode("random");
+    setUserId("");
+  }
+
+  function becomeRandomMember(unit) {
+    setMemberIdentityMode("random");
+    setUserId("");
+    setPersona(randomMemberPersona(unit ? [unit] : brigadeUnits));
+  }
+  function becomeTeamLead(team) {
+    setMemberIdentityMode("lead");
+    setPersona({ rank: team.leadRank, name: team.leadName, personalNumber: team.leadPersonalNumber, unit: team.unit });
+    setUserId(team.leadPersonalNumber);
+  }
+  function becomeTeamMember(entry) {
+    setMemberIdentityMode("teamMember");
+    setPersona({ rank: "טוראי", name: `חבר ${entry.subteamName}`, personalNumber: entry.identifier, unit: entry.unit });
+    setUserId(entry.identifier);
   }
 
   function chooseRole(r) {
@@ -206,17 +249,78 @@ export default function App() {
       if (cancelled) return;
       setTicketsForBadge(tickets);
       setBrigadeUnits(units);
+      setOfficerUnit((prev) => (prev && units.includes(prev) ? prev : units[0] || ""));
     });
     return () => { cancelled = true; };
   }, [brigadeId]);
 
-  const visibleNav = useMemo(() => NAV.filter((n) => !n.visibleFor || n.visibleFor.includes(role)), [role]);
+  // "זהות אמיתית" לצורך בדיקות שתלויות באדם הספציפי (ראש צוות / חסימה) —
+  // ל-MEMBER יש persona אקראית לגמרי בכל הגרלה, אז אם מולאה בכוונה תעודת
+  // זהות (userId) היא זו שקובעת; אחרת נופלים חזרה למספר האישי המדומה.
+  const effectiveMemberId = role === STRUCTURAL_ROLES.MEMBER ? (userId || persona?.personalNumber) : userId;
+  const unitForGate = role === STRUCTURAL_ROLES.MEMBER ? persona?.unit : (officerUnit || brigadeUnits[0]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (role !== STRUCTURAL_ROLES.MEMBER || !effectiveMemberId) { setLedTeam(null); return; }
+    getLedTeam(brigadeId, effectiveMemberId).then((t) => { if (!cancelled) setLedTeam(t); });
+    return () => { cancelled = true; };
+  }, [brigadeId, role, effectiveMemberId]);
+
+  // חברות רגילה בתת-צוות (לא ראש צוות) — נבדקת בנפרד מ-ledTeam, כי מי שאינו
+  // ראש צוות עדיין עשוי להיות "משוייך לצוות" (ראו סמל הצוות בסיידבר למטה).
+  useEffect(() => {
+    let cancelled = false;
+    if (role !== STRUCTURAL_ROLES.MEMBER || !effectiveMemberId) { setMyTeamInfo(null); return; }
+    getMemberTeamInfo(brigadeId, { personalNumber: effectiveMemberId, fullName: persona ? `${persona.rank} ${persona.name}` : null })
+      .then((info) => { if (!cancelled) setMyTeamInfo(info); });
+    return () => { cancelled = true; };
+  }, [brigadeId, role, effectiveMemberId, persona]);
+
+  // רשימת הצוותים בחטיבה הנוכחית — לצורך בורר "התחזות" בפאנל הפיתוח בלבד
+  // (ראש צוות / חבר צוות קיימים), לא נצרכת על ידי שום מסך תפעולי. תלויה גם
+  // ב-now (אותו טיק שכבר מרענן התראות) כדי להישאר מסונכרנת כשצוותים
+  // נוצרים/נמחקים במסך ניהול הרשאות באותה סשן — בלי זה הבורר נשאר "תקוע"
+  // עם רשימה ישנה עד החלפת חטיבה.
+  useEffect(() => {
+    let cancelled = false;
+    fetchBrigadeTeams(brigadeId).then((t) => { if (!cancelled) setDevTeams(t); });
+    return () => { cancelled = true; };
+  }, [brigadeId, now]);
+
+  const teamMemberOptions = useMemo(() => {
+    const out = [];
+    devTeams.forEach((t) => t.subteams.forEach((s) => s.members.forEach((m) => {
+      out.push({ identifier: m.identifier, teamName: t.name, subteamName: s.name, unit: t.unit });
+    })));
+    return out;
+  }, [devTeams]);
+
+  // שער חסימה — נבדק רק עבור חייל/קצין אמל״ח יחידה (מי שבאמת "בתוך" יחידה),
+  // לא עבור קציני אמל״ח חטיבה/מנהלי מערכת שמנהלים את החסימות עצמן.
+  useEffect(() => {
+    let cancelled = false;
+    if (!(role === STRUCTURAL_ROLES.MEMBER || role === STRUCTURAL_ROLES.UNIT_OFFICER) || !effectiveMemberId) { setMyBlock(null); return; }
+    fetchIsBlocked(brigadeId, effectiveMemberId, unitForGate).then((b) => { if (!cancelled) setMyBlock(b); });
+    return () => { cancelled = true; };
+  }, [brigadeId, role, effectiveMemberId, unitForGate]);
+
+  const isTeamLead = role === STRUCTURAL_ROLES.MEMBER && !!ledTeam;
+  // הזהות שמוצגת בסיידבר — חטיבה תמיד, יחידה רק לתפקיד ששייך בפועל ליחידה
+  // אחת (חייל / קצין אמל״ח יחידה — לא קצין אמל״ח חטיבה/מנהל מערכת), וסמל
+  // צוות רק אם המשתמש משוייך לצוות *וללצוות יש לוגו* — אחרת מציגים עד היחידה.
+  const sidebarUnitName = role === STRUCTURAL_ROLES.MEMBER ? persona?.unit : role === STRUCTURAL_ROLES.UNIT_OFFICER ? (officerUnit || brigadeUnits[0]) : null;
+  const identityTeam = ledTeam || myTeamInfo?.team || null;
+  const visibleNav = useMemo(
+    () => NAV.filter((n) => !n.visibleFor || n.visibleFor.includes(role) || (n.key === "permissions" && isTeamLead)),
+    [role, isTeamLead]
+  );
   const ticketsBadge = useMemo(
-    () => ticketBadgeCount(role, ticketsForBadge, persona, brigadeUnits[0]),
-    [role, ticketsForBadge, persona, brigadeUnits]
+    () => ticketBadgeCount(role, ticketsForBadge, persona, officerUnit || brigadeUnits[0]),
+    [role, ticketsForBadge, persona, officerUnit, brigadeUnits]
   );
 
-  const myUnitForNotif = role === STRUCTURAL_ROLES.UNIT_OFFICER ? brigadeUnits[0] : persona?.unit;
+  const myUnitForNotif = role === STRUCTURAL_ROLES.UNIT_OFFICER ? (officerUnit || brigadeUnits[0]) : persona?.unit;
   const relevantNotifications = useMemo(
     () => notifications.filter((n) => isNotificationRelevant(n, role, persona, myUnitForNotif)),
     [notifications, role, persona, myUnitForNotif]
@@ -226,6 +330,7 @@ export default function App() {
   function openNotification(n) {
     markNotificationsRead(brigadeId, [n.id]).then(() => fetchNotifications(brigadeId).then(setNotifications));
     if (n.kind === "catalogItem") viewCatalogItem(n.itemId);
+    else if (n.kind === "teamRequest") setView("permissions");
     else viewTicketDetail(n.ticketId);
     setNotifOpen(false);
   }
@@ -276,6 +381,28 @@ export default function App() {
 
       <aside className={"app-sidebar" + (sidebarOpen ? " expanded" : "")}>
         <div className="sidebar-mark">HGR</div>
+        {(currentBrigade || sidebarUnitName) && (
+          <div className="sidebar-identity">
+            {currentBrigade && (
+              <div className="sidebar-identity-item" title={currentBrigade.name}>
+                <UnitEmblem name={currentBrigade.name} size={sidebarOpen ? 26 : 22} showRing={false} image={currentBrigade.logo} />
+                {sidebarOpen && <span className="sidebar-identity-label">{currentBrigade.name}</span>}
+              </div>
+            )}
+            {sidebarUnitName && (
+              <div className="sidebar-identity-item" title={sidebarUnitName}>
+                <UnitEmblem name={sidebarUnitName} size={sidebarOpen ? 22 : 19} showRing={false} image={currentBrigade?.unitLogos?.[sidebarUnitName]} />
+                {sidebarOpen && <span className="sidebar-identity-label">{sidebarUnitName}</span>}
+              </div>
+            )}
+            {sidebarUnitName && identityTeam?.logo && (
+              <div className="sidebar-identity-item" title={identityTeam.name}>
+                <img className="sidebar-identity-team-img" src={identityTeam.logo} alt="" />
+                {sidebarOpen && <span className="sidebar-identity-label">{identityTeam.name}</span>}
+              </div>
+            )}
+          </div>
+        )}
         <nav className="sidebar-nav">
           {visibleNav.map((n) => {
             const Icon = n.icon;
@@ -397,9 +524,20 @@ export default function App() {
         </div>
 
         <div className="app-body">
-          {active && active.render(role, persona, brigadeId, brigades, setBrigades, userId, {
-            categories, setCategories, crossNav, clearCrossNav, requestTicketForItem, viewCatalogItem, viewTicketDetail,
-          })}
+          {myBlock ? (
+            <div className="blocked-gate panel-card">
+              <ShieldOff size={34} />
+              <h2>הגישה למערכת חסומה</h2>
+              <p>{myBlock.blockedBy} חסם/ה את הגישה שלך {myBlock.scope === "brigade" ? "ברמת החטיבה" : `ביחידת ${myBlock.unit}`}.</p>
+              <div className="blocked-gate-reason">סיבה: {myBlock.reason}</div>
+              <span className="blocked-gate-hint">פנה/י לקצין אמל״ח היחידה/החטיבה לבירור. (סביבת פיתוח — ניתן להחליף תפקיד/זהות מהבורר הצף.)</span>
+            </div>
+          ) : (
+            active && active.render(role, persona, brigadeId, brigades, setBrigades, userId, {
+              categories, setCategories, crossNav, clearCrossNav, requestTicketForItem, viewCatalogItem, viewTicketDetail,
+              officerUnit: officerUnit || brigadeUnits[0], effectiveMemberId, ledTeam,
+            })
+          )}
         </div>
       </div>
 
@@ -436,20 +574,74 @@ export default function App() {
               ))}
             </div>
             {role === STRUCTURAL_ROLES.MEMBER && (
-              <span className="env-strip-persona">
-                מחובר כ: {persona.rank} {persona.name} · {persona.unit}
-              </span>
+              <div className="env-strip-member-block">
+                <span className="env-strip-persona">
+                  מחובר כ: {persona.rank} {persona.name} · {persona.unit}
+                </span>
+                <div className="pill-tabs member-identity-tabs">
+                  <button type="button" className={"pill-tab" + (memberIdentityMode === "random" ? " active" : "")} onClick={() => becomeRandomMember()}>חייל רגיל</button>
+                  <button type="button" className={"pill-tab" + (memberIdentityMode === "lead" ? " active" : "")} onClick={() => setMemberIdentityMode("lead")}>ראש צוות</button>
+                  <button type="button" className={"pill-tab" + (memberIdentityMode === "teamMember" ? " active" : "")} onClick={() => setMemberIdentityMode("teamMember")}>חבר צוות</button>
+                </div>
+                {memberIdentityMode === "random" && brigadeUnits.length > 1 && (
+                  <label className="env-strip-identity officer-unit-pick">
+                    <span>יחידה לחייל רגיל</span>
+                    <select value={persona.unit} onChange={(e) => becomeRandomMember(e.target.value)}>
+                      {brigadeUnits.map((u) => <option key={u} value={u}>{u}</option>)}
+                    </select>
+                  </label>
+                )}
+                {memberIdentityMode === "lead" && (
+                  devTeams.length === 0 ? (
+                    <span className="env-strip-hint">אין עדיין צוותים בחטיבה זו — ניתן ליצור דרך ניהול הרשאות ← עץ ארגוני.</span>
+                  ) : (
+                    <label className="env-strip-identity officer-unit-pick">
+                      <span>בחירת צוות להתחזות כראש שלו</span>
+                      <select value={ledTeam?.id || ""} onChange={(e) => { const t = devTeams.find((tt) => tt.id === e.target.value); if (t) becomeTeamLead(t); }}>
+                        <option value="">בחר/י צוות...</option>
+                        {devTeams.map((t) => <option key={t.id} value={t.id}>{t.name} — {t.unit}</option>)}
+                      </select>
+                    </label>
+                  )
+                )}
+                {memberIdentityMode === "teamMember" && (
+                  teamMemberOptions.length === 0 ? (
+                    <span className="env-strip-hint">אין עדיין חברי תת-צוות בחטיבה זו.</span>
+                  ) : (
+                    <label className="env-strip-identity officer-unit-pick">
+                      <span>בחירת חבר צוות להתחזות אליו</span>
+                      <select value={userId} onChange={(e) => { const entry = teamMemberOptions.find((o) => o.identifier === e.target.value); if (entry) becomeTeamMember(entry); }}>
+                        <option value="">בחר/י חבר צוות...</option>
+                        {teamMemberOptions.map((o, i) => <option key={o.identifier + i} value={o.identifier}>{o.identifier} — {o.teamName}/{o.subteamName} ({o.unit})</option>)}
+                      </select>
+                    </label>
+                  )
+                )}
+              </div>
             )}
-            {role !== STRUCTURAL_ROLES.MEMBER && (
-              <label className="env-strip-identity">
-                <span>זיהוי משתמש (מ.א.) — פריסת הדשבורד האישית שלך עוברת איתך בין מכשירים</span>
-                <input
-                  value={userId}
-                  onChange={(e) => setUserId(e.target.value.replace(/\D/g, ""))}
-                  placeholder="לדוגמה: 7134209"
-                  inputMode="numeric"
-                />
+            {role === STRUCTURAL_ROLES.UNIT_OFFICER && brigadeUnits.length > 1 && (
+              <label className="env-strip-identity officer-unit-pick">
+                <span>יחידה — לאיזו יחידה קצין האמל״ח שייך (חברי יחידה מדומים מקבלים יחידה אקראית, לכן זה לא תמיד מסתנכרן לבד)</span>
+                <select value={officerUnit || brigadeUnits[0]} onChange={(e) => setOfficerUnit(e.target.value)}>
+                  {brigadeUnits.map((u) => <option key={u} value={u}>{u}</option>)}
+                </select>
               </label>
+            )}
+            <label className="env-strip-identity">
+              <span>
+                {role === STRUCTURAL_ROLES.MEMBER
+                  ? "מספר אישי אמיתי (אופציונלי) — דורס את הפרסונה האקראית, כדי לבדוק זיהוי כראש צוות או חסימה"
+                  : "זיהוי משתמש (מ.א.) — פריסת הדשבורד האישית שלך עוברת איתך בין מכשירים"}
+              </span>
+              <input
+                value={userId}
+                onChange={(e) => setUserId(e.target.value.replace(/\D/g, ""))}
+                placeholder="לדוגמה: 7134209"
+                inputMode="numeric"
+              />
+            </label>
+            {isTeamLead && (
+              <span className="env-strip-persona"><Network size={12} style={{ verticalAlign: "-2px" }} /> מזוהה כראש צוות: {ledTeam.name}</span>
             )}
           </div>
         )}

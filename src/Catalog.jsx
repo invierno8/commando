@@ -11,6 +11,7 @@ import { fetchBrigadeCatalog, fetchBrigadeUnits, fetchBrigadeTickets } from "./b
 import { pushNotification, NOTIFICATION_TYPES } from "./notificationStore.js";
 import { STRUCTURAL_ROLES } from "./roles.js";
 import { CATALOG_ORIGINS, CATALOG_ORIGIN_LABELS } from "./opsData.jsx";
+import { requiresTeamLeadApproval } from "./teamStore.js";
 
 /* תפריט סינון לפי מקור/אחריות — לא FilterSelect רגיל (select) בכוונה:    */
 /* ל"ייצור פנים" יש אפקט זוהר-מנצנץ עדין שהמשתמש ביקש שירגיש גם בפילטר,   */
@@ -64,6 +65,7 @@ function blankItem(unit, submittedBy) {
     addedAt: new Date().toLocaleDateString("he-IL"), addedBy: submittedBy,
     updatedAt: new Date().toLocaleDateString("he-IL"), updatedBy: submittedBy,
     media: [], status: CATALOG_STATUS.ACTIVE, notes: "", rejectionReason: null, equipInstructions: "", interested: [],
+    teamLeadGate: null, gateTeamId: null,
   };
 }
 
@@ -94,7 +96,7 @@ function CatalogDecideRow({ onApprove, onReject }) {
   );
 }
 
-export default function Catalog({ brigadeId, role, persona, categories, crossNav, clearCrossNav, requestTicketForItem, viewTicketDetail }) {
+export default function Catalog({ brigadeId, role, persona, officerUnit, userId, effectiveMemberId, ledTeam, categories, crossNav, clearCrossNav, requestTicketForItem, viewTicketDetail }) {
   const [item, setItem] = useState(null);
   const [isNewItem, setIsNewItem] = useState(false);
   const [catalog, setCatalog] = useState(null);
@@ -107,6 +109,8 @@ export default function Catalog({ brigadeId, role, persona, categories, crossNav
   const [pageSize, setPageSize] = useState(24);
   const [tab, setTab] = useState("catalog");
   const [toast, setToast] = useState(null);
+  const [myGateTeam, setMyGateTeam] = useState(null);
+  const isTeamLead = role === STRUCTURAL_ROLES.MEMBER && !!ledTeam;
 
   // ה"תעודת זהות" הפתוחה (item) היא סנאפשוט נפרד מ-catalog, לא נגזרת ממנו
   // בכל רינדור — כל מוטטור (toggleInterest/reopenItem/handleSave) צריך אותה
@@ -154,7 +158,7 @@ export default function Catalog({ brigadeId, role, persona, categories, crossNav
   const isBrigadeOfficer = role === STRUCTURAL_ROLES.BRIGADE_OFFICER || role === STRUCTURAL_ROLES.SYSTEM_ADMIN;
   const isUnitOfficer = role === STRUCTURAL_ROLES.UNIT_OFFICER;
   const isMember = role === STRUCTURAL_ROLES.MEMBER;
-  const myUnit = isMember ? persona?.unit : units?.[0];
+  const myUnit = isMember ? persona?.unit : (officerUnit || units?.[0]);
 
   // בדמו הזה אין עדיין זהות משתמש אמיתית — קצין אמל"ח יחידה תמיד "מחזיק" ביחידה
   // הראשונה של החטיבה, אותה מוסכמה שכבר קיימת ב-PermissionsDashboard.jsx.
@@ -164,6 +168,18 @@ export default function Catalog({ brigadeId, role, persona, categories, crossNav
   const canProposeItem = canControlCatalog || isMember;
   const currentActor = isBrigadeOfficer ? "קצין אמל״ח חטיבה (הדגמה)" : isUnitOfficer ? "קצין אמל״ח יחידה (הדגמה)"
     : persona ? `${persona.rank} ${persona.name}` : "משתמש (הדגמה)";
+  const draftIdentity = isMember ? persona?.personalNumber : userId;
+
+  // שער אישור ראש צוות — נבדק מראש (לא סינכרוני בזמן handleSave עצמו), אותו
+  // רעיון בדיוק כמו ב-Tickets.jsx: אם חברות בתת-צוות מסומנת requireLeadApproval,
+  // הצעת קטלוג חדשה של אותו חבר נתקעת אצל ראש הצוות לפני תור קצין אמל״ח היחידה.
+  useEffect(() => {
+    let cancelled = false;
+    if (!isMember) { setMyGateTeam(null); return; }
+    const identity = { personalNumber: effectiveMemberId || persona?.personalNumber, fullName: persona ? `${persona.rank} ${persona.name}` : null };
+    requiresTeamLeadApproval(brigadeId, identity).then((t) => { if (!cancelled) setMyGateTeam(t); });
+    return () => { cancelled = true; };
+  }, [brigadeId, isMember, effectiveMemberId, persona]);
 
   const scopedCatalog = useMemo(() => {
     if (!catalog) return [];
@@ -172,8 +188,12 @@ export default function Catalog({ brigadeId, role, persona, categories, crossNav
   }, [catalog, isUnitOfficer, isMember, myUnit]);
 
   const activeItems = useMemo(() => scopedCatalog.filter((it) => it.status === CATALOG_STATUS.ACTIVE), [scopedCatalog]);
-  const pendingItems = useMemo(() => scopedCatalog.filter((it) => it.status === CATALOG_STATUS.PENDING), [scopedCatalog]);
+  const pendingItems = useMemo(() => scopedCatalog.filter((it) => it.status === CATALOG_STATUS.PENDING && it.teamLeadGate !== "pending"), [scopedCatalog]);
   const rejectedItems = useMemo(() => scopedCatalog.filter((it) => it.status === CATALOG_STATUS.REJECTED), [scopedCatalog]);
+  const teamGateItems = useMemo(
+    () => (isTeamLead ? (catalog || []).filter((it) => it.status === CATALOG_STATUS.PENDING && it.teamLeadGate === "pending" && it.gateTeamId === ledTeam.id) : []),
+    [catalog, isTeamLead, ledTeam]
+  );
 
   function canEditItem(it) {
     // ממתין לאישור מוכרע דרך כפתורי אישור/סירוב (canDecideItem), לא נערך
@@ -186,12 +206,13 @@ export default function Catalog({ brigadeId, role, persona, categories, crossNav
   }
   function canDecideItem(it) {
     if (it.status !== CATALOG_STATUS.PENDING) return false;
+    if (it.teamLeadGate === "pending") return false; // עדיין תקוע אצל ראש הצוות — לא הגיע לתור קצין אמל״ח היחידה
     if (isBrigadeOfficer) return true;
     if (isUnitOfficer) return it.unit === myUnit;
     return false;
   }
 
-  const listForTab = tab === "catalog" ? activeItems : tab === "pending" ? pendingItems : rejectedItems;
+  const listForTab = tab === "catalog" ? activeItems : tab === "pending" ? pendingItems : tab === "teamGate" ? teamGateItems : rejectedItems;
 
   const categoryFilterOptions = useMemo(
     () => [...new Set(activeItems.map((it) => it.category).filter(Boolean))].map((c) => ({ value: c, label: c })),
@@ -227,15 +248,45 @@ export default function Catalog({ brigadeId, role, persona, categories, crossNav
 
   function handleSave(updated) {
     const isCreating = !catalog.some((it) => it.id === updated.id);
+    const gated = isCreating && !canControlCatalog && !!myGateTeam;
     const finalItem = isCreating
-      ? { ...updated, status: canControlCatalog ? CATALOG_STATUS.ACTIVE : CATALOG_STATUS.PENDING }
+      ? { ...updated, status: canControlCatalog ? CATALOG_STATUS.ACTIVE : CATALOG_STATUS.PENDING, teamLeadGate: gated ? "pending" : null, gateTeamId: gated ? myGateTeam.id : null }
       : updated;
     setCatalog((prev) => (isCreating ? [finalItem, ...prev] : prev.map((it) => (it.id === finalItem.id ? finalItem : it))));
     setItem(finalItem);
     setIsNewItem(false);
     if (isCreating && finalItem.status === CATALOG_STATUS.PENDING) {
-      flash(`הפריט "${finalItem.name}" נשלח לאישור קצין אמל״ח היחידה`);
-      notifyCatalog(finalItem, NOTIFICATION_TYPES.SUBMITTED, `${currentActor} הציע/ה פריט קטלוג חדש — "${finalItem.name}" — הממתין להחלטתך`);
+      if (gated) {
+        flash(`הפריט "${finalItem.name}" נשלח — ממתין לאישור ראש/ת ${myGateTeam.name} לפני שיעבור לקצין האמל״ח ביחידה`);
+      } else {
+        flash(`הפריט "${finalItem.name}" נשלח לאישור קצין אמל״ח היחידה`);
+        notifyCatalog(finalItem, NOTIFICATION_TYPES.SUBMITTED, `${currentActor} הציע/ה פריט קטלוג חדש — "${finalItem.name}" — הממתין להחלטתך`);
+      }
+    }
+  }
+
+  // הכרעת ראש צוות על הצעת קטלוג שנתקעה בשער שלו — אותו רעיון בדיוק כמו
+  // decideTeamGate ב-Tickets.jsx (ראו שם התיעוד המלא).
+  function decideTeamGateItem(id, decision, reason) {
+    let updated = null;
+    setCatalog((prev) =>
+      prev.map((it) => {
+        if (it.id !== id) return it;
+        updated =
+          decision === "approved"
+            ? { ...it, teamLeadGate: "approved" }
+            : { ...it, teamLeadGate: "rejected", status: CATALOG_STATUS.REJECTED, updatedAt: new Date().toLocaleDateString("he-IL"), updatedBy: `${ledTeam.leadRank} ${ledTeam.leadName} (ראש צוות)`, rejectionReason: reason };
+        return updated;
+      })
+    );
+    if (updated) {
+      if (decision === "approved") {
+        flash(`הפריט "${updated.name}" אושר על ידך והועבר לתור קצין האמל״ח ביחידה`);
+        notifyCatalog(updated, NOTIFICATION_TYPES.SUBMITTED, `${updated.addedBy} הציע/ה פריט קטלוג חדש — "${updated.name}" — אושר על ידי ראש/ת הצוות והממתין להחלטתך`);
+      } else {
+        flash(`הפריט "${updated.name}" סורב על ידך`);
+        notifyCatalog(updated, NOTIFICATION_TYPES.REJECTED, `"${updated.name}" סורב על ידי ראש/ת הצוות שלך: ${reason}`);
+      }
     }
   }
   function handleDelete(id) {
@@ -319,6 +370,11 @@ export default function Catalog({ brigadeId, role, persona, categories, crossNav
         ["pending", "ממתינות לאישור", pendingItems.length],
         ["rejected", "נדחו", rejectedItems.length],
       ]
+    : isTeamLead
+    ? [
+        ["catalog", "קטלוג", activeItems.length],
+        ["teamGate", "אישורי ראש צוות", teamGateItems.length],
+      ]
     : null;
 
   return (
@@ -354,7 +410,7 @@ export default function Catalog({ brigadeId, role, persona, categories, crossNav
         </div>
       ) : listForTab.length === 0 ? (
         <div className="empty-state">
-          {tab === "pending" ? "אין הצעות פריט הממתינות לאישור." : tab === "rejected" ? "אין פריטים שנדחו." : "אין עדיין פריטים בתצוגה זו."}
+          {tab === "pending" ? "אין הצעות פריט הממתינות לאישור." : tab === "teamGate" ? "אין הצעות פריט הממתינות לאישורך כראש צוות." : tab === "rejected" ? "אין פריטים שנדחו." : "אין עדיין פריטים בתצוגה זו."}
         </div>
       ) : (
       <>
@@ -375,6 +431,7 @@ export default function Catalog({ brigadeId, role, persona, categories, crossNav
         {pagedItems.map((it, idx) => {
           const editable = canEditItem(it);
           const decidable = canDecideItem(it);
+          const gateDecidable = isTeamLead && it.teamLeadGate === "pending" && it.gateTeamId === ledTeam.id;
           return (
             <div className={"prod-card-wrap" + (it.status !== CATALOG_STATUS.ACTIVE ? " " + it.status : "")} key={it.id} style={{ animationDelay: `${idx * 40}ms` }}>
               <button className="prod-card" onClick={() => setItem(it)}>
@@ -402,6 +459,9 @@ export default function Catalog({ brigadeId, role, persona, categories, crossNav
               {decidable && (
                 <CatalogDecideRow onApprove={() => decide(it.id, CATALOG_STATUS.ACTIVE)} onReject={(reason) => decide(it.id, CATALOG_STATUS.REJECTED, reason)} />
               )}
+              {gateDecidable && (
+                <CatalogDecideRow onApprove={() => decideTeamGateItem(it.id, "approved")} onReject={(reason) => decideTeamGateItem(it.id, "rejected", reason)} />
+              )}
             </div>
           );
         })}
@@ -423,6 +483,7 @@ export default function Catalog({ brigadeId, role, persona, categories, crossNav
           onReopen={isNewItem ? undefined : reopenItem}
           onToggleInterest={isNewItem ? undefined : () => toggleInterest(item.id)}
           currentActor={currentActor}
+          draftUserId={isNewItem ? draftIdentity : undefined}
           onDelete={isNewItem ? undefined : (canEditItem(item) ? handleDelete : undefined)}
           availableUnits={isBrigadeOfficer ? units : undefined}
           categories={categories}

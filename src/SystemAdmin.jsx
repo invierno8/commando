@@ -1,14 +1,18 @@
-import React, { useEffect, useState } from "react";
-import { X, Plus, Check, Trash2, Tag, ShieldCheck, AlertTriangle, ScrollText } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { X, Plus, Check, Trash2, Tag, ShieldCheck, AlertTriangle, ScrollText, RotateCcw, History } from "lucide-react";
 import { BrigadeIcon } from "./BrigadeSetupWizard.jsx";
 import { RANK_OPTIONS } from "./PermissionsDashboard.jsx";
 import SearchBar from "./SearchBar.jsx";
 import FilterSelect from "./FilterSelect.jsx";
 import { matchesSearch } from "./search.js";
 import { BRIGADE_STATUS, BRIGADE_STATUS_LABELS, seedSystemAdmins } from "./brigadesData.js";
-import { fetchPendingDeletions, requestDeletion, resolveDeletion, fetchAuditLog, logAction } from "./adminStore.js";
+import { fetchPendingDeletions, requestDeletion, resolveDeletion, fetchAuditLog, logAction, markLogRestored } from "./adminStore.js";
+import { restoreTeam } from "./teamStore.js";
 
 const BRIGADE_STATUS_FILTER_OPTIONS = Object.entries(BRIGADE_STATUS_LABELS).map(([value, label]) => ({ value, label }));
+
+const LOG_TARGET_TYPE_LABELS = { brigade: "חטיבה", admin: "מנהל מערכת", team: "צוות" };
+const LOG_TYPE_FILTER_OPTIONS = Object.entries(LOG_TARGET_TYPE_LABELS).map(([value, label]) => ({ value, label }));
 
 /* ================================================================== */
 /* LEGO BLOCK — SystemAdmin: the one screen above brigade level.        */
@@ -73,7 +77,7 @@ function AddBrigadeForm({ onAdd }) {
 /* אישור סופית — וגם אז, אם מי שמבצע אינו מנהל עליון, הפעולה לא מתבצעת     */
 /* בפועל אלא רק נרשמת כבקשה הממתינה לאישור כפול של מנהל עליון (ראו         */
 /* PendingDeletionsPanel למטה) — רק כשהוא מאשר, המחיקה בפועל קורית.        */
-function DestructiveConfirm({ label, targetType, targetId, targetLabel, isSuperAdmin, actorLabel, onExecute }) {
+function DestructiveConfirm({ label, targetType, targetId, targetLabel, snapshot, isSuperAdmin, actorLabel, onExecute }) {
   const [step, setStep] = useState(0);
   const [typed, setTyped] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -83,9 +87,9 @@ function DestructiveConfirm({ label, targetType, targetId, targetLabel, isSuperA
   async function finalConfirm() {
     if (isSuperAdmin) {
       onExecute();
-      await logAction({ actor: actorLabel, action: `מחיקה מיידית (מנהל עליון) — ${label}`, target: targetLabel });
+      await logAction({ actor: actorLabel, action: `מחיקה מיידית (מנהל עליון) — ${label}`, target: targetLabel, targetType, snapshot });
     } else {
-      await requestDeletion({ targetType, targetId, targetLabel, requestedBy: actorLabel });
+      await requestDeletion({ targetType, targetId, targetLabel, requestedBy: actorLabel, snapshot });
       await logAction({ actor: actorLabel, action: `בקשת מחיקה נשלחה לאישור מנהל עליון — ${label}`, target: targetLabel });
       setSubmitted(true);
     }
@@ -180,6 +184,7 @@ function BrigadeRow({ b, onUpdate, onActivate, onRemove, isSuperAdmin, actorLabe
         targetType="brigade"
         targetId={b.id}
         targetLabel={b.name}
+        snapshot={b}
         isSuperAdmin={isSuperAdmin}
         actorLabel={actorLabel}
         onExecute={() => onRemove(b.id)}
@@ -336,6 +341,8 @@ export default function SystemAdmin({ brigades, setBrigades, categories, setCate
   const [adminQuery, setAdminQuery] = useState("");
   const [pendingDeletions, setPendingDeletions] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
+  const [auditQuery, setAuditQuery] = useState("");
+  const [auditTypeFilter, setAuditTypeFilter] = useState("all");
 
   // הזהות היחידה שכבר קיימת ללא כניסת SSO אמיתית — אותו מספר אישי ששמור
   // בבורר תפקיד/חטיבה של סביבת הפיתוח (App.jsx). אם המספר לא תואם אף מנהל
@@ -366,6 +373,15 @@ export default function SystemAdmin({ brigades, setBrigades, categories, setCate
   );
   const filteredAdmins = admins.filter((a) => matchesSearch([a.rank, a.name, a.personalNumber, a.email], adminQuery));
   const openDeletions = pendingDeletions.filter((d) => d.status === "pending");
+  const filteredAuditLog = useMemo(
+    () =>
+      auditLog.filter(
+        (l) =>
+          matchesSearch([l.actor, l.action, l.target], auditQuery) &&
+          (auditTypeFilter === "all" || l.targetType === auditTypeFilter)
+      ),
+    [auditLog, auditQuery, auditTypeFilter]
+  );
 
   function updateBrigade(id, patch) {
     setBrigades((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)));
@@ -393,11 +409,30 @@ export default function SystemAdmin({ brigades, setBrigades, categories, setCate
     if (decision === "approved") {
       if (d.targetType === "brigade") removeBrigade(d.targetId);
       else if (d.targetType === "admin") removeAdmin(d.targetId);
-      await logAction({ actor: currentActorLabel, action: `אישר/ה בקשת מחיקה של ${d.requestedBy} — ${d.targetLabel} נמחקה בפועל`, target: d.targetLabel });
+      await logAction({
+        actor: currentActorLabel, action: `אישר/ה בקשת מחיקה של ${d.requestedBy} — ${d.targetLabel} נמחקה בפועל`,
+        target: d.targetLabel, targetType: d.targetType, snapshot: d.snapshot,
+      });
     } else {
       await logAction({ actor: currentActorLabel, action: `דחה/תה בקשת מחיקה של ${d.requestedBy} — ${d.targetLabel} נשארה במערכת`, target: d.targetLabel });
     }
     Promise.all([fetchPendingDeletions(), fetchAuditLog()]).then(([dl, l]) => { setPendingDeletions(dl); setAuditLog(l); });
+  }
+
+  // "היומן הוא גם גיבוי" — כל רשומת יומן שנושאת snapshot (עותק מלא של מה
+  // שנמחק, ראו adminStore.js) ושעדיין לא שוחזרה, ניתנת לשחזור בלחיצה אחת.
+  // שחזור חטיבה/מנהל מערכת מזריק את ה-snapshot בחזרה לרשימה החיה (הדאטהסט
+  // התפעולי של החטיבה ב-brigadeStore.js מעולם לא נמחק בפועל — רק החטיבה
+  // הוסרה מרשימת "החטיבות הידועות"), ושחזור צוות קורא ל-teamStore.js ישירות
+  // עם ה-brigadeId שנשמר בתוך ה-snapshot עצמו.
+  async function restoreLogEntry(l) {
+    if (!l.snapshot || l.restored) return;
+    if (l.targetType === "brigade") addBrigade(l.snapshot);
+    else if (l.targetType === "admin") addAdmin(l.snapshot);
+    else if (l.targetType === "team") await restoreTeam(l.snapshot.__brigadeId, l.snapshot);
+    await markLogRestored(l.id);
+    await logAction({ actor: currentActorLabel, action: `שחזר/ה פעולה מהיומן — ${l.action}`, target: l.target });
+    fetchAuditLog().then(setAuditLog);
   }
 
   return (
@@ -473,6 +508,7 @@ export default function SystemAdmin({ brigades, setBrigades, categories, setCate
                   targetType="admin"
                   targetId={a.id}
                   targetLabel={a.name}
+                  snapshot={a}
                   isSuperAdmin={currentIsSuperAdmin}
                   actorLabel={currentActorLabel}
                   onExecute={() => removeAdmin(a.id)}
@@ -510,16 +546,38 @@ export default function SystemAdmin({ brigades, setBrigades, categories, setCate
       {tab === "auditLog" && (
         <div className="panel-card sa-section">
           <div className="section-title"><ScrollText size={16} /> יומן פעולות מנהלי מערכת ({auditLog.length})</div>
-          <p className="sa-hint">רישום קבוע של כל פעולה משמעותית שביצעו מנהלי המערכת — בקשות מחיקה, אישורים ודחיות.</p>
+          <p className="sa-hint">
+            רישום קבוע של כל פעולה משמעותית שביצעו מנהלי המערכת — בקשות מחיקה, אישורים ודחיות. רשומה שנושאת עותק מלא
+            של מה שנמחק (<History size={11} style={{ verticalAlign: "-1px" }} /> מסומנת) משמשת גם כגיבוי — ניתן ללחוץ "שחזור" ולהחזיר אותה למערכת.
+          </p>
+          {auditLog.length > 0 && (
+            <SearchBar value={auditQuery} onChange={setAuditQuery} placeholder="חיפוש לפי גורם מבצע, פעולה או יעד...">
+              <FilterSelect value={auditTypeFilter} onChange={setAuditTypeFilter} options={LOG_TYPE_FILTER_OPTIONS} allLabel="כל סוגי היעד" ariaLabel="סינון לפי סוג יעד" />
+            </SearchBar>
+          )}
           {auditLog.length === 0 ? (
             <div className="empty">היומן ריק כרגע.</div>
+          ) : filteredAuditLog.length === 0 ? (
+            <div className="empty">לא נמצאו רשומות התואמות את החיפוש.</div>
           ) : (
             <div className="audit-log-list">
-              {auditLog.map((l) => (
+              {filteredAuditLog.map((l) => (
                 <div className="audit-log-row" key={l.id}>
                   <span className="audit-log-actor">{l.actor}</span>
-                  <span className="audit-log-action">{l.action}</span>
+                  <span className="audit-log-action">
+                    {l.snapshot && <History size={12} className="audit-log-backup-icon" title="רשומה זו נושאת גיבוי — ניתנת לשחזור" />}
+                    {l.action}
+                  </span>
                   <span className="dim audit-log-stamp">{new Date(l.ts).toLocaleString("he-IL")}</span>
+                  {l.snapshot && (
+                    l.restored ? (
+                      <span className="audit-log-restored-tag"><Check size={11} /> שוחזר</span>
+                    ) : (
+                      <button type="button" className="audit-log-restore-btn" onClick={() => restoreLogEntry(l)}>
+                        <RotateCcw size={12} /> שחזור
+                      </button>
+                    )
+                  )}
                 </div>
               ))}
             </div>
@@ -666,8 +724,16 @@ const CSS = `
 }
 .audit-log-row:last-child{ border-bottom:none; }
 .audit-log-actor{ font-weight:700; color:var(--text); flex:none; }
-.audit-log-action{ color:var(--text-dim); flex:1; min-width:200px; }
+.audit-log-action{ color:var(--text-dim); flex:1; min-width:200px; display:flex; align-items:center; gap:6px; }
 .audit-log-stamp{ font-family:var(--font-mono); font-size:11px; flex:none; }
+.audit-log-backup-icon{ color:var(--accent); flex:none; }
+.audit-log-restore-btn{
+  display:inline-flex; align-items:center; gap:5px; background:transparent; border:1px solid var(--accent);
+  color:var(--accent); border-radius:8px; padding:5px 11px; font-size:11.5px; font-weight:700; cursor:pointer;
+  font-family:var(--font-sans); flex:none; transition:background .15s ease;
+}
+.audit-log-restore-btn:hover{ background:color-mix(in srgb, var(--accent) 12%, transparent); }
+.audit-log-restored-tag{ display:inline-flex; align-items:center; gap:4px; color:var(--green); font-size:11px; font-weight:600; flex:none; }
 
 @media (max-width:760px){
   .brigade-row{ flex-direction:column; align-items:stretch; }

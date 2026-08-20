@@ -153,7 +153,7 @@ const CATEGORY_BAR_COLORS = ["#3ECF8E", "#159865", "#F2C94C", "#EB5757", "#56CCF
 /* Root                                                                */
 /* ================================================================== */
 
-export default function DevDashboard({ brigadeId, role, userId, unitLogos, categories, crossNav, clearCrossNav, requestTicketForItem, viewTicketDetail }) {
+export default function DevDashboard({ brigadeId, role, userId, officerUnit, unitLogos, categories, crossNav, clearCrossNav, requestTicketForItem, viewTicketDetail }) {
   const isUnitOfficer = role === UNIT_OFFICER;
   const [scope, setScope] = useState(ALL_SCOPE);
   const [openItem, setOpenItem] = useState(null);
@@ -198,8 +198,8 @@ export default function DevDashboard({ brigadeId, role, userId, unitLogos, categ
   // זהות משתמש אמיתית) — ונעול אליה: השאלה הרלוונטית לרמה הזו היא "מה
   // קורה ביחידה שלי", לא תמונת מצב כלל-חטיבתית.
   useEffect(() => {
-    if (isUnitOfficer && loaded?.units?.[0]) setScope(loaded.units[0]);
-  }, [isUnitOfficer, loaded]);
+    if (isUnitOfficer) setScope(officerUnit || loaded?.units?.[0]);
+  }, [isUnitOfficer, loaded, officerUnit]);
 
   // גשר ניווט צולב: הגעה מדרישה שמקושרת לפריט קטלוג ("צפייה במוצר") פותחת
   // ישירות את תעודת הזהות שלו מתוך תצוגת הדשבורד.
