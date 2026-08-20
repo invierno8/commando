@@ -1,0 +1,67 @@
+{
+  "brigades": [
+    {
+      "id": "brg-commando",
+      "name": "חטיבת הקומנדו",
+      "logo": null,
+      "unitLogos": {},
+      "unitMissions": {},
+      "mission": "חטיבת עילית רב-זרועית",
+      "status": "active",
+      "units": 4,
+      "members": 268,
+      "contactRank": "רס״ן",
+      "contactName": "רוני כהן",
+      "contactPersonalNumber": "7134209",
+      "createdAt": "01/01/2026"
+    },
+    {
+      "id": "brg-golani",
+      "name": "חטיבת גולני",
+      "logo": null,
+      "unitLogos": {},
+      "unitMissions": {},
+      "mission": "חטיבה רגלית",
+      "status": "active",
+      "units": 4,
+      "members": 512,
+      "contactRank": "אל״ם",
+      "contactName": "דורון אשל",
+      "contactPersonalNumber": "6812345",
+      "createdAt": "05/03/2026"
+    },
+    {
+      "id": "brg-seven",
+      "name": "חטיבה 7",
+      "logo": null,
+      "unitLogos": {},
+      "unitMissions": {},
+      "mission": "",
+      "status": "pending",
+      "units": 0,
+      "members": 0,
+      "contactRank": "סרן",
+      "contactName": "איתן ברוך",
+      "contactPersonalNumber": "7998211",
+      "createdAt": "18/08/2026"
+    }
+  ],
+  "systemAdmins": [
+    {
+      "id": "sa-1",
+      "rank": "רס״ן",
+      "name": "טל ברקאי",
+      "personalNumber": "6923456",
+      "email": "tal.barkai@hangar.mil",
+      "isSuperAdmin": true
+    },
+    {
+      "id": "sa-2",
+      "rank": "סרן",
+      "name": "עומר דגן",
+      "personalNumber": "7288341",
+      "email": "omer.dagan@hangar.mil",
+      "isSuperAdmin": false
+    }
+  ]
+}

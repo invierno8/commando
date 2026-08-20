@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>האנגר — פרוטוטייפ מקומי</title>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("hangar-theme");
+          document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      })();
+    </script>
+    <style>
+      body { margin: 0; background: #F2F4F5; }
+      [data-theme="dark"] body { background: #0B0D0F; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

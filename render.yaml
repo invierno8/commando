@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: hangar-data
+    runtime: node
+    rootDir: data
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      # Free tier means data/db/ (live-mode operational data) does NOT
+      # survive a redeploy/idle spin-down — only dev-users.json and QA
+      # annotations do, because those are committed to GitHub instead
+      # (see GITHUB_TOKEN below). Mock mode is unaffected either way,
+      # since it's re-read fresh from data/mock/*.json on every boot.
+      - key: ALLOWED_ORIGINS
+        value: https://joshuael120.github.io
+      - key: COOKIE_CROSS_SITE
+        value: "true"
+      - key: GITHUB_REPO
+        value: joshuael120/commando
+      - key: GITHUB_BRANCH
+        value: main
+      # Set these two in the Render dashboard after the first deploy —
+      # never commit real values for them (sync: false keeps Render from
+      # asking you to fill them in at blueprint-creation time in a way
+      # that could end up in a shared config).
+      - key: ADMIN_SECRET
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false

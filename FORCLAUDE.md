@@ -37,19 +37,43 @@ session would otherwise have to re-discover the hard way.
 
 ## What this project is
 
-**HANGAR (האנגר)** — a Vite + React prototype for a military brigade
-equipment-catalog and requisition-ticket system. Hebrew RTL throughout
-(`dir="rtl"`, `<html lang="he" dir="rtl">`). It's explicitly framed as
-**כלל-זרועי** (all-corps/multi-branch) — a system-admin level exists above
-brigade level, and multiple brigades run fully isolated from each other.
-This is a **local prototype with no real backend** — every data store is an
-in-memory JS module simulating async latency, deployed static to GitHub
-Pages (`vite.config.js` sets `base:"/commando/"`, via
-`.github/workflows/deploy.yml`). Repo folder name is `commando` (unrelated
-to the product name — an earlier product name, "אמל״ח־נט"/amalach-net, was
-rebranded to HANGAR; the generic Hebrew word "אמל״ח" itself, meaning
-materiel/equipment, is a normal domain word left alone everywhere, e.g.
-"קטלוג אמל״ח" = equipment catalog).
+**HANGAR (האנגר)** — a military brigade equipment-catalog and
+requisition-ticket system. Hebrew RTL throughout (`dir="rtl"`,
+`<html lang="he" dir="rtl">`). It's explicitly framed as **כלל-זרועי**
+(all-corps/multi-branch) — a system-admin level exists above brigade level,
+and multiple brigades run fully isolated from each other. Repo folder name
+is `commando` (unrelated to the product name — an earlier product name,
+"אמל״ח־נט"/amalach-net, was rebranded to HANGAR; the generic Hebrew word
+"אמל״ח" itself, meaning materiel/equipment, is a normal domain word left
+alone everywhere, e.g. "קטלוג אמל״ח" = equipment catalog).
+
+**Two-part architecture (since 2026-08-20)** — a real backend now exists,
+deliberately split into two top-level directories that mirror where this
+will actually deploy once it's on military infrastructure (the site and the
+API+DB will very likely live on separate hosts — see the "Public hosting"
+note below):
+- **`client/`** — the Vite + React SPA (everything that used to live in a
+  flat `src/` now lives in `client/src/`, reorganized into `screens/`
+  /`components/`/`api-client/`/`devtools/`). Deploys to GitHub Pages
+  (`client/vite.config.js` sets `base:"/commando/"`, via
+  `.github/workflows/deploy.yml`, which now builds from the `client/`
+  working directory).
+- **`data/`** — a real Express API backed by JSON files as the "database"
+  (no SQL engine — deliberately simple, see `data/lib/jsonStore.js`).
+  Runs locally always (`npm run dev --prefix data`); `render.yaml` in the
+  repo root makes it a one-click Render Blueprint deploy (free tier —
+  explicitly not the paid tier, see "GitHub-as-database" below for why
+  that's actually fine here). Whether it's actually been connected on
+  Render is a fact about the user's account, not the code — don't assume
+  either way; ask if it matters.
+
+This is genuinely a **public concept demo carrying no real military data**
+— the repo (`joshuael120/commando`) is a **public** GitHub repo, and the
+user was explicit that this is by design: the public GitHub Pages link is
+what actually gets handed to QA/commanders to log into dev mode and leave
+feedback, so some things that would be inappropriate for a repo holding real
+secrets (like git-tracking a password-hash roster) are a deliberate,
+considered choice here — see "Dev-mode auth" below before "fixing" that.
 
 **Remote:** `https://github.com/joshuael120/commando.git` (origin) — already
 configured, so `git push`/`git pull`/`git clone` work normally and this is
@@ -66,26 +90,36 @@ discussing the product/domain since the UI and data are Hebrew-first.
 2. Read this file's "Chronological log" bottom-up (newest first) for the
    most recent state of things — the log is append-only, so the tail is the
    freshest picture.
-3. `src/roles.js` is the one source of truth for the four structural roles
-   (`STRUCTURAL_ROLES`: `member` / `unit_officer` / `brigade_officer` /
-   `system_admin`). There's no real login yet — `App.jsx` owns a dev-only
-   floating role/brigade/identity switcher (`.dev-fab` bottom-right) that
-   simulates whoever is "logged in." Every screen receives `role` as a prop
-   and branches its UI/data scope off it.
-4. Every operational data store (`brigadeStore.js`, `teamStore.js`,
-   `blockStore.js`, `notificationStore.js`, `adminStore.js`,
-   `draftStore.js`, `userPrefsStore.js`) is a "LEGO block": plain in-memory
-   state behind `async function fetchX()`/`saveX()` wrappers with a small
-   simulated latency, so every consuming screen already awaits a promise and
-   renders a loading state — swapping the body for a real API call later is
-   meant to be a contained change that touches no screen. **Follow this
-   pattern for any new data need** rather than inventing a different shape.
-5. To run/verify: `npm install`, `npm run dev` (Vite), open
-   `http://localhost:5173/commando/` (port may shift if occupied — pass
-   `--port` to `npx vite` if you need a specific one, e.g. when a previous
-   session's dev server is still bound). Node/npm are expected to already be
-   installed on the dev machine (if not: `winget install --id
-   OpenJS.NodeJS.LTS`, then open a fresh shell for PATH).
+3. `client/src/roles.js` is the one source of truth for the four structural
+   roles (`STRUCTURAL_ROLES`: `member` / `unit_officer` / `brigade_officer` /
+   `system_admin`). There's still no real *application* login (that's still
+   simulated — see below); `App.jsx` owns the role/brigade/identity switcher
+   (`DevFab.jsx`, moved into `client/src/devtools/`), now gated behind real
+   **dev-mode authentication** (see "Dev-mode auth" below) rather than
+   always-open. Every screen still receives `role` as a prop and branches
+   its UI/data scope off it exactly as before.
+4. Every operational data store (`client/src/api-client/*.js`) now makes
+   **real HTTP calls** to `data/routes/*.js` — this used to be the "LEGO
+   block" in-memory-simulate-latency pattern; that pattern's whole point was
+   that swapping the body for a real API call would be a contained change
+   touching no screen, and that's exactly what happened. Each store still
+   exports the same `async function fetchX()`/`saveX()`-shaped functions;
+   **follow that pattern for any new data need** — add a client function in
+   `api-client/`, a matching route in `data/routes/`, don't invent a
+   different shape. The two exceptions worth knowing: `brigadesData.js`
+   (brigade *registry* — name/logo/status, not a brigade's operational
+   data) and `brigadeStore.js`'s catalog/ticket writes both needed small
+   real code changes beyond a body-swap — see the chronological log entry
+   for 2026-08-20's backend build-out for why.
+5. To run/verify: `npm run install:all` once, then `npm run dev` from the
+   repo root (runs `client/` and `data/` together via `concurrently`), open
+   `http://localhost:5173/commando/`. `data/` needs a local `.env` first
+   (`cp data/.env.example data/.env`, then set a real `ADMIN_SECRET`) — see
+   `README.md`. Each half can also run standalone:
+   `npm run dev --prefix client` (port 5173, proxies `/api/*` to `data/` via
+   `client/vite.config.js`'s `server.proxy`) / `npm run dev --prefix data`
+   (port 4000). Node 20+ is required (both `package.json`s pin
+   `engines.node`).
 
 ## Design system (current state)
 
@@ -197,20 +231,85 @@ discussing the product/domain since the UI and data are Hebrew-first.
   under this. Fix pattern: derive dependent state via a separate `useEffect`
   that re-syncs from the source array whenever it changes, instead of
   manual side-effect variables inside an updater.
+- **Mutations that persist to the backend compute the new object *before*
+  calling `setX`, never inside the `setX(prev => {...})` updater.** This
+  extends the StrictMode rule above: `Catalog.jsx`/`Tickets.jsx`'s ~11
+  mutator functions (decide/reopen/assign/toggle-interest/etc.) all follow
+  `const target = list.find(...); const updated = {...target, ...patch};
+  await updateX(brigadeId, id, updated); setList(prev => prev.map(...))` —
+  find the current item, compute the full next value, `await` the API call,
+  *then* set state from that already-known value. Never try to read the
+  server's response back out of a `setState` updater's side effect.
+- **Free-text fields that persist per-keystroke (`onChange`) must debounce
+  the network call, not the local state update.** A brigade-name input or a
+  ticket due-date field updates React state immediately (so typing feels
+  instant) but the `updateX(...)` call is wrapped in a
+  `clearTimeout`/`setTimeout(..., 500)` pair keyed by the record's id (see
+  `SystemAdmin.jsx`'s `brigadePatchTimers` / `Tickets.jsx`'s
+  `dueDateTimers`), so a fast typist doesn't fire one HTTP request per
+  character.
 - **RTL bidi reversal bites plain number/ratio strings.** A string like
   `"1 / 4"` or a Recharts numeric axis label renders visually reversed
   unless the containing element (or a wrapping `<div dir="ltr">`) is
   explicitly LTR — this has bitten a gallery counter and a Recharts vertical
   category axis before.
-- **Identity is simulated via `App.jsx`'s dev-fab panel, not real
-  auth, and it is intentionally being kept that way for now.** `persona`
-  (for `MEMBER` role: random rank/name/personal-number/unit, re-rolled on
-  role/brigade switch) and `userId` (a free-typed personal number, used for
-  every officer role's identity, and optionally overridable for `MEMBER`
-  too) are the two identity primitives every "per-person" feature is keyed
-  off (dashboard layout, drafts, favorites, team-lead detection, block
-  status). See the "Explicitly deferred" section below and `TODO.md` — real
-  SSO-based identity/enrollment is planned but not started.
+- **Application identity is still simulated via the (now-gated) dev-fab
+  panel, not real auth, and it is intentionally being kept that way for
+  now.** `persona` (for `MEMBER` role: random rank/name/personal-number/
+  unit, re-rolled on role/brigade switch) and `userId` (a free-typed
+  personal number, used for every officer role's identity, and optionally
+  overridable for `MEMBER` too) are the two identity primitives every
+  "per-person" feature is keyed off (dashboard layout, drafts, favorites,
+  team-lead detection, block status). See the "Explicitly deferred" section
+  below and `TODO.md` — real SSO-based identity/enrollment is planned but
+  not started. Don't confuse this with **dev-mode auth** (below), which is
+  a real, separate authentication layer — it gates who can *open the
+  role-switcher panel at all* and leave QA feedback, not what role/persona
+  someone picks once they're in.
+- **Dev-mode auth is real, on purpose, and deliberately minimal — see
+  `data/middleware/auth.js`.** A named dev user (product manager, commander,
+  engineer — not necessarily an engineer) logs in with a personal password
+  (bcrypt-hashed, `data/config/dev-users.json`) to unlock the dev-fab panel;
+  a completely separate, stricter secret (`ADMIN_SECRET` env var, never
+  committed) gates `DevAdminPanel.jsx` (managing the dev-user roster,
+  reviewing QA annotations). **`data/middleware/auth.js` is the only place
+  in the whole backend that ever reads the `hangar_dev_session` cookie** —
+  every route reads `req.devUser` instead. This is deliberate: swapping in
+  real OpenID SSO later is meant to be a middleware replacement, not a
+  route-by-route rewrite. Don't add a second place that reads that cookie.
+- **`data/config/dev-users.json` is git-tracked on purpose, even though it
+  holds password hashes — this was a direct, considered decision, not an
+  oversight.** The user was explicit: this repo is a public concept demo
+  with no real military data, and the public GitHub Pages link *is* the
+  thing handed to QA/commanders, so the roster needs to travel with the
+  repo the same way `FORCLAUDE.md`/`TODO.md` already do. Hashes only, never
+  plaintext; `ADMIN_SECRET` (the higher-privilege secret) and `GITHUB_TOKEN`
+  (see next bullet) both stay real, never-committed `.env` values
+  regardless — don't relax that half.
+- **GitHub is the durable store for the dev-user roster and QA
+  annotations — deliberately, instead of paying for hosting with a
+  persistent disk.** `data/lib/githubPersist.js` commits every write
+  straight to this repo via the GitHub Contents API (`GITHUB_TOKEN` env
+  var — a fine-grained PAT scoped to just this repo, Contents: read/write,
+  nothing broader) and re-hydrates the local disk from git on every server
+  boot (`hydrateDevUsersFromGithub`/`hydrateAnnotationsFromGithub`, called
+  once in `server.js` before `app.listen`). This is why the free (not
+  paid) Render tier is genuinely fine here even though its filesystem is
+  fully ephemeral (wiped on every idle spin-down or redeploy) — the real
+  copy always lives in git, not on that disk. Without `GITHUB_TOKEN` set
+  (the normal case in local dev), every function in that module is a
+  no-op and everything falls back to local-disk-only behavior, exactly as
+  before this existed — don't assume `GITHUB_TOKEN` is set just because
+  the code path exists. QA annotations specifically are **one JSON file
+  per annotation** under `data/annotations/notes/` (not one shared array)
+  — this was a deliberate choice so concurrent submissions land as
+  distinct files/commits instead of racing to overwrite one file, and so
+  `git log` on that folder reads as a genuine change log (the user's own
+  ask: "log every change afterwards"). `data/db/` (live-mode brigade
+  operational data) is **not** git-backed this way — only the dev-user
+  roster and annotations are, per what was actually asked for; live-mode
+  data on a free host is still ephemeral, and that's an accepted,
+  unaddressed gap, not a bug.
 - **Officer "which unit am I" is a real, previously-buggy concept.** A
   `MEMBER` persona's unit is genuinely random on every reroll; an officer's
   "my unit" is `officerUnit` (an explicit dev-panel picker in `App.jsx`,
@@ -316,10 +415,52 @@ discussing the product/domain since the UI and data are Hebrew-first.
   brigade officer/system admin for anything already past raw submission.
 - **Drafts** (`draftStore.js`) — one auto-saving slot per person per
   form-kind (ticket / catalog item), resume-or-discard banner on reopen.
+  Now server-backed (`data/routes/drafts.js`) rather than `localStorage` —
+  strictly better here, since a draft now survives a device switch.
 - **Per-user dashboard layout** (`userPrefsStore.js`) — keyed by personal
   number (`userId`), explicitly **not** by device, because military users
   sign in from many different machines and a device-bound key would strand
-  personalization on one computer.
+  personalization on one computer. Also now server-backed
+  (`data/routes/user-prefs.js`), so this genuinely works as designed now —
+  it couldn't fully deliver on "follows you to any device" while it was
+  `localStorage`-only.
+- **Dev-mode / QA feedback overlay** (`client/src/devtools/`, backend in
+  `data/routes/dev-auth.js`/`dev-users.js`/`dev-data-mode.js`/
+  `annotations.js`/`admin-auth.js`) — added 2026-08-20, this is the newest
+  major feature and is entirely separate from the app's real
+  role/permission model:
+  - `DevAuthGate.jsx` is the single entry point (fixed bottom-right,
+    replacing the old always-open `.dev-fab`): unauthenticated shows only a
+    locked "DEV" button + a name/password login form; authenticated shows
+    the moved-verbatim `DevFab.jsx` role/brigade/identity picker plus a
+    small toolbar (`MockDataToggle.jsx`, an overlay on/off eye icon, a
+    ⚙ admin button, and the logged-in dev user's name).
+  - **Hover + Ctrl/Cmd+click annotate** (`devtools/overlay/DevOverlay.jsx`)
+    — while the overlay toggle is on, hovering shows a glowing outline
+    around the container under the cursor (`useHoverTarget.js`: a
+    `data-devblock="<label>"` attribute where present, falling back to the
+    nearest flex/grid ancestor or a known `theme.js`/screen class — added so
+    far only to the 5 highest-traffic screens' outer container, meant to be
+    extended incrementally, not exhaustively pre-annotated). Ctrl/Cmd+click
+    stops the real app's click handler (capture-phase `stopPropagation` on
+    `window`) and opens a small comment box
+    (`overlay/AnnotationPopover.jsx`), submitting to
+    `POST /api/dev/annotations`.
+  - **Mock/live data-mode toggle** (`MockDataToggle.jsx`) — a single
+    **global**, server-side flag (`data/lib/dataMode.js`), not per-session;
+    flipping it does a full page reload. Mock mode is an in-process memory
+    clone of `data/mock/*.json` (writes never touch disk — a demo session
+    can't corrupt the seed files); live mode is real disk I/O against
+    `data/db/*.json`, created lazily and empty ("the system starts empty").
+  - **Admin review** (`DevAdminPanel.jsx`, admin-secret-gated, composes
+    `DevAdminUsersScreen.jsx` + `DevAnnotationsScreen.jsx` as tabs) — manage
+    the dev-user roster, and review/resolve/export (Markdown, grouped by
+    screen, unresolved-only) the QA annotation queue. This Markdown export
+    is meant to become an actual Claude to-do list — see the user's original
+    framing of this feature in the architecture plan.
+  - Verified end-to-end with a real headless-browser (Playwright) smoke
+    pass, not just a build check — see "Testing / verification workflow"
+    below for a real gotcha found doing that.
 
 ## Explicitly deferred (see `TODO.md` for the full writeup)
 
@@ -339,14 +480,40 @@ flagged for later on purpose.
 
 ## Testing / verification workflow
 
-- Dev server: `npx vite --port <N>` (background), then drive it with small
-  ad-hoc Playwright Node scripts — there's no test framework installed,
-  this is a prototype. Playwright's Chromium may need
-  `npx playwright install chromium --with-deps` on a fresh machine.
-- **Run Node scripts through the PowerShell tool, not Bash** — Bash in this
-  environment doesn't have `node` on PATH; PowerShell does (or needs
-  `$env:Path += ";C:\Program Files\nodejs"` prepended once per session).
-- The dev-fab role/brigade/identity switcher requires clicking `.dev-fab`
+- Run both processes: `data/`'s server first (`npx node server.js` or
+  `npm run dev --prefix data`, port 4000), then `client/`'s dev server
+  (`npx vite --port <N>` from inside `client/`, background), then drive it
+  with small ad-hoc Playwright Node scripts — there's no test framework
+  installed, this is a prototype. Playwright itself may need installing as
+  a real npm dependency somewhere on `NODE_PATH` (it's not a project
+  dependency — install it in a scratch temp directory if needed) plus
+  `npx playwright install chromium` on a fresh machine. **Get each
+  background process's `cwd` right explicitly** (e.g.
+  `(cd client && npx vite --port N &)`) — a plain `cd` earlier in the same
+  shell session persists across tool calls, and starting `vite` from the
+  wrong directory silently falls back to a different globally-cached
+  Vite version with no `vite.config.js`, serving 404s that look like a real
+  bug but aren't.
+- **Whether Node is on Bash's PATH is machine-specific — don't assume
+  either way.** An earlier Windows dev machine needed the PowerShell tool
+  instead of Bash for this reason; on a macOS session, plain Bash has had
+  `node` on PATH directly. Check `which node` once at the start of a
+  session rather than trusting a stale assumption from a different machine.
+- **Playwright's `mouse.click(x, y, {modifiers: [...]})` does not reliably
+  set `ctrlKey`/`metaKey` on the resulting event in this environment** —
+  confirmed while verifying the dev-overlay's Ctrl/Cmd+click-to-annotate
+  feature: neither `keyboard.down("Control")` + `mouse.click()` nor the
+  `modifiers` option produced a click event `DevOverlay.jsx`'s handler
+  treated as modified, even though the exact same interaction works
+  correctly for a real user. Verify this class of interaction with a
+  manually dispatched native event instead:
+  `el.dispatchEvent(new MouseEvent("click", {bubbles:true, cancelable:true,
+  clientX, clientY, ctrlKey:true, view:window}))` via `page.evaluate(...)`
+  — this reproduced the real interaction correctly and confirmed the
+  feature itself was never broken, only the test's input emulation was.
+- The dev-fab role/brigade/identity switcher (now behind `DevAuthGate.jsx`
+  — log in as the seeded `Demo Dev` / `hangar-demo-2026` account first, see
+  `README.md`) requires clicking `.dev-fab`
   to open `.dev-fab-panel` first; it does **not** auto-close after a
   selection (by design, so it can be reused for several picks in a row) —
   guard any helper that opens it with an `isVisible()` check first, since
@@ -380,57 +547,98 @@ flagged for later on purpose.
   firing `dragover` on the target — space the move into a few discrete
   `mouse.move` calls with short waits between them instead.
 - Standard closing move for any change to `PermissionsDashboard.jsx`,
-  `App.jsx`, `Tickets.jsx`, or `Catalog.jsx`: `npx vite build` (catches
-  syntax errors fast) → targeted Playwright check of the new behavior → a
-  full sweep across all 4 roles × both real brigades × every visible nav
-  view, checking for zero console/page errors.
+  `App.jsx`, `Tickets.jsx`, or `Catalog.jsx`: `npx vite build` from
+  `client/` (catches syntax errors fast) → targeted Playwright check of the
+  new behavior against both processes running → a full sweep across all 4
+  roles × both real brigades × every visible nav view, checking for zero
+  console/page/network errors. If the change touches persistence, also
+  verify live mode survives a real server restart (create something, `kill`
+  + restart `data/`, confirm it's still there) and that mock mode never
+  writes to `data/mock/*.json` on disk (`git status` should stay clean
+  after a mock-mode test session).
 
-## File map (`src/`)
+## File map
 
-- `App.jsx` — shell: sidebar, topbar, notification bell, dev-fab identity
-  switcher, sidebar identity stack, `NAV` registry (role-gated), the
-  block-gate full-screen check.
+### `client/src/`
+
+- `App.jsx` — shell: sidebar, topbar, notification bell, sidebar identity
+  stack, `NAV` registry (role-gated), the block-gate full-screen check, and
+  mounts `devtools/DevAuthGate.jsx` (the dev-mode entry point — the actual
+  role/brigade picker UI now lives in `devtools/DevFab.jsx`).
 - `roles.js` — `STRUCTURAL_ROLES`, `ROLE_LABELS`, `ROLE_ORDER`. Single
   source of truth.
-- `brigadesData.js` — system-admin-level brigade registry seed
-  (`seedBrigades`) + `seedSystemAdmins` (with `isSuperAdmin`).
-- `brigadeStore.js` — per-brigade operational dataset (catalog, tickets,
-  roster, dashboard stats) + `saveBrigadeSetup` write-back from the wizard.
-- `teamStore.js` — team/sub-team hierarchy, org-change requests,
-  membership lookups, `restoreTeam`.
-- `blockStore.js` — the blocklist.
-- `notificationStore.js` — the personal notification feed.
-- `adminStore.js` — pending-deletion approval queue + the audit log
-  (with snapshot/restore support).
-- `draftStore.js` — per-person, per-form-kind draft auto-save.
-- `userPrefsStore.js` — per-person dashboard-layout persistence.
-- `Catalog.jsx` / `ProductDossier.jsx` / `PhotoTile.jsx` /
-  `MediaGallery.jsx` / `MediaEditor.jsx` — catalog browsing + item detail +
-  media gallery/editor.
-- `Tickets.jsx` — requisition/repair/idea ticket lifecycle, all roles.
-- `PermissionsDashboard.jsx` — roster/org-tree/teams/blocking, the largest
-  and most actively-changing screen. Exports `RANK_OPTIONS` (reused by
-  `SystemAdmin.jsx`).
-- `SystemAdmin.jsx` — brigade provisioning, system-admin management,
-  category management, audit log.
-- `BrigadeSetupWizard.jsx` — brigade-officer-only setup/edit flow, exports
-  `MissionBar` (rendered persistently in `App.jsx`).
-- `DevDashboard.jsx` — role-scoped widget dashboard (drag-to-reorder,
-  hide/show, per-user persisted layout).
 - `theme.js` — `THEME_CSS` (shared tokens + primitives), theme
   read/persist helpers.
 - `analytics.js` — timestamp parsing + duration/response-time helpers.
 - `search.js` — `matchesSearch`, the one shared search-matching function.
 - `opsData.jsx` — brigade-agnostic helpers (`StatusPill`, `PriorityDot`,
   `randomMemberPersona`, `DEFAULT_CATEGORIES`).
-- `SearchBar.jsx` / `FilterSelect.jsx` / `Pagination.jsx` — shared
-  list-control primitives, used everywhere a list/grid exists.
-- `ScopePicker.jsx` — the shared unit-scope dropdown.
-- `UnitEmblem.jsx` / `LogoUpload.jsx` — shared logo/emblem rendering +
-  upload.
-- `ThemeToggle.jsx`, `Loading.jsx`, `CountUp.jsx` — small shared widgets.
+- **`screens/`** — `Catalog.jsx` / `ProductDossier.jsx` (catalog browsing +
+  item detail), `Tickets.jsx` (requisition/repair/idea ticket lifecycle),
+  `PermissionsDashboard.jsx` (roster/org-tree/teams/blocking, the largest
+  screen, exports `RANK_OPTIONS`), `SystemAdmin.jsx` (brigade provisioning,
+  system-admin management, category management, audit log),
+  `BrigadeSetupWizard.jsx` (exports `MissionBar`), `DevDashboard.jsx`
+  (role-scoped widget dashboard).
+- **`components/`** — `PhotoTile.jsx` / `MediaGallery.jsx` /
+  `MediaEditor.jsx` (catalog media), `SearchBar.jsx` / `FilterSelect.jsx` /
+  `Pagination.jsx` (list controls), `ScopePicker.jsx` (unit-scope dropdown),
+  `UnitEmblem.jsx` / `LogoUpload.jsx` (logo/emblem rendering + upload),
+  `ThemeToggle.jsx`, `Loading.jsx`, `CountUp.jsx`.
+- **`api-client/`** — every real app data call. `http.js` is the shared
+  `fetch` wrapper every other file here goes through (base URL from
+  `VITE_API_BASE_URL`, `credentials:"include"` for session cookies).
+  `brigadeStore.js` / `teamStore.js` / `blockStore.js` /
+  `notificationStore.js` / `adminStore.js` / `draftStore.js` /
+  `userPrefsStore.js` / `brigadesData.js` each mirror a same-named file in
+  `data/routes/` — same exported function names as the old in-memory
+  version, real HTTP now. `demoMediaAssets.js` maps the bare filenames
+  `data/mock/`'s catalog JSON stores (`"item-photo-1.jpg"`) back to the
+  real Vite-bundled asset URLs — `data/` has no business knowing about
+  Vite's asset pipeline, so this is the one seam that does.
+- **`devtools/`** — everything dev-mode/QA-overlay related, entirely
+  separate from the real app. `devApi.js` (every dev/admin HTTP call),
+  `DevAuthGate.jsx` (entry point), `DevFab.jsx` (the moved role/brigade
+  picker), `MockDataToggle.jsx`, `DevAdminPanel.jsx` (admin-secret-gated
+  modal, composes `DevAdminUsersScreen.jsx` + `DevAnnotationsScreen.jsx` as
+  tabs), `overlay/DevOverlay.jsx` + `overlay/useHoverTarget.js` +
+  `overlay/AnnotationPopover.jsx` (hover-highlight + Ctrl/Cmd+click
+  annotate). See "Dev-mode / QA feedback overlay" above for the full
+  picture.
 - `assets/` — placeholder demo media (abstract/technical, not fake product
   photography — a deliberate design choice, see the chronological log).
+
+### `data/`
+
+- `server.js` — Express entrypoint; every route module gets mounted here.
+- `routes/` — one file per concern, same names as their `api-client/`
+  counterparts, plus dev-only ones: `dev-auth.js` (dev-user login/session),
+  `admin-auth.js` (the separate `ADMIN_SECRET` gate), `dev-users.js`
+  (admin-gated roster CRUD), `dev-data-mode.js` (mock/live toggle),
+  `annotations.js` (submit + admin review/export).
+- `middleware/` — `auth.js` (`attachDevUser`/`requireDevUser` — **the only
+  place that reads the dev-session cookie**), `adminAuth.js`
+  (`requireAdmin` — separate, stricter tier), `rateLimit.js` (login
+  endpoints only), `errorHandler.js`, `validate.js` (`requireFields`,
+  `asyncRoute` wrapper so a thrown error reaches `errorHandler`).
+- `lib/` — `jsonStore.js` (the one chokepoint every route reads/writes
+  through; resolves mock-vs-live), `dataMode.js` (the mock/live flag
+  itself), `passwords.js` (bcrypt), `sessions.js` (opaque in-memory
+  session tokens — shared by both dev and admin sessions, distinguished
+  only by which cookie name each middleware reads), `cookies.js`
+  (`sessionCookieOptions` — the one place `sameSite`/`secure` are decided,
+  driven by `COOKIE_CROSS_SITE`), `devUsers.js` (read/write
+  `config/dev-users.json`, commits to GitHub, boot-time hydration),
+  `githubPersist.js` (the GitHub Contents API wrapper both `devUsers.js`
+  and `routes/annotations.js` use — see the rule above).
+- `mock/` — git-tracked seed dataset (extracted faithfully from the old
+  hardcoded `COMMANDO`/`GOLANI` consts via a one-time script, not
+  hand-transcribed). `db/` — gitignored, empty by default, live data, not
+  git-backed (ephemeral on a free host — accepted gap). `config/
+  dev-users.json` — git-tracked, also committed-to on every write (see the
+  rule above). `config/data-mode.json` — gitignored runtime flag.
+  `annotations/notes/` — one git-tracked JSON file per QA annotation,
+  also committed-to on every write/resolve.
 
 ---
 
@@ -550,3 +758,167 @@ for deferred work, and a Claude Code auto-memory note
 (`deferred-work-tracking.md`) establishing that deferred work belongs in a
 committed repo file (survives machine switches via git) rather than only in
 local session memory (which does not).
+
+### 2026-08-20 — Real backend, client/data reorg, dev-mode auth, QA feedback overlay
+The big one — an initial full read of every file in the repo (a
+"summarize/finish for prod" request), followed in the same session by the
+user's actual plan: HANGAR is heading to a real military server with real
+OpenID SSO later, and needs (1) a real backend now, built inside this repo
+but architected for a clean handoff, (2) still a rich dev/demo layer, and
+(3) a brand-new feature — named dev users leaving Word-doc-style inline
+comments on the live UI that become an actual Claude to-do list. Planned in
+full via plan mode (see `/Users/amireli/.claude/plans/
+vivid-wondering-piglet.md` for the complete original plan doc) before any
+code changed; approved with one correction from the user mid-review (see
+the dev-users.json rule above — public-repo git-tracking was a deliberate
+call, not a default). All 13 planned steps were completed in one session:
+
+1. **Six pre-existing bugs fixed** in the then-still-flat `src/`: (a)
+   `App.jsx`'s `useState(randomMemberPersona)` was an unparameterized lazy
+   initializer, so a fresh page load got a fake `persona.unit` that matched
+   no real brigade unit and both Catalog/Tickets showed empty until the dev
+   panel manually rerolled — fixed by rerolling once real units load on
+   mount; (b) `saveBrigadeSetup` rebuilt `unitPeople`/`unitOfficers` keyed
+   only by the wizard's *current* unit names, silently deleting a renamed
+   unit's whole roster and dropping its officer if the name field was
+   blank — fixed via an `originalName` field the wizard now injects per
+   unit row, so a rename carries the roster/officer forward; (c)
+   `ProductDossier.jsx` hardcoded `updatedBy: "קצין אמל״ח (הדגמה)"` instead
+   of using the already-passed `currentActor` prop; (d) catalog-item delete
+   used a native `window.confirm` instead of the established two-step
+   destructive-action pattern — replaced with an inline
+   `DeleteItemControl`; (e) `index.html`'s hardcoded pre-hydration
+   background colors didn't match `theme.js`'s real tokens, causing a
+   visible flash on load; (f) a dead duplicate `src/.github/workflows/
+   deploy.yml` (GitHub Actions only reads the root `.github/`) deleted.
+2. **Repo reorg**: `src/` → `client/src/` (screens/components/api-client
+   split), new top-level `data/` for the backend, `dist/` removed from git
+   tracking entirely, `.github/workflows/deploy.yml` updated for the
+   `client/` working directory.
+3. **Backend skeleton**: Express app (`data/server.js`), `jsonStore.js`
+   (the mock-vs-live chokepoint every route goes through), today's
+   hardcoded `COMMANDO`/`GOLANI` datasets extracted into `data/mock/*.json`
+   via a one-time Node script (not hand-transcribed, to avoid errors in a
+   large Hebrew dataset) — verified against the live source before
+   deleting the script.
+4. **Six simple stores wired real**: teams, blocks, notifications, admin
+   (audit log + deletion approvals), drafts, user-prefs — each got a
+   matching `data/routes/*.js` file; drafts/user-prefs moved off
+   `localStorage` entirely (a genuine improvement, not just a port — they
+   now actually follow a person across devices as originally intended).
+5. **Brigade registry wired real** (`brigadesData.js`) — this one needed a
+   real code edit, not just a body-swap: `seedBrigades`/`seedSystemAdmins`
+   were plain consts directly `useState()`'d in `App.jsx`/`SystemAdmin.jsx`
+   with no existing `await fetchX()` pattern, unlike every other store.
+   `SystemAdmin.jsx`'s brigade-name text input (fires `onChange` per
+   keystroke) got a debounced persist (`brigadePatchTimers`) rather than
+   firing one HTTP request per character.
+6. **Real catalog + ticket persistence built from scratch** — the single
+   biggest step. These never had *any* persistence before, fake or real:
+   `Catalog.jsx`/`Tickets.jsx` only ever mutated local React state. All
+   ~15 mutator functions across both screens (save/delete/decide/reopen/
+   toggle-interest for catalog; submit/decide/reopen/archive/assignee/
+   priority/due-date/collaborators/progress-log for tickets) were rewritten
+   to the "compute the full next object first, `await` the persist call,
+   then `setState` from the known value" pattern (see the architecture rule
+   above) instead of computing inside a `setState` updater. New
+   `data/routes/brigade-data.js` endpoints are deliberately thin — the
+   client still owns every status-transition/permission decision exactly
+   as before; the server just persists whatever object it's handed. A
+   design gap caught mid-build: catalog item photos are base64 data URLs
+   bundled by Vite from `client/src/assets/`, but `data/mock/*.json` can't
+   reference a Vite-bundled URL — solved with `demoMediaAssets.js`, a
+   bare-filename-to-real-URL lookup that only `brigadeStore.js`'s
+   `fetchBrigadeCatalog` passes results through.
+7. **Mock/live toggle** — a single global server-side flag
+   (`data/lib/dataMode.js`), not per-session, by design (small internal
+   tool, not a multi-tenant product). Mock mode is an in-memory clone that
+   never touches `data/mock/*.json` on disk; live mode is real disk I/O
+   against `data/db/*.json`, created lazily and empty.
+8. **Dev-mode authentication** — bcrypt (`bcryptjs`, pure-JS, no native
+   build step) password hashes in `data/config/dev-users.json`, opaque
+   in-memory session tokens (`data/lib/sessions.js`, shared by both dev and
+   admin tiers, distinguished only by cookie name), rate-limited login.
+   `DevFab.jsx` (the old `.dev-fab` panel, moved verbatim) is now gated by
+   `DevAuthGate.jsx` rather than always-open.
+9. **Separate admin-secret gate** (`ADMIN_SECRET` env var, one shared
+   bootstrap secret, not a per-person account system — deliberately
+   minimal per the user's "not too complex" instruction) plus
+   `DevAdminUsersScreen.jsx` for roster CRUD.
+10. **Hover-highlight overlay** (`DevOverlay.jsx`/`useHoverTarget.js`) — a
+    hybrid detection heuristic (`data-devblock` attribute where present,
+    falling back to the nearest flex/grid ancestor or a known shared CSS
+    class) so the glow snaps to a meaningful container instead of lighting
+    up every nested `<div>`. Added to the 5 highest-traffic screens'
+    outer container so far, meant to be extended incrementally.
+11. **Ctrl/Cmd+click annotate + admin review** — capture-phase
+    `stopPropagation` on `window` stops the real app's click handler from
+    firing underneath; submissions go to `data/annotations/notes/<id>.json`
+    (one file per annotation, git-tracked, outside the mock/live split — QA
+    feedback isn't brigade data and must survive the toggle);
+    `DevAnnotationsScreen.jsx` adds resolve-toggle + a Markdown export
+    (grouped by screen, unresolved-only, meant to be pasted directly as a
+    Claude to-do list).
+12. **Security + docs pass**: confirmed via `git add -n data/` exactly
+    which files would be staged (real secrets — `.env`, `data-mode.json`,
+    `db/` — correctly excluded; `dev-users.json` correctly included per
+    the deliberate call above), root `package.json` added
+    (`npm run install:all` / `npm run dev` via `concurrently`, verified
+    working end-to-end), `README.md` and this file updated.
+13. **Public hosting** — explicitly **not done**, and needs the user: `data/`
+    has no public host yet, so the QA-overlay flow only works when both
+    processes are run locally, not yet at the real GitHub Pages link. This
+    is the one remaining piece of the original plan.
+
+**Verification**: every step build-checked (`npx vite build`); the full
+catalog/ticket/team/block/notification/admin/draft/pref persistence surface
+smoke-tested end-to-end via `curl` against a live `data/` server, including
+confirming live-mode data survives a real server restart and mock-mode
+never writes to disk; the entire dev-mode/overlay/admin flow verified with
+a real headless-browser Playwright pass (login, hover, Ctrl+click annotate,
+admin panel, resolve, Markdown export) — zero console/page/network errors;
+a full 4-role × every-nav-view regression sweep after all changes — zero
+errors, and confirmed bug (a) above is actually fixed (a fresh unauthenticated
+page load now shows real catalog data immediately). One seeded placeholder
+account exists for testing: `Demo Dev` / `hangar-demo-2026` — meant to be
+replaced with real named users before sharing a real link.
+
+### 2026-08-20/21 — Public hosting: GitHub-as-database instead of a paid disk, Render Blueprint
+Direct follow-up to the previous entry's item 13. First proposed the
+obvious path (Render, paid Starter tier + a persistent-disk add-on, so
+`data/db/`, `dev-users.json`, and QA annotations would all durably survive
+a real host). The user pushed back with a sharper question that changed
+the actual design: *why pay for a database-grade guarantee here at all* —
+the dev-user roster is already a plain git file, QA comments are just text,
+and "if someone doesn't know a [dev-mode] code he probably won't even try
+it" (their words) — i.e. this genuinely doesn't need production-grade
+security or infrastructure, just to actually work and to leave an
+auditable trail ("log every change afterwards"). Also asked about Glitch
+as a free alternative — confirmed via web search that Glitch shut down all
+app hosting in 2025, so that's off the table entirely.
+
+Landed on: **GitHub itself as the durable store**, not a database or a
+paid disk. `data/lib/githubPersist.js` commits `dev-users.json` and every
+QA annotation (one file per annotation, `data/annotations/notes/<id>.json`
+— switched from the earlier single-array-file design specifically so
+concurrent submissions can't race to overwrite one file, and so `git log`
+on that folder doubles as the literal change log the user asked for) via
+the GitHub Contents API, and `server.js` re-hydrates both from git on
+every boot before accepting requests. This makes Render's **free** tier
+(fully ephemeral filesystem — verified via web search: wiped on every
+idle spin-down or redeploy, not just explicit redeploys) genuinely correct
+to use, not just cheap — no paid tier needed after all. `render.yaml`
+added as a one-click Blueprint (`plan: free`); `.github/workflows/
+deploy.yml` now passes `VITE_API_BASE_URL` through from a GitHub Actions
+repo Variable at build time, so pointing the built site at wherever
+`data/` actually ends up hosted doesn't require a code change. `data/db/`
+(live-mode brigade operational data) deliberately was **not** given this
+same git-backed treatment — only the dev-user roster and annotations were,
+matching exactly what was asked for; live data on a free host stays
+ephemeral, a known and accepted gap. Verified locally end-to-end with
+`GITHUB_TOKEN` unset (the normal local-dev case) — every code path
+transparently falls back to local-disk-only behavior, unchanged from
+before this existed. The actual GitHub-commit path itself (with a real
+`GITHUB_TOKEN`) has **not** been live-tested — that requires a real PAT
+only the user can create; verify it once one exists before trusting it
+blindly in production.

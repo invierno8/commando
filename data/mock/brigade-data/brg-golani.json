@@ -1,0 +1,659 @@
+{
+  "units": [
+    "גדוד 12",
+    "גדוד 13",
+    "גדוד 51",
+    "מטה חטיבה"
+  ],
+  "catalog": [
+    {
+      "id": "OPT-01",
+      "name": "כוונת יום טקטית",
+      "category": "ראייה",
+      "qty": 74,
+      "icon": "nvg",
+      "unit": "גדוד 12",
+      "desc": "כוונת יום מוגברת עם רתיכת רד-דוט, מותאמת לנשק אישי סטנדרטי.",
+      "origin": "industry",
+      "originCompany": "אלביט מערכות בע״מ",
+      "responsibleRank": "סרן",
+      "responsibleName": "עומר לביא",
+      "responsiblePersonalNumber": "6811023",
+      "responsiblePhone": "050-9871234",
+      "addedAt": "10/02/2026",
+      "addedBy": "סרן עומר לביא",
+      "updatedAt": "12/08/2026 10:00",
+      "updatedBy": "סרן עומר לביא",
+      "media": []
+    },
+    {
+      "id": "IFAK-03",
+      "name": "ערכת עזרה ראשונה אישית",
+      "category": "רפואה",
+      "qty": 12,
+      "icon": "medical",
+      "unit": "מטה חטיבה",
+      "desc": "ערכת IFAK אישית להצמדה לאפוד, כוללת חוסם עורקים ותחבושת לחץ.",
+      "origin": "matal",
+      "originContact": {
+        "rank": "רס״ן",
+        "name": "תמר גולן",
+        "phone": "050-7778899"
+      },
+      "responsibleRank": "רס״ן",
+      "responsibleName": "שירה נוי",
+      "responsiblePersonalNumber": "6923781",
+      "responsiblePhone": "052-8765432",
+      "addedAt": "22/01/2026",
+      "addedBy": "רס״ן שירה נוי",
+      "updatedAt": "16/08/2026 08:30",
+      "updatedBy": "רס״ן שירה נוי",
+      "media": [
+        {
+          "type": "image",
+          "url": "item-photo-3.jpg",
+          "caption": "הערכה סגורה, מוצמדת לאפוד"
+        },
+        {
+          "type": "image",
+          "url": "item-photo-2.jpg",
+          "caption": "תכולת הערכה פרוסה"
+        }
+      ]
+    },
+    {
+      "id": "CER-06",
+      "name": "אפוד קרמי דגם 4",
+      "category": "ציוד אישי",
+      "qty": 58,
+      "icon": "vest",
+      "unit": "גדוד 13",
+      "desc": "אפוד מגן קרמי ברמת הגנה IV, כולל לוחות חזה וגב.",
+      "origin": "industry",
+      "originCompany": "מגן-שריון תעשיות בע״מ",
+      "responsibleRank": "סגן",
+      "responsibleName": "בר כספי",
+      "responsiblePersonalNumber": "7011234",
+      "responsiblePhone": "053-1122334",
+      "addedAt": "05/03/2026",
+      "addedBy": "סגן בר כספי",
+      "updatedAt": "09/08/2026 13:15",
+      "updatedBy": "סגן בר כספי",
+      "media": []
+    },
+    {
+      "id": "RDO-04",
+      "name": "רדיו טקטי כף יד",
+      "category": "תקשורת",
+      "qty": 33,
+      "icon": "radio",
+      "unit": "מטה חטיבה",
+      "desc": "מכשיר קשר כף יד להצטיידות פלוגתית, טווח קצר-בינוני.",
+      "origin": "in_house",
+      "developmentLead": {
+        "rank": "רס״ן",
+        "name": "שירה נוי"
+      },
+      "productFiles": [
+        "תיק_פיתוח_רדיו_RDO04.pdf"
+      ],
+      "responsibleRank": "רס״ן",
+      "responsibleName": "שירה נוי",
+      "responsiblePersonalNumber": "6923781",
+      "responsiblePhone": "052-8765432",
+      "addedAt": "18/01/2026",
+      "addedBy": "רס״ן שירה נוי",
+      "updatedAt": "14/08/2026 09:45",
+      "updatedBy": "רס״ן שירה נוי",
+      "media": []
+    },
+    {
+      "id": "BAT-02",
+      "name": "סוללת ליתיום נטענת",
+      "category": "אנרגיה",
+      "qty": 4,
+      "icon": "battery",
+      "unit": "גדוד 51",
+      "desc": "סוללה נטענת לציוד קשר וראייה, קיבולת גבוהה.",
+      "origin": "industry",
+      "originCompany": "פאואר-טק תעשיות אנרגיה בע״מ",
+      "responsibleRank": "רס״ר",
+      "responsibleName": "גיא מזרחי",
+      "responsiblePersonalNumber": "6754321",
+      "responsiblePhone": "054-2233445",
+      "addedAt": "02/04/2026",
+      "addedBy": "רס״ר גיא מזרחי",
+      "updatedAt": "17/08/2026 07:50",
+      "updatedBy": "רס״ר גיא מזרחי",
+      "media": []
+    },
+    {
+      "id": "NAV-02",
+      "name": "מצפן צבאי",
+      "category": "ניווט",
+      "qty": 40,
+      "icon": "nav",
+      "unit": "גדוד 13",
+      "desc": "מצפן לנסלר סטנדרטי, עמיד לזעזועים ולתנאי שטח.",
+      "origin": "matal",
+      "originContact": {
+        "rank": "סא״ל",
+        "name": "אורי פלד",
+        "phone": "052-4445566"
+      },
+      "responsibleRank": "סגן",
+      "responsibleName": "בר כספי",
+      "responsiblePersonalNumber": "7011234",
+      "responsiblePhone": "053-1122334",
+      "addedAt": "05/03/2026",
+      "addedBy": "סגן בר כספי",
+      "updatedAt": "01/07/2026 12:00",
+      "updatedBy": "סגן בר כספי",
+      "media": []
+    },
+    {
+      "id": "LGT-02",
+      "name": "פנס ראש טקטי",
+      "category": "תאורה",
+      "qty": 61,
+      "icon": "light",
+      "unit": "מטה חטיבה",
+      "desc": "פנס ראש עם תאורה לבנה ואדומה, רצועה מתכווננת לקסדה.",
+      "origin": "industry",
+      "originCompany": "לומינה אופטיקה בע״מ",
+      "responsibleRank": "רס״ן",
+      "responsibleName": "שירה נוי",
+      "responsiblePersonalNumber": "6923781",
+      "responsiblePhone": "052-8765432",
+      "addedAt": "22/01/2026",
+      "addedBy": "רס״ן שירה נוי",
+      "updatedAt": "20/06/2026 16:20",
+      "updatedBy": "רס״ן שירה נוי",
+      "media": []
+    }
+  ],
+  "tickets": [
+    {
+      "id": "REQ-2101",
+      "title": "חוסר בכוונות יום",
+      "desc": "נדרשות 6 כוונות נוספות לקראת מסע פלוגתי.",
+      "unit": "גדוד 12",
+      "category": "ראייה",
+      "collaborators": [],
+      "raisedByUnitOfficer": false,
+      "type": "equip",
+      "linkedProductId": "OPT-01",
+      "damatz": "damatz_opt_2101.pdf",
+      "extras": [],
+      "status": "pending",
+      "priority": null,
+      "requestedBy": "רב״ט עידו שני",
+      "createdAt": "היום, 07:30",
+      "submittedAt": "19/08/2026 07:30",
+      "decidedAt": null,
+      "decidedBy": null,
+      "prioritizedAt": null,
+      "dueDate": "",
+      "photoUploaded": false,
+      "progressStatus": null,
+      "progressNote": "",
+      "assignee": null,
+      "progressLog": []
+    },
+    {
+      "id": "REQ-2098",
+      "title": "מלאי סוללות קריטי",
+      "desc": "מלאי הסוללות ירד משמעותית, נדרשת הזמנה דחופה.",
+      "unit": "מטה חטיבה",
+      "category": "אנרגיה",
+      "collaborators": [
+        {
+          "rank": "רס״ן",
+          "name": "שירה נוי"
+        }
+      ],
+      "raisedByUnitOfficer": false,
+      "type": "procurement",
+      "estimatedPrice": 15000,
+      "purchaseLink": "https://supplier-portal.example.mil/orders/bat-02",
+      "damatz": "damatz_bat_2098.pdf",
+      "extras": [
+        "דוח_מלאי.pdf"
+      ],
+      "status": "approved",
+      "priority": "red",
+      "requestedBy": "רס״ר גיא מזרחי",
+      "createdAt": "אתמול, 16:10",
+      "submittedAt": "18/08/2026 16:10",
+      "decidedAt": "18/08/2026 18:00",
+      "decidedBy": "רס״ן שירה נוי",
+      "prioritizedAt": "18/08/2026 18:15",
+      "dueDate": "22/08/2026",
+      "photoUploaded": false,
+      "progressStatus": "in_progress",
+      "progressNote": "הזמנה נשלחה לספק, ממתינים לאישור תקציבי לפני משלוח.",
+      "assignee": {
+        "personalNumber": "6754321",
+        "rank": "רס״ר",
+        "name": "גיא מזרחי"
+      },
+      "progressLog": [
+        {
+          "id": "lg-8",
+          "author": "רס״ן שירה נוי",
+          "authorRole": "brigade_officer",
+          "stamp": "18/08/2026 18:20",
+          "status": "waiting",
+          "statusChanged": true,
+          "text": "מקצה את רס״ר גיא מזרחי לטיפול — נא לפתוח מול הספק בדחיפות."
+        },
+        {
+          "id": "lg-9",
+          "author": "רס״ר גיא מזרחי",
+          "authorRole": "assignee",
+          "stamp": "19/08/2026 08:00",
+          "status": "in_progress",
+          "statusChanged": true,
+          "text": "הזמנה נשלחה לספק, ממתינים לאישור תקציבי לפני משלוח."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2090",
+      "title": "בקשת אפודים נוספים",
+      "desc": "תגבור כוח אדם בגדוד, נדרשים 8 אפודים.",
+      "unit": "גדוד 13",
+      "category": "ציוד אישי",
+      "collaborators": [],
+      "raisedByUnitOfficer": false,
+      "type": "equip",
+      "linkedProductId": "CER-06",
+      "damatz": "damatz_vest_2090.pdf",
+      "extras": [],
+      "status": "approved",
+      "priority": "yellow",
+      "requestedBy": "סגן בר כספי",
+      "createdAt": "לפני יומיים",
+      "submittedAt": "17/08/2026 10:40",
+      "decidedAt": "17/08/2026 14:00",
+      "decidedBy": "רס״ן שירה נוי",
+      "prioritizedAt": "17/08/2026 14:45",
+      "dueDate": "27/08/2026",
+      "photoUploaded": false,
+      "progressStatus": "waiting",
+      "progressNote": "ממתין להקצאת גורם אחראי.",
+      "assignee": null,
+      "progressLog": []
+    },
+    {
+      "id": "REQ-2081",
+      "title": "רדיו תקול",
+      "desc": "מכשיר קשר אינו נטען, דורש בדיקה או החלפה.",
+      "unit": "גדוד 51",
+      "category": "תקשורת",
+      "collaborators": [],
+      "raisedByUnitOfficer": false,
+      "type": "repair",
+      "linkedProductId": "RDO-04",
+      "damatz": "damatz_rdo_2081.pdf",
+      "extras": [],
+      "status": "rejected",
+      "priority": null,
+      "requestedBy": "טוראי נדב אור",
+      "createdAt": "לפני 4 ימים",
+      "submittedAt": "15/08/2026 09:20",
+      "decidedAt": "15/08/2026 15:00",
+      "decidedBy": "רס״ן שירה נוי",
+      "prioritizedAt": null,
+      "dueDate": "",
+      "photoUploaded": false,
+      "daysLeft": 29,
+      "rejectionReason": "טרם בוצעה בדיקה בסיסית של הכבל/שקע לפני הגשת הדרישה — נא לבצע בדיקה ראשונית מול קצין התקשורת ולהגיש שוב אם התקלה נמשכת.",
+      "progressStatus": null,
+      "progressNote": "",
+      "assignee": null,
+      "progressLog": []
+    },
+    {
+      "id": "REQ-2065",
+      "title": "רדיו טקטי — כשל טעינה חוזר",
+      "desc": "שקע הטעינה רופף, הבעיה חוזרת על עצמה במכשירים נוספים — פתחתי ישירות כדי לזרז טיפול לפני שהתקלה תתפשט.",
+      "unit": "מטה חטיבה",
+      "category": "תקשורת",
+      "collaborators": [],
+      "raisedByUnitOfficer": true,
+      "type": "repair",
+      "linkedProductId": "RDO-04",
+      "damatz": "damatz_rdo_2065.pdf",
+      "extras": [],
+      "status": "approved",
+      "priority": "yellow",
+      "requestedBy": "רס״ן שירה נוי",
+      "createdAt": "לפני 3 שבועות",
+      "submittedAt": "29/07/2026 11:00",
+      "decidedAt": "29/07/2026 11:00",
+      "decidedBy": "רס״ן שירה נוי",
+      "prioritizedAt": "29/07/2026 14:00",
+      "dueDate": "05/08/2026",
+      "photoUploaded": false,
+      "progressStatus": "done",
+      "progressNote": "כלל המכשירים הפגומים הוחלפו במלאי טרי.",
+      "assignee": {
+        "personalNumber": "6923781",
+        "rank": "רס״ן",
+        "name": "שירה נוי"
+      },
+      "progressLog": [
+        {
+          "id": "lg-10",
+          "author": "רס״ן שירה נוי",
+          "authorRole": "brigade_officer",
+          "stamp": "29/07/2026 14:05",
+          "status": "in_progress",
+          "statusChanged": true,
+          "text": "מטפלת בעצמי מול היצרן — פנס בעיה בייצור אצווה."
+        },
+        {
+          "id": "lg-11",
+          "author": "רס״ן שירה נוי",
+          "authorRole": "assignee",
+          "stamp": "03/08/2026 10:00",
+          "status": "done",
+          "statusChanged": true,
+          "text": "כלל המכשירים הפגומים הוחלפו במלאי טרי."
+        }
+      ]
+    }
+  ],
+  "roster": {
+    "unitOfficers": [
+      {
+        "id": "guo-1",
+        "unit": "גדוד 12",
+        "rank": "סרן",
+        "name": "עומר לביא",
+        "personalNumber": "6811023",
+        "email": "omer.lavi@example.mil"
+      },
+      {
+        "id": "guo-2",
+        "unit": "גדוד 13",
+        "rank": "סגן",
+        "name": "בר כספי",
+        "personalNumber": "7011234",
+        "email": "bar.caspi@example.mil"
+      },
+      {
+        "id": "guo-3",
+        "unit": "גדוד 51",
+        "rank": "רס״ר",
+        "name": "גיא מזרחי",
+        "personalNumber": "6754321",
+        "email": "guy.mizrahi@example.mil"
+      },
+      {
+        "id": "guo-4",
+        "unit": "מטה חטיבה",
+        "rank": "רס״ן",
+        "name": "שירה נוי",
+        "personalNumber": "6923781",
+        "email": "shira.noy@example.mil"
+      }
+    ],
+    "brigadeStaff": [
+      {
+        "id": "gbs-1",
+        "rank": "אל״ם",
+        "name": "דורון אשל",
+        "personalNumber": "6812345",
+        "email": "doron.eshel@example.mil",
+        "catalogAccess": "manager",
+        "ticketAccess": "manager"
+      }
+    ],
+    "unitPeople": {
+      "גדוד 12": [
+        {
+          "id": "gp-1",
+          "rank": "רב״ט",
+          "name": "עידו שני",
+          "personalNumber": "7112233",
+          "email": "ido.shani@example.mil",
+          "catalogAccess": "read",
+          "ticketAccess": "requester"
+        }
+      ],
+      "גדוד 13": [],
+      "גדוד 51": [
+        {
+          "id": "gp-2",
+          "rank": "טוראי",
+          "name": "נדב אור",
+          "personalNumber": "7223344",
+          "email": "nadav.or@example.mil",
+          "catalogAccess": "read",
+          "ticketAccess": "requester"
+        }
+      ],
+      "מטה חטיבה": []
+    }
+  },
+  "dashboard": {
+    "ticketsByUnit": [
+      {
+        "unit": "גדוד 12",
+        "approved": 14,
+        "pending": 3,
+        "rejected": 1
+      },
+      {
+        "unit": "גדוד 13",
+        "approved": 11,
+        "pending": 2,
+        "rejected": 2
+      },
+      {
+        "unit": "גדוד 51",
+        "approved": 9,
+        "pending": 1,
+        "rejected": 3
+      },
+      {
+        "unit": "מטה חטיבה",
+        "approved": 6,
+        "pending": 1,
+        "rejected": 0
+      }
+    ],
+    "priorityByUnit": {
+      "גדוד 12": [
+        {
+          "key": "red",
+          "label": "דחוף",
+          "value": 2
+        },
+        {
+          "key": "yellow",
+          "label": "בינוני",
+          "value": 5
+        },
+        {
+          "key": "green",
+          "label": "שגרתי",
+          "value": 7
+        }
+      ],
+      "גדוד 13": [
+        {
+          "key": "red",
+          "label": "דחוף",
+          "value": 1
+        },
+        {
+          "key": "yellow",
+          "label": "בינוני",
+          "value": 4
+        },
+        {
+          "key": "green",
+          "label": "שגרתי",
+          "value": 6
+        }
+      ],
+      "גדוד 51": [
+        {
+          "key": "red",
+          "label": "דחוף",
+          "value": 2
+        },
+        {
+          "key": "yellow",
+          "label": "בינוני",
+          "value": 3
+        },
+        {
+          "key": "green",
+          "label": "שגרתי",
+          "value": 4
+        }
+      ],
+      "מטה חטיבה": [
+        {
+          "key": "red",
+          "label": "דחוף",
+          "value": 1
+        },
+        {
+          "key": "yellow",
+          "label": "בינוני",
+          "value": 2
+        },
+        {
+          "key": "green",
+          "label": "שגרתי",
+          "value": 3
+        }
+      ]
+    },
+    "trendDays": [
+      "1/8",
+      "2/8",
+      "3/8",
+      "4/8",
+      "5/8",
+      "6/8",
+      "7/8",
+      "8/8",
+      "9/8",
+      "10/8",
+      "11/8",
+      "12/8",
+      "13/8",
+      "14/8"
+    ],
+    "trendByUnit": {
+      "גדוד 12": [
+        2,
+        4,
+        3,
+        5,
+        3,
+        6,
+        4,
+        7,
+        4,
+        5,
+        6,
+        4,
+        6,
+        8
+      ],
+      "גדוד 13": [
+        1,
+        3,
+        2,
+        4,
+        2,
+        5,
+        3,
+        5,
+        3,
+        4,
+        5,
+        3,
+        4,
+        6
+      ],
+      "גדוד 51": [
+        2,
+        2,
+        1,
+        3,
+        2,
+        4,
+        2,
+        4,
+        2,
+        3,
+        4,
+        2,
+        3,
+        5
+      ],
+      "מטה חטיבה": [
+        1,
+        1,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        1,
+        2,
+        2,
+        1,
+        2,
+        3
+      ]
+    },
+    "activityLog": [
+      {
+        "date": "18/8",
+        "time": "18:00",
+        "actor": "שירה נוי",
+        "unit": "מטה חטיבה",
+        "title": "מלאי סוללות קריטי",
+        "action": "אישרה את REQ-2098",
+        "tone": "green"
+      },
+      {
+        "date": "18/8",
+        "time": "16:10",
+        "actor": "גיא מזרחי",
+        "unit": "מטה חטיבה",
+        "title": "מלאי סוללות קריטי",
+        "action": "פתח דרישה דחופה REQ-2098",
+        "tone": "red"
+      },
+      {
+        "date": "17/8",
+        "time": "14:00",
+        "actor": "שירה נוי",
+        "unit": "גדוד 13",
+        "title": "בקשת אפודים נוספים",
+        "action": "אישרה את REQ-2090",
+        "tone": "green"
+      },
+      {
+        "date": "15/8",
+        "time": "15:00",
+        "actor": "שירה נוי",
+        "unit": "גדוד 51",
+        "title": "רדיו תקול",
+        "action": "דחתה את REQ-2081",
+        "tone": "yellow"
+      }
+    ]
+  }
+}
