@@ -5,10 +5,11 @@
   "targetLabel": "mock-toggle",
   "secondaryTargets": [],
   "comment": "צריך כאן שגם משתמשי דב רגילים יוכלו להפעיל ולכבות את המוק דאטה לא רק מנהל...",
-  "resolved": false,
-  "resolvedAt": null,
-  "actionStatus": "queued",
+  "resolved": true,
+  "resolvedAt": "2026-08-21T14:27:22.562Z",
+  "actionStatus": "done",
   "actionRequestedAt": "2026-08-21T14:02:36.205Z",
   "actionPrUrl": null,
-  "actionLog": null
+  "actionLog": null,
+  "resolutionNote": "Verified — this already works. Any logged-in dev user (not just admin) can toggle mock/live data; tested directly with a non-admin test account."
 }
