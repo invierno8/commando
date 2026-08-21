@@ -56,7 +56,12 @@ export default function DevAnnotationsScreen() {
               <div className={"dev-admin-annotation-row" + (a.resolved ? " resolved" : "")} key={a.id}>
                 <div className="dev-admin-annotation-main">
                   <span className="dev-admin-annotation-route">{a.route}</span>
-                  {a.targetLabel && <span className="dev-admin-annotation-target">{a.targetLabel}</span>}
+                  {a.targetLabel && (
+                    <span className="dev-admin-annotation-target">
+                      {a.targetLabel}
+                      {a.secondaryTargets?.length > 0 && ` → ${a.secondaryTargets.join(", ")}`}
+                    </span>
+                  )}
                   <p className="dev-admin-annotation-comment">{a.comment}</p>
                   <span className="dev-admin-annotation-meta">{a.authorName} · {new Date(a.createdAt).toLocaleString("he-IL")}</span>
                   {hasAction && (

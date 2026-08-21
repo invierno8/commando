@@ -21,22 +21,49 @@ import { submitAnnotation } from "../devApi.js";
 
 export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
   const target = useHoverTarget(active);
-  const [popover, setPopover] = useState(null); // { x, y, label } | null
+  const [popover, setPopover] = useState(null); // { x, y, label, secondaryTargets: [] } | null
+  const [pickingSecondary, setPickingSecondary] = useState(false);
   const [markersRefreshKey, setMarkersRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!active) return;
     function onClickCapture(e) {
-      if (!(e.ctrlKey || e.metaKey)) return;
       const el = document.elementFromPoint(e.clientX, e.clientY);
+
+      // מצב "בחירת יעד משני": כל קליק (בלי צורך ב-Ctrl) על אלמנט מודגש
+      // מוסיף אותו כ-yed משני ל-popover הפתוח, בלי לסגור אותו ובלי לתת
+      // לקליק להגיע לאפליקציה האמיתית — כך אפשר להצביע על "לאן להעביר"
+      // במקום לתאר את זה במילים.
+      if (pickingSecondary) {
+        if (!el || el.closest(".dev-overlay-ignore")) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const lbl = labelForElement(target || el);
+        setPopover((p) => {
+          if (!p) return p;
+          if (p.secondaryTargets.includes(lbl) || lbl === p.label) return p;
+          return { ...p, secondaryTargets: [...p.secondaryTargets, lbl] };
+        });
+        setPickingSecondary(false);
+        return;
+      }
+
+      if (!(e.ctrlKey || e.metaKey)) return;
       if (!el || el.closest(".dev-overlay-ignore")) return;
       e.preventDefault();
       e.stopPropagation();
-      setPopover({ x: e.clientX, y: e.clientY, label: labelForElement(target || el) });
+      setPopover({ x: e.clientX, y: e.clientY, label: labelForElement(target || el), secondaryTargets: [] });
+    }
+    function onKeyDown(e) {
+      if (e.key === "Escape" && pickingSecondary) setPickingSecondary(false);
     }
     window.addEventListener("click", onClickCapture, true);
-    return () => window.removeEventListener("click", onClickCapture, true);
-  }, [active, target]);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("click", onClickCapture, true);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [active, target, pickingSecondary]);
 
   if (!active) return null;
 
@@ -45,7 +72,10 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
   async function submit(comment) {
     // כשמי שכותב מאומת גם כמנהל, ההערה שלו הופכת אוטומטית לפריט פעולה —
     // "כל מה שאני כותב הופך לפעולה", בלי צעד נוסף.
-    await submitAnnotation({ route, targetLabel: popover.label, comment, actionRequested: isAdmin });
+    await submitAnnotation({
+      route, targetLabel: popover.label, comment, actionRequested: isAdmin,
+      secondaryTargets: popover.secondaryTargets,
+    });
     setPopover(null);
     setMarkersRefreshKey((k) => k + 1);
     onSubmitted?.();
@@ -65,9 +95,13 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
           x={popover.x}
           y={popover.y}
           label={popover.label}
+          secondaryTargets={popover.secondaryTargets}
+          pickingSecondary={pickingSecondary}
           isAdmin={isAdmin}
-          onCancel={() => setPopover(null)}
+          onCancel={() => { setPickingSecondary(false); setPopover(null); }}
           onSubmit={submit}
+          onAddSecondary={() => setPickingSecondary(true)}
+          onRemoveSecondary={(lbl) => setPopover((p) => p && { ...p, secondaryTargets: p.secondaryTargets.filter((t) => t !== lbl) })}
         />
       )}
       <AdminAnnotationMarkers isAdmin={isAdmin} route={route} refreshKey={markersRefreshKey} />
@@ -109,4 +143,24 @@ const CSS = `
 }
 .dev-annotate-btn-primary{ background:var(--dev); color:#fff; }
 .dev-annotate-btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+.dev-annotate-secondary-block{ display:flex; flex-direction:column; gap:6px; }
+.dev-annotate-secondary-chips{ display:flex; flex-wrap:wrap; gap:5px; }
+.dev-annotate-secondary-chip{
+  display:inline-flex; align-items:center; gap:5px; background:color-mix(in srgb, var(--dev) 12%, transparent);
+  border:1px solid var(--dev); color:var(--dev); border-radius:20px; padding:3px 8px; font-size:11px; font-family:var(--font-mono);
+}
+.dev-annotate-secondary-chip button{
+  background:none; border:none; color:inherit; cursor:pointer; font-size:13px; line-height:1; padding:0;
+}
+.dev-annotate-add-secondary-btn{
+  align-self:flex-start; background:none; border:1px dashed var(--line); color:var(--text-dim); border-radius:7px;
+  padding:5px 9px; font-size:11.5px; font-family:var(--font-sans); cursor:pointer;
+}
+.dev-annotate-add-secondary-btn:hover{ border-color:var(--dev); color:var(--dev); }
+.dev-annotate-picking-hint{
+  font-size:11.5px; color:var(--dev); background:color-mix(in srgb, var(--dev) 10%, transparent);
+  border-radius:6px; padding:5px 9px; animation:devAdminPulse 1.2s ease-in-out infinite;
+}
+@keyframes devAdminPulse{ 50%{ opacity:.55; } }
 `;

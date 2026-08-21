@@ -65,6 +65,7 @@ async function persistNote(note, message) {
 async function queueAction(note, requestedBy) {
   const workItem = {
     id: note.id, route: note.route, targetLabel: note.targetLabel, targetSelector: note.targetSelector,
+    secondaryTargets: note.secondaryTargets || [],
     comment: note.comment, authorName: note.authorName, requestedAt: new Date().toISOString(), requestedBy,
   };
   fs.mkdirSync(ACTIONS_DIR, { recursive: true });
@@ -82,10 +83,14 @@ router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
   // "כל מה שאני כותב הופך לפעולה" (ראו DevOverlay.jsx). לא נבדק כאן מול
   // עוגיית מנהל בכוונה: זו נוחות דמו, לא גבול אבטחה (בדיוק כמו מתג ה-mock/live).
   const actionRequested = !!req.body.actionRequested;
+  const secondaryTargets = Array.isArray(req.body.secondaryTargets)
+    ? req.body.secondaryTargets.filter((t) => typeof t === "string" && t.trim()).slice(0, 10)
+    : [];
   const entry = {
     id: "ann-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     authorId: req.devUser.id, authorName: req.devUser.name, createdAt: new Date().toISOString(),
     route: req.body.route, targetLabel: req.body.targetLabel || null, targetSelector: req.body.targetSelector || null,
+    secondaryTargets,
     comment: req.body.comment, resolved: false, resolvedAt: null, resolvedBy: null,
     actionStatus: actionRequested ? "queued" : "none",
     actionRequestedAt: actionRequested ? new Date().toISOString() : null,
@@ -140,7 +145,8 @@ router.get("/admin/annotations/export", requireAdmin, (_req, res) => {
   Object.entries(byRoute).forEach(([route, items]) => {
     md += `## ${route}\n\n`;
     items.forEach((a) => {
-      md += `- [ ] **${a.targetLabel || "?"}** — ${a.comment} _(${a.authorName}, ${new Date(a.createdAt).toLocaleString("he-IL")})_\n`;
+      const arrow = a.secondaryTargets?.length ? ` (→ ${a.secondaryTargets.join(", ")})` : "";
+      md += `- [ ] **${a.targetLabel || "?"}**${arrow} — ${a.comment} _(${a.authorName}, ${new Date(a.createdAt).toLocaleString("he-IL")})_\n`;
     });
     md += "\n";
   });

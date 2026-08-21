@@ -1,10 +1,10 @@
 [
   {
-    "id": "dev-demo-1",
-    "name": "Demo Dev",
-    "role": "engineer",
-    "passwordHash": "$2a$12$LzBM7DIPQNgFCt.EwpkHR.PVccUMw2AepHZHeNTj1QBFSrzSSyZsO",
+    "id": "dev-mt2u2p9mh64w",
+    "name": "אילאיל",
+    "role": "מנהלת מוצר הטובה בעולם",
+    "passwordHash": "$2a$12$EPG0yD4Uz4oZZB12SOHceeRp4BNmkcPQmlYxOqTWYOS/DiBMgV.8e",
     "active": true,
-    "createdAt": "2026-08-20T00:00:00.000Z"
+    "createdAt": "2026-08-21T10:55:47.839Z"
   }
 ]
