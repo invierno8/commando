@@ -113,6 +113,21 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredListId, items, tick]);
 
+  // יעדים משניים (a.secondaryTargets) של השורה שמעל העכבר — אותה שיטת
+  // איתור בדיוק כמו rectFor() ליעד הראשי, רק שיש כאן כמה תוצאות אפשריות
+  // במקום אחת, ומוצגות בכחול כדי לא להתבלבל עם ההדגשה הכתומה של היעד הראשי.
+  const hoveredSecondaryRects = useMemo(() => {
+    if (!hoveredListId) return [];
+    void tick;
+    const a = items.find((x) => x.id === hoveredListId);
+    if (!a?.secondaryTargets?.length) return [];
+    return a.secondaryTargets
+      .map((label) => document.querySelector(`[data-devblock="${CSS.escape(label)}"]`))
+      .filter(Boolean)
+      .map((el) => el.getBoundingClientRect());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hoveredListId, items, tick]);
+
   function jumpTo(a) {
     const found = rectFor(a);
     if (!found) return;
@@ -186,6 +201,13 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
           style={{ top: hoveredRect.top, left: hoveredRect.left, width: hoveredRect.width, height: hoveredRect.height }}
         />
       )}
+      {hoveredSecondaryRects.map((r, i) => (
+        <div
+          key={i}
+          className="comments-panel-highlight comments-panel-highlight-secondary"
+          style={{ top: r.top, left: r.left, width: r.width, height: r.height }}
+        />
+      ))}
       {flashRect && (
         <div
           className="comments-panel-highlight comments-panel-flash"
@@ -375,6 +397,11 @@ const CSS_TEXT = `
 }
 .comments-panel-flash{
   border-color:var(--jynx); animation:commentsFlash 1.6s ease;
+}
+.comments-panel-highlight-secondary{
+  border-color:#2F8FCE;
+  box-shadow:0 0 0 3px color-mix(in srgb, #2F8FCE 28%, transparent),
+             0 0 18px color-mix(in srgb, #2F8FCE 50%, transparent);
 }
 @keyframes commentsFlash{
   0%, 100% { box-shadow:0 0 0 3px color-mix(in srgb, var(--jynx) 28%, transparent), 0 0 18px color-mix(in srgb, var(--jynx) 50%, transparent); }
