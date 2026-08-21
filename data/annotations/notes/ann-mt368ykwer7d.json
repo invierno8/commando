@@ -12,10 +12,10 @@
   "resolvedAt": null,
   "resolvedBy": null,
   "resolutionNote": null,
-  "actionStatus": "queued",
+  "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T20:08:27.867Z",
   "actionRequestedBy": "admin",
-  "actionPrUrl": null,
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/17",
   "actionLog": null,
   "replies": [],
   "reactions": {
