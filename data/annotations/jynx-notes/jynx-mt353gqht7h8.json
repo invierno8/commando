@@ -8,9 +8,16 @@
   "resolved": false,
   "resolvedAt": null,
   "resolutionNote": null,
-  "actionStatus": "queued",
+  "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T16:04:16.121Z",
-  "actionPrUrl": null,
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/8",
   "actionLog": null,
-  "replies": []
+  "replies": [
+    {
+      "id": "rep-mt354pr8dup0",
+      "authorName": "Admin",
+      "text": "This is the same gap as PR #8, which adds a \"+ Feedback about Jynx\" composer directly inside the comments sidebar (no separate popover/element pick needed), so you can leave Jynx-tool feedback from right there. #8 has since merged, so this should already be live — no new PR opened for this note to avoid duplicating #8.",
+      "createdAt": "2026-08-21T16:13:31.000Z"
+    }
+  ]
 }
