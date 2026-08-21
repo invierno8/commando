@@ -8,12 +8,13 @@
   "targetSelector": null,
   "secondaryTargets": [],
   "comment": "אין צורך שיוכלו לתת הערות ושיוכלו בכלל ללחוץ ולראות את הבורדר בהובר מעל כל מה שקשור למערכת ה jynx' dev over lay שזה רק יתאפשר על האתר עצמו ולא על המערכת פיתוח",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolvedBy": null,
-  "actionStatus": "queued",
+  "resolved": true,
+  "resolvedAt": "2026-08-21T14:27:21.232Z",
+  "resolvedBy": "admin",
+  "actionStatus": "done",
   "actionRequestedAt": "2026-08-21T11:30:54.832Z",
   "actionRequestedBy": "מנהל",
   "actionPrUrl": null,
-  "actionLog": null
+  "actionLog": null,
+  "resolutionNote": "Fixed — Jynx's own UI (FAB, toolbar, admin panel) is now excluded from hover/comment for everyone except admin, who gets a separate purple-colored meta-feedback mode for commenting on Jynx itself."
 }
