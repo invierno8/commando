@@ -13,9 +13,9 @@
   "resolved": false,
   "resolvedAt": null,
   "resolvedBy": null,
-  "actionStatus": "queued",
+  "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T11:27:53.517Z",
   "actionRequestedBy": "מנהל",
-  "actionPrUrl": null,
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/1",
   "actionLog": null
 }
