@@ -156,8 +156,8 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
       )}
 
       <div className="comments-sidebar jynx-ui" style={{ left: panelFab.pos.left, bottom: panelFab.pos.bottom }}>
-        <div className="comments-sidebar-head">
-          <span className="comments-sidebar-grip" {...panelFab.dragHandlers} title="Drag to move"><GripVertical size={13} /></span>
+        <div className="comments-sidebar-head" {...panelFab.dragHandlers}>
+          <span className="comments-sidebar-grip" title="Drag anywhere on the header to move"><GripVertical size={13} /></span>
           <span className="comments-sidebar-title"><MessageSquare size={13} /> Comments</span>
           <button type="button" className="comments-sidebar-collapse" onClick={() => setCollapsed((v) => !v)} title={collapsed ? "Expand" : "Collapse"}>
             {collapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
@@ -296,9 +296,9 @@ const CSS_TEXT = `
   background:var(--panel); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow-md);
   display:flex; flex-direction:column; overflow:hidden;
 }
-.comments-sidebar-head{ padding:8px 10px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:6px; }
-.comments-sidebar-grip{ display:flex; align-items:center; color:var(--text-dim); cursor:grab; touch-action:none; }
-.comments-sidebar-grip:active{ cursor:grabbing; }
+.comments-sidebar-head{ padding:8px 10px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:6px; cursor:grab; touch-action:none; }
+.comments-sidebar-head:active{ cursor:grabbing; }
+.comments-sidebar-grip{ display:flex; align-items:center; color:var(--text-dim); }
 .comments-sidebar-title{ display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--jynx); flex:1; }
 .comments-sidebar-collapse{ background:none; border:none; color:var(--text-dim); cursor:pointer; display:flex; }
 .comments-sidebar-collapse:hover{ color:var(--jynx); }
