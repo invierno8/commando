@@ -8,7 +8,12 @@
 /* a build-time env var, nothing in this file needs to change.          */
 /* ================================================================== */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
+/* גיבוי קשיח: אם VITE_API_BASE_URL לא הוזרק בזמן ה-build (למשל בעיית scope    */
+/* במשתני GitHub Actions), אבל אנחנו בפועל רצים מ-GitHub Pages, עדיף לפנות   */
+/* לכתובת ה-Render הידועה מאשר ליפול חזרה ל-"/api" היחסי שלעולם לא יעבוד שם. */
+const RENDER_API_BASE = "https://hangar-data.onrender.com/api";
+const isGithubPages = typeof window !== "undefined" && window.location.hostname.endsWith("github.io");
+const API_BASE = import.meta.env.VITE_API_BASE_URL || (isGithubPages ? RENDER_API_BASE : "/api");
 
 async function request(path, { method = "GET", body } = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
