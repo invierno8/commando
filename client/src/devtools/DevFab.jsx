@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useRef } from "react";
 import { ChevronLeft, Network, Users } from "lucide-react";
 import { STRUCTURAL_ROLES, ROLE_LABELS, ROLE_ORDER } from "../roles.js";
 import { BRIGADE_STATUS } from "../api-client/brigadesData.js";
 import { useDraggableFab } from "./useDraggableFab.js";
+import { useKeepInViewport } from "./useKeepInViewport.js";
 import MockDataToggle from "./MockDataToggle.jsx";
 
 /* ================================================================== */
@@ -25,6 +26,13 @@ export default function DevFab({
     if (roleFab.consumeWasDragged()) return;
     setOpen((v) => !v);
   }
+  // הפאנל הזה עלול להיות הגבוה ביותר בכל ה-chrome של Jynx (רשימת חטיבות +
+  // בורר-זהות מלא, בלי גבול), ותמיד נפתח כלפי מעלה מהכפתור — הכי חשוף מכולם
+  // לצאת מעל ה-viewport אם הכפתור נגרר קרוב לחלק העליון של המסך. role/
+  // memberIdentityMode ב-watch כי הם משנים אילו תת-מקטעים מוצגים ולכן את
+  // הגובה בפועל, גם בלי לגעת בכפתור עצמו.
+  const rolePanelRef = useRef(null);
+  useKeepInViewport(rolePanelRef, open, 8, [role, memberIdentityMode]);
   return (
     <div
       className="dev-fab-wrap jynx-chrome jynx-ui"
@@ -33,7 +41,7 @@ export default function DevFab({
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false); }}
     >
       {open && (
-        <div className="dev-fab-panel dev-only">
+        <div ref={rolePanelRef} className="dev-fab-panel dev-only">
           <span className="dev-only-tag">JYNX — Role & brigade simulator</span>
           <div className="dev-fab-mock-toggle-row">
             <MockDataToggle />
@@ -135,7 +143,7 @@ export default function DevFab({
           )}
         </div>
       )}
-      <button type="button" className="dev-fab" onClick={onTriggerClick} {...roleFab.dragHandlers} title="Role & brigade picker — draggable">
+      <button type="button" ref={roleFab.sizeRef} className="dev-fab" onClick={onTriggerClick} {...roleFab.dragHandlers} title="Role & brigade picker — draggable">
         <Users size={14} />
         <ChevronLeft size={14} className={"dev-fab-arrow" + (open ? " open" : "")} />
       </button>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, X, Loader2 } from "lucide-react";
 import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
@@ -6,6 +6,7 @@ import DevAdminPanel from "./DevAdminPanel.jsx";
 import DevOverlay from "./overlay/DevOverlay.jsx";
 import CommentsPanel from "./overlay/CommentsPanel.jsx";
 import { useDraggableFab } from "./useDraggableFab.js";
+import { useKeepInViewport } from "./useKeepInViewport.js";
 
 /* ================================================================== */
 /* השער היחיד לכל מצב הפיתוח — לא מחליף את .dev-fab הקיים, רק שומר       */
@@ -38,6 +39,10 @@ export default function DevAuthGate({ route, devFabProps }) {
   // יסתיר בטעות תוכן קבוע במסך כלשהו, גם אחרי שמתחברים ומופיע גם הסרגל.
   const lockedFab = useDraggableFab("jynx-fab-pos");
   const toolbarFab = useDraggableFab("jynx-toolbar-pos", { right: 20, bottom: 76 });
+  // פאנל ההתחברות עצמו לא גרירי (הוא נפתח יחסית לכפתור הנעול) אבל יכול
+  // בהחלט לצאת מה-viewport אם הכפתור נגרר קרוב לקצה — ראו useKeepInViewport.js.
+  const loginPanelRef = useRef(null);
+  useKeepInViewport(loginPanelRef, loginOpen, 8, [error]);
 
   // גרירה אמיתית לא אמורה גם לפתוח/לסגור את פאנל ההתחברות — רק קליק "נקי".
   function onFabClick() {
@@ -96,7 +101,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       >
         <style>{CSS}</style>
         {loginOpen && (
-          <div className="dev-fab-panel dev-only dev-login-panel">
+          <div ref={loginPanelRef} className="dev-fab-panel dev-only dev-login-panel">
             <span className="dev-only-tag">JYNX — Sign in to dev mode</span>
             <label className="env-strip-identity">
               <span>Password</span>
@@ -110,6 +115,7 @@ export default function DevAuthGate({ route, devFabProps }) {
         )}
         <button
           type="button"
+          ref={lockedFab.sizeRef}
           className="dev-fab dev-fab-locked"
           onClick={onFabClick}
           {...lockedFab.dragHandlers}
@@ -129,6 +135,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} isAdmin={isAdmin} canJynxComment={canJynxComment} />
       {toolbarOpen ? (
         <div
+          ref={toolbarFab.sizeRef}
           className="dev-fab-toolbar jynx-chrome jynx-ui"
           style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}
           {...toolbarFab.dragHandlers}
@@ -153,7 +160,7 @@ export default function DevAuthGate({ route, devFabProps }) {
         </div>
       ) : (
         <div className="dev-fab-wrap jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
-          <button type="button" className="dev-fab" onClick={toggleToolbarOpen} {...toolbarFab.dragHandlers} title="Expand the Jynx toolbar — draggable">
+          <button type="button" ref={toolbarFab.sizeRef} className="dev-fab" onClick={toggleToolbarOpen} {...toolbarFab.dragHandlers} title="Expand the Jynx toolbar — draggable">
             <span className="jynx-logo">JYNX</span>
           </button>
         </div>

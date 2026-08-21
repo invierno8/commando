@@ -88,7 +88,7 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
     return { left, bottom: Math.max(4, window.innerHeight - top - 230) };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- קפוא במכוון בעת ה-mount, גרירה לוקחת שליטה אחרי
   }, []);
-  const { pos, dragHandlers } = useDraggableFab("jynx-annotate-popover-pos", initialPos, "left");
+  const { pos, dragHandlers, sizeRef } = useDraggableFab("jynx-annotate-popover-pos", initialPos, "left");
 
   async function submit() {
     if (!comment.trim() || sending) return;
@@ -105,6 +105,7 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
 
   return (
     <div
+      ref={sizeRef}
       className={"dev-overlay-ignore dev-annotate-popover jynx-ui" + (isJynxMeta ? " dev-annotate-popover-jynx" : "")}
       style={{ left: pos.left, bottom: pos.bottom }}
       onClick={(e) => e.stopPropagation()}

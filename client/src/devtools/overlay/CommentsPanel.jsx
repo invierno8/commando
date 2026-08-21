@@ -264,6 +264,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
       {/* כמו dev-fab-toolbar (ראו useDraggableFab.js) — קליק נקי על כפתור/    */}
       {/* שורת-תגובה בפנים ממשיך לעבוד רגיל, רק תזוזה אמיתית (4px+) גוררת.     */}
       <div
+        ref={panelFab.sizeRef}
         className="comments-sidebar jynx-chrome jynx-ui"
         style={{ left: panelFab.pos.left, bottom: panelFab.pos.bottom }}
         {...panelFab.dragHandlers}
