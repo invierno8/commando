@@ -1,0 +1,21 @@
+{
+  "id": "ann-mt2ulbyussap",
+  "authorId": "admin",
+  "authorName": "מנהל",
+  "createdAt": "2026-08-21T11:10:13.974Z",
+  "route": "catalog",
+  "targetLabel": "sidebar-mark",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "app-topbar"
+  ],
+  "comment": "move this to",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-21T11:10:13.974Z",
+  "actionRequestedBy": "מנהל",
+  "actionPrUrl": null,
+  "actionLog": null
+}
