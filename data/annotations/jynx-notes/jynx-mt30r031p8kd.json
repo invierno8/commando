@@ -1,0 +1,14 @@
+{
+  "id": "jynx-mt30r031p8kd",
+  "createdAt": "2026-08-21T14:02:36.205Z",
+  "route": "sysadmin",
+  "targetLabel": "mock-toggle",
+  "secondaryTargets": [],
+  "comment": "צריך כאן שגם משתמשי דב רגילים יוכלו להפעיל ולכבות את המוק דאטה לא רק מנהל...",
+  "resolved": false,
+  "resolvedAt": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-21T14:02:36.205Z",
+  "actionPrUrl": null,
+  "actionLog": null
+}

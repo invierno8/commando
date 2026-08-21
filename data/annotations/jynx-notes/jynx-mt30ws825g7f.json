@@ -1,0 +1,14 @@
+{
+  "id": "jynx-mt30ws825g7f",
+  "createdAt": "2026-08-21T14:07:05.954Z",
+  "route": "dashboard",
+  "targetLabel": "dev-fab-toolbar",
+  "secondaryTargets": [],
+  "comment": "צריך אופציה לצמצם את ההגדרות לבועה של jynx כמו בהתחלה ולהרחיב אותה ולקבל את הפרטים האלו ואת כל הכפתורים והבורר אנשים, ושהכל יהיה נגרר וריאקטיבי בנוסף כאשר יוזר שם סיסמא בין הנקודה שבא הוא לחץ התחבר עד לזה שהוא באמת התחבר לוקח זמן, תוסיף שם לואדיניג אנימיישן או משהו",
+  "resolved": false,
+  "resolvedAt": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-21T14:07:05.954Z",
+  "actionPrUrl": null,
+  "actionLog": null
+}
