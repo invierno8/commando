@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Pencil, Paperclip, Zap, Loader2, GitPullRequest, XCircle, Sparkles } from "lucide-react";
 import {
   fetchDevAnnotations, replyToAnnotation, editMyAnnotation, reactToAnnotation, requestAnnotationAction,
-  fetchJynxFeedback, replyToJynxFeedback, reactToJynxFeedback, submitJynxFeedback,
+  fetchJynxFeedback, fetchMyJynxFeedback, replyToJynxFeedback, reactToJynxFeedback, submitJynxFeedback,
 } from "../devApi.js";
 import { useDraggableFab } from "../useDraggableFab.js";
 
@@ -39,7 +39,7 @@ const REACTION_EMOJI = ["👍", "😄", "🤔", "❤️"];
 /*     needs admin rights, this one needs nothing but being the author.    */
 /* ================================================================== */
 
-export default function CommentsPanel({ active, route, currentDevUserId, isAdmin }) {
+export default function CommentsPanel({ active, route, currentDevUserId, isAdmin, canJynxComment }) {
   const [items, setItems] = useState([]);
   const [statusFilter, setStatusFilter] = useState("open"); // open | done
   const [mineOnly, setMineOnly] = useState(false);
@@ -62,10 +62,11 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   // התפקיד), כדי שהמיקום ההתחלתי לא יתנגש איתם עוד לפני שגוררים משהו.
   const panelFab = useDraggableFab("jynx-comments-panel-pos", { left: 16, bottom: 76 }, "left");
 
-  // מנהל רואה כאן גם משוב על Jynx עצמו (תור נפרד לגמרי — jynx-feedback, ראו
-  // data/routes/jynx-feedback.js) — בלי זה, מנהל שכתב הערה דרך מצב "משוב
-  // Jynx" (הילה סגולה, ראו DevOverlay.jsx) לא היה רואה אותה בכלל כאן, כי
-  // היא לא באה מ-/dev/annotations. מסומנת kind:"jynx" להבחנה.
+  // מנהל (וכן Jynx commenter, ראו למטה) רואה כאן גם משוב על Jynx עצמו (תור
+  // נפרד לגמרי — jynx-feedback, ראו data/routes/jynx-feedback.js) — בלי זה,
+  // מי שכתב הערה דרך מצב "משוב Jynx" (הילה סגולה, ראו DevOverlay.jsx) לא היה
+  // רואה אותה בכלל כאן, כי היא לא באה מ-/dev/annotations. מסומנת kind:"jynx"
+  // להבחנה.
   function reload() {
     // .catch(() => []) on EACH branch independently — not just one shared
     // catch on the combined Promise.all — because the dev-session token
@@ -81,8 +82,13 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     // for that branch on this poll, and self-heals on the next 5s poll
     // once the session issue is resolved, instead of freezing forever.
     const appPromise = fetchDevAnnotations(route).then((d) => d.map((a) => ({ ...a, kind: "app" }))).catch(() => []);
+    // Jynx commenter שאינו מנהל: לא יכול לקרוא את התור המלא
+    // (GET /admin/jynx-feedback נשאר admin-only בכוונה), אבל צריך לראות את
+    // מה שהוא עצמו כתב — ראו GET /dev/jynx-feedback/mine.
     const jynxPromise = isAdmin
       ? fetchJynxFeedback().then((d) => d.filter((a) => a.route === route).map((a) => ({ ...a, kind: "jynx", authorName: a.authorName || "Admin" }))).catch(() => [])
+      : canJynxComment
+      ? fetchMyJynxFeedback().then((d) => d.filter((a) => a.route === route).map((a) => ({ ...a, kind: "jynx", authorName: a.authorName || "Admin" }))).catch(() => [])
       : Promise.resolve([]);
     Promise.all([appPromise, jynxPromise]).then(([app, jynx]) => setItems([...app, ...jynx]));
   }
@@ -92,7 +98,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     const t = setInterval(reload, 5000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, route, isAdmin]);
+  }, [active, route, isAdmin, canJynxComment]);
 
   useEffect(() => {
     if (!active) return;

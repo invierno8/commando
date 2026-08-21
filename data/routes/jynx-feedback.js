@@ -24,6 +24,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requireAdmin } from "../middleware/adminAuth.js";
+import { requireDevUser } from "../middleware/auth.js";
 import { resolveSession } from "../lib/sessions.js";
 import { readDevUsers } from "../lib/devUsers.js";
 import { asyncRoute, requireFields } from "../middleware/validate.js";
@@ -122,6 +123,20 @@ router.post("/admin/jynx-feedback", requireAdminOrJynxCommenter, asyncRoute(asyn
 
 router.get("/admin/jynx-feedback", requireAdmin, (_req, res) => {
   res.json(readAll());
+});
+
+// "ההערות שלי" — עבור CommentsPanel.jsx, כדי שמשתמש-פיתוח עם canJynxComment
+// (לא מנהל) יראה בפאנל שלו את משוב ה-Jynx שהוא עצמו כתב, בדיוק כמו שהוא כבר
+// רואה אותו בתפריט המנהל. בכוונה לא הופך את GET /admin/jynx-feedback עצמו
+// למשותף (זה נשאר admin-only, כמו כל route אחר כאן חוץ מה-POST) — route
+// נפרד, מצומצם לרשומות של המשתמש עצמו בלבד, אותו היגיון בדיוק כמו
+// PATCH /dev/annotations/:id מול PATCH /admin/annotations/:id.
+router.get("/dev/jynx-feedback/mine", requireDevUser, (req, res) => {
+  const record = readDevUsers().find((u) => u.id === req.devUser.id);
+  if (!record || record.active === false || !record.canJynxComment) {
+    return res.status(401).json({ error: "נדרש הרשאת Jynx commenter" });
+  }
+  res.json(readAll().filter((a) => a.authorId === req.devUser.id));
 });
 
 // גם resolve/reopen (כמו קודם) וגם, מ-2026-08-21, עריכת טקסט ההערה עצמה

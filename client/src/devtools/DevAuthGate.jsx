@@ -127,7 +127,7 @@ export default function DevAuthGate({ route, devFabProps }) {
     <>
       <style>{CSS}</style>
       <DevOverlay active={overlayOn} route={route} isAdmin={isAdmin} canJynxChrome={isAdmin || canJynxComment} />
-      <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} isAdmin={isAdmin} />
+      <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} isAdmin={isAdmin} canJynxComment={canJynxComment} />
       {toolbarOpen ? (
         <div
           className="dev-fab-toolbar jynx-chrome jynx-ui"

@@ -57,6 +57,11 @@ export async function submitJynxFeedback(data) {
 export async function fetchJynxFeedback() {
   return http.get(`/admin/jynx-feedback`);
 }
+// עבור Jynx commenter שאינו מנהל — רק הרשומות שהוא עצמו כתב (ראו
+// data/routes/jynx-feedback.js), עבור CommentsPanel.jsx.
+export async function fetchMyJynxFeedback() {
+  return http.get(`/dev/jynx-feedback/mine`);
+}
 export async function resolveJynxFeedback(id, resolved, resolutionNote) {
   return http.patch(`/admin/jynx-feedback/${id}`, { resolved, resolutionNote });
 }
