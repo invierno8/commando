@@ -1,0 +1,11 @@
+{
+  "id": "ann-mt368ykwer7d",
+  "route": "permissions",
+  "targetLabel": "pill-tabs",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "מנהל מערכת לא קשור לדרג הטקטי, אין שום צורך שהוא יראה עץ ארגוני רק נתוני מערכת וניהול חטיבות רוחבי ומשתמשים",
+  "authorName": "Admin",
+  "requestedAt": "2026-08-21T20:08:26.669Z",
+  "requestedBy": "admin"
+}
