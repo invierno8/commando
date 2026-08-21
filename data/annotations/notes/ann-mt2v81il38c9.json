@@ -17,5 +17,14 @@
   "actionRequestedAt": "2026-08-21T11:27:53.517Z",
   "actionRequestedBy": "מנהל",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/1",
-  "actionLog": null
+  "actionLog": null,
+  "replies": [
+    {
+      "id": "rep-mt32ufsrfs1s",
+      "authorId": "admin",
+      "authorName": "Admin",
+      "text": "but its not solved this all misison bar div is still there",
+      "createdAt": "2026-08-21T15:01:15.771Z"
+    }
+  ]
 }
