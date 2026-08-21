@@ -47,7 +47,10 @@ function readDiskJson(absPath, defaultValue) {
 
 function writeDiskJson(absPath, value) {
   fs.mkdirSync(path.dirname(absPath), { recursive: true });
-  fs.writeFileSync(absPath, JSON.stringify(value, null, 2));
+  // תמיד עם \n בסוף — כדי שהעותק המקומי יתאים בדיוק לעותק שמגיע מ-git
+  // (commitFileToGithub כותב עם \n), אחרת כל כתיבה יוצרת diff מלאכותי של
+  // תו אחד בכל פעם שההידרציה מריצה git pull על עותק שנכתב מקומית.
+  fs.writeFileSync(absPath, JSON.stringify(value, null, 2) + "\n");
 }
 
 // relPath - למשל "brigades.json" או "brigade-data/brg-commando.json".
