@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, X, Loader2 } from "lucide-react";
 import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
-import MockDataToggle from "./MockDataToggle.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
 import DevOverlay from "./overlay/DevOverlay.jsx";
 import CommentsPanel from "./overlay/CommentsPanel.jsx";
@@ -135,7 +134,6 @@ export default function DevAuthGate({ route, devFabProps }) {
           {...toolbarFab.dragHandlers}
         >
           <span className="dev-toolbar-grip" title="Drag anywhere on the toolbar to move it"><GripVertical size={13} /></span>
-          <MockDataToggle />
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-overlay-toggle" onClick={() => setOverlayOn((v) => !v)} title={overlayOn ? "Turn off hover overlay" : "Turn on hover overlay"}>
             {overlayOn ? <Eye size={13} /> : <EyeOff size={13} />}
           </button>
@@ -197,6 +195,7 @@ const CSS = `
   padding:6px 12px; font-family:var(--font-mono); font-size:11px; font-weight:700; white-space:nowrap;
 }
 
+.dev-fab-mock-toggle-row{ display:flex; margin-bottom:6px; }
 .mock-toggle{
   display:inline-flex; align-items:center; gap:6px; border-radius:20px; padding:6px 12px; border:1px solid var(--jynx);
   background:var(--panel); font-family:var(--font-mono); font-size:11px; font-weight:700; cursor:pointer;
