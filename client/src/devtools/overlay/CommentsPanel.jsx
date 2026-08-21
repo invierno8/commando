@@ -1,11 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Zap, Loader2, GitPullRequest, XCircle } from "lucide-react";
-import { fetchDevAnnotations, replyToAnnotation, fetchJynxFeedback, replyToJynxFeedback, requestAnnotationAction } from "../devApi.js";
+import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Zap, Loader2, GitPullRequest, XCircle, Sparkles } from "lucide-react";
+import {
+  fetchDevAnnotations, replyToAnnotation, reactToAnnotation, requestAnnotationAction,
+  fetchJynxFeedback, replyToJynxFeedback, reactToJynxFeedback, submitJynxFeedback,
+} from "../devApi.js";
 import { useDraggableFab } from "../useDraggableFab.js";
 
 const ACTION_STATUS_LABEL = { queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed" };
 const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: GitPullRequest, done: CheckCircle2, failed: XCircle };
+
+// פלטת ריאקציות קטנה וקבועה בכוונה — לא ספריית emoji-picker (אין ספריות UI
+// חיצוניות נוספות בקודבייס הזה, ראו FORCLAUDE.md). זהה למה שהשרת מאמת מולו
+// (ראו data/routes/annotations.js ו-data/routes/jynx-feedback.js).
+const REACTION_EMOJI = ["👍", "😄", "🤔", "❤️"];
 
 /* ================================================================== */
 /* LEGO BLOCK — "who commented on what, here" for EVERY dev user (not    */
@@ -34,6 +42,12 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   const [replyText, setReplyText] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const [tick, setTick] = useState(0);
+  // "+ Feedback about Jynx" — הרכבה מינימלית inline, לא שימוש חוזר
+  // ב-AnnotationPopover.jsx (שממוקם לפי קואורדינטות x/y של קליק, שלא
+  // רלוונטיות כאן). מנהל בלבד, בדיוק כמו שער השליחה הקיים בשרת.
+  const [jynxComposerOpen, setJynxComposerOpen] = useState(false);
+  const [jynxComposerText, setJynxComposerText] = useState("");
+  const [jynxComposerSending, setJynxComposerSending] = useState(false);
   // עוגן שמאלי בכוונה — הצד ההפוך מאשכול הכפתורים הימני (הבועה/הסרגל/בורר
   // התפקיד), כדי שהמיקום ההתחלתי לא יתנגש איתם עוד לפני שגוררים משהו.
   const panelFab = useDraggableFab("jynx-comments-panel-pos", { left: 16, bottom: 76 }, "left");
@@ -120,6 +134,30 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     reload();
   }
 
+  // toggle רגיל — קליק על אימוג'י שכבר ריאקטתי איתו מסיר אותו, לא מוסיף שוב.
+  async function sendReaction(a, emoji) {
+    if (a.kind === "jynx") await reactToJynxFeedback(a.id, emoji);
+    else await reactToAnnotation(a.id, emoji);
+    reload();
+  }
+
+  async function submitJynxComposer() {
+    if (!jynxComposerText.trim() || jynxComposerSending) return;
+    setJynxComposerSending(true);
+    try {
+      // אין צורך ב-targetLabel/סיכת מיקום — משוב כללי על Jynx עצמו, לא
+      // מוצמד לאלמנט ספציפי (הבקאנד כבר מקבל targetLabel:null, ראו
+      // data/routes/jynx-feedback.js). route כן נשלח, כדי שהפריט יופיע
+      // ישר ברשימה הנוכחית (שמסוננת לפי מסך, ראו reload() למעלה).
+      await submitJynxFeedback({ route, comment: jynxComposerText.trim() });
+      setJynxComposerText("");
+      setJynxComposerOpen(false);
+      reload();
+    } finally {
+      setJynxComposerSending(false);
+    }
+  }
+
   if (!active) return null;
 
   const shown = items
@@ -163,6 +201,40 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
             {collapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           </button>
         </div>
+        {!collapsed && isAdmin && (
+          <div className="comments-jynx-composer-wrap">
+            {!jynxComposerOpen ? (
+              <button type="button" className="comments-jynx-composer-toggle" onClick={() => setJynxComposerOpen(true)}>
+                <Sparkles size={12} /> Feedback about Jynx
+              </button>
+            ) : (
+              <div className="comments-jynx-composer">
+                <textarea
+                  autoFocus
+                  rows={2}
+                  placeholder="What should improve in the dev tool itself?"
+                  value={jynxComposerText}
+                  onChange={(e) => setJynxComposerText(e.target.value)}
+                />
+                <div className="comments-jynx-composer-actions">
+                  <button
+                    type="button"
+                    onClick={() => { setJynxComposerOpen(false); setJynxComposerText(""); }}
+                    disabled={jynxComposerSending}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button" className="primary" onClick={submitJynxComposer}
+                    disabled={!jynxComposerText.trim() || jynxComposerSending}
+                  >
+                    {jynxComposerSending ? "Sending..." : "Send"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         {!collapsed && (
           <>
             <div className="comments-sidebar-filters">
@@ -184,7 +256,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                       onMouseLeave={() => setHoveredListId((h) => (h === a.id ? null : h))}
                       onClick={() => jumpTo(a)}
                     >
-                      {a.targetLabel && (
+                      {(a.targetLabel || a.kind === "jynx") && (
                         <span className="comments-sidebar-item-target">
                           {a.kind === "jynx" && <span className="comments-jynx-badge">🔮 Jynx</span>}
                           {a.targetLabel}
@@ -211,6 +283,24 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                           <Zap size={11} /> Action
                         </button>
                       )}
+                    </div>
+                    <div className="comments-reaction-row" onClick={(e) => e.stopPropagation()}>
+                      {REACTION_EMOJI.map((emoji) => {
+                        const reactors = a.reactions?.[emoji] || [];
+                        const mine = reactors.includes(currentDevUserId);
+                        return (
+                          <button
+                            key={emoji}
+                            type="button"
+                            className={"comments-reaction-btn" + (mine ? " active" : "")}
+                            onClick={() => sendReaction(a, emoji)}
+                            title={mine ? "Remove your reaction" : "React"}
+                          >
+                            {emoji}
+                            {reactors.length > 0 && <span className="comments-reaction-count">{reactors.length}</span>}
+                          </button>
+                        );
+                      })}
                     </div>
                     <button
                       type="button" className="comments-thread-toggle"
@@ -353,4 +443,38 @@ const CSS_TEXT = `
   background:var(--jynx); color:#fff; border:none; border-radius:7px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;
 }
 .comments-thread-input button:disabled{ opacity:.5; cursor:not-allowed; }
+
+.comments-reaction-row{ display:flex; flex-wrap:wrap; gap:5px; padding:2px 12px 8px; }
+.comments-reaction-btn{
+  display:inline-flex; align-items:center; gap:3px; background:none; border:1px solid var(--line);
+  color:var(--text-dim); border-radius:12px; padding:2px 7px; font-size:12px; line-height:1.4; cursor:pointer;
+}
+.comments-reaction-btn:hover{ border-color:var(--jynx); }
+.comments-reaction-btn.active{ background:color-mix(in srgb, var(--jynx) 16%, transparent); border-color:var(--jynx); }
+.comments-reaction-count{ font-family:var(--font-mono); font-size:10px; color:var(--text-dim); }
+.comments-reaction-btn.active .comments-reaction-count{ color:var(--jynx); }
+
+.comments-jynx-composer-wrap{ padding:8px 10px 0; }
+.comments-jynx-composer-toggle{
+  display:inline-flex; align-items:center; gap:5px; width:100%; justify-content:center; background:none;
+  border:1px dashed var(--dev); color:var(--dev); border-radius:8px; padding:6px 10px; font-size:11.5px;
+  font-weight:700; cursor:pointer;
+}
+.comments-jynx-composer-toggle:hover{ background:color-mix(in srgb, var(--dev) 10%, transparent); }
+.comments-jynx-composer{
+  display:flex; flex-direction:column; gap:6px; border:1px solid var(--dev); border-radius:8px; padding:8px;
+  background:color-mix(in srgb, var(--dev) 6%, transparent);
+}
+.comments-jynx-composer textarea{
+  width:100%; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:6px 8px;
+  font-size:12px; font-family:var(--font-sans); color:var(--text); resize:vertical;
+}
+.comments-jynx-composer textarea:focus{ outline:none; border-color:var(--dev); }
+.comments-jynx-composer-actions{ display:flex; justify-content:flex-end; gap:6px; }
+.comments-jynx-composer-actions button{
+  border:none; border-radius:7px; padding:5px 11px; font-family:var(--font-sans); font-weight:700; font-size:11.5px;
+  cursor:pointer; background:var(--panel-raised); color:var(--text-dim);
+}
+.comments-jynx-composer-actions button.primary{ background:var(--dev); color:#fff; }
+.comments-jynx-composer-actions button:disabled{ opacity:.5; cursor:not-allowed; }
 `;
