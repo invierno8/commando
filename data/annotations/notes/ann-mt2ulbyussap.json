@@ -10,9 +10,9 @@
     "app-topbar"
   ],
   "comment": "move this to",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolvedBy": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-21T11:28:27.435Z",
+  "resolvedBy": "admin",
   "actionStatus": "queued",
   "actionRequestedAt": "2026-08-21T11:10:13.974Z",
   "actionRequestedBy": "מנהל",
