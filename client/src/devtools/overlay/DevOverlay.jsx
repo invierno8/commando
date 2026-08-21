@@ -50,8 +50,20 @@ export default function DevOverlay({ active, route, isAdmin, canJynxChrome, onSu
 
   useEffect(() => {
     if (!active) return;
+    // הפופאובר עצמו (ה-textarea, "תישלח כפעולה" וכו') נפתח קרוב מאוד לנקודת
+    // הקליק שפתחה אותו — ולעיתים קרובות ממש מעל האלמנט שרוצים לקשר כיעד משני
+    // (בעיקר במשוב Jynx-meta על הסרגל עצמו, שבו הפופאובר נפתח ממש מעל שאר
+    // כפתורי הסרגל). elementFromPoint() היה מחזיר את הפופאובר עצמו במקרה כזה
+    // (הכי עליון ב-z-index בנקודה הזו) ותופס אותו כ"לא יעד תקין"
+    // (.dev-overlay-ignore) בלי להגיע בכלל לאלמנט האמיתי מתחתיו. elementsFromPoint
+    // נותן את כל הערימה בנקודה הזו — מדלגים על כל שכבות ה-overlay עצמו (הפופאובר,
+    // ההילה, הסימונים) ולוקחים את האלמנט האמיתי הראשון מתחתיהן.
+    function realElementAtPoint(x, y) {
+      const stack = document.elementsFromPoint(x, y);
+      return stack.find((n) => !n.closest(".dev-overlay-ignore")) || null;
+    }
     function onClickCapture(e) {
-      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const el = realElementAtPoint(e.clientX, e.clientY);
 
       // popover פתוח: Ctrl/Cmd+קליק על אלמנט תקין (לא חלק מה-UI של ה-overlay
       // עצמו) מוסיף אותו כיעד משני לתגובה הפתוחה מיד — בלי לסגור אותה ובלי
@@ -61,7 +73,7 @@ export default function DevOverlay({ active, route, isAdmin, canJynxChrome, onSu
       // האפליקציה האמיתית בזמן שהתגובה פתוחה.
       if (popover) {
         if (!(e.ctrlKey || e.metaKey)) return;
-        if (!el || el.closest(".dev-overlay-ignore")) return;
+        if (!el) return;
         if (el.closest(".jynx-chrome") && !canJynxChrome) return;
         e.preventDefault();
         e.stopPropagation();
@@ -75,7 +87,7 @@ export default function DevOverlay({ active, route, isAdmin, canJynxChrome, onSu
       }
 
       if (!(e.ctrlKey || e.metaKey)) return;
-      if (!el || el.closest(".dev-overlay-ignore")) return;
+      if (!el) return;
       // Jynx-chrome (ה-FAB/סרגל/פאנל ניהול עצמם) — משוב עליהם נכנס לתור
       // נפרד לגמרי (jynx-feedback, ראו submit() למטה); רק מי שיש לו
       // canJynxChrome (מנהל, או משתמש-פיתוח עם canJynxComment) רואה אותו

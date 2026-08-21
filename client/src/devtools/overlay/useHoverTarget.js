@@ -23,18 +23,35 @@ function hasHintClass(el) {
   return FALLBACK_CLASS_HINTS.some((c) => list.includes(c));
 }
 
-function isContainerLike(el) {
+function hasDevblock(el) {
+  return !(!el || el === document.body || el === document.documentElement) && !!el.dataset?.devblock;
+}
+
+function isFallbackContainer(el) {
   if (!el || el === document.body || el === document.documentElement) return false;
-  if (el.dataset?.devblock) return true;
   if (hasHintClass(el)) return true;
   const display = window.getComputedStyle(el).display;
   return display === "flex" || display === "grid";
 }
 
+// שני מעברים בכוונה, לא מעבר אחד משולב: data-devblock הוא האות הראשי (ראו
+// התיעוד למעלה), אז חייב לנצח כל התאמת flex/grid/hint-class קרובה יותר
+// בדרך למעלה — לא רק לשמש כבדיקה נוספת באותו node. באג אמיתי שנתפס: כרטיסי
+// קטלוג (וכל דפוס דומה של buttonflex בתוך wrapper מתויג) — ה-<button
+// className="prod-card"> הפנימי כבר flex, אז מעבר-יחיד היה עוצר שם ומחזיר
+// את התווית הגנרית "prod-card" במקום data-devblock הייחודי-לפריט שעל ה-
+// wrapper החיצוני — מה שגרם לכל שני כרטיסים להיראות כ"אותו יעד" ולתיוג יעד
+// משני (Ctrl/Cmd+קליק, ראו DevOverlay.jsx) להיכשל בשקט על ההשוואה
+// lbl === p.label.
 function findTarget(el) {
   let node = el;
   while (node && node !== document.body) {
-    if (isContainerLike(node)) return node;
+    if (hasDevblock(node)) return node;
+    node = node.parentElement;
+  }
+  node = el;
+  while (node && node !== document.body) {
+    if (isFallbackContainer(node)) return node;
     node = node.parentElement;
   }
   return el; // שום דבר "מעניין" יותר בדרך — עדיף האלמנט הגולמי מכלום
