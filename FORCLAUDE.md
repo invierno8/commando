@@ -1144,6 +1144,115 @@ writes while talking to the user), separate from and not overriding the
 autonomous-routine PR-only rule above, which the user did not revisit or
 walk back.
 
+### 2026-08-21 — Action pipeline: first two real items processed (edit-in-place + Jynx commenter tier), on a branch/PR per the routine's own rule
+The `jynx-action-worker` routine (or a Claude session working the same
+action-item file by hand) picked up work item `jynx-mt30ld1htt72`
+(route `dashboard`, target `dev-toolbar-icon-btn`) — the note whose
+admin reply already recorded that the per-dev-user comments view
+(Open/Done split, "just me" filter, jump-to-element, reply) was done in
+an earlier pass. The two genuinely open pieces from that note:
+
+1. **Edit-in-place for Jynx feedback text.** `data/routes/jynx-feedback.js`'s
+   `PATCH /admin/jynx-feedback/:id` (previously `resolved`-only) now also
+   accepts a `comment` field, independently of `resolved` — the two are
+   handled via separate `Object.prototype.hasOwnProperty.call(req.body,
+   "resolved")` / `typeof req.body.comment === "string"` checks so a
+   comment-only edit can never accidentally flip `resolved` back to
+   `false` (verified live: resolve an entry, then PATCH just `{comment}`,
+   confirm `resolved`/`resolvedAt`/`resolutionNote` are untouched).
+   `JynxFeedbackScreen.jsx` (the admin's Jynx-feedback list, inside
+   `DevAdminPanel.jsx`'s "🔮 Jynx" tab) got a pencil icon next to each
+   comment → inline textarea → Save/Cancel, reusing the existing
+   `.dev-admin-resolve-note-box`/`-actions` classes from
+   `DevAdminPanel.jsx`'s shared `<style>` (that file's tabs have never
+   carried their own `<style>` block — they're always mounted as children
+   of `DevAdminPanel.jsx`, which injects one shared block first; this PR
+   follows that existing convention rather than introducing per-tab
+   styles). `devApi.js` grew `editJynxFeedback(id, comment)`.
+2. **A new "Jynx commenter" permission tier**, since Jynx meta-feedback
+   (comments about the FAB/toolbar/admin-panel itself, separate from
+   `data/annotations/{notes,actions}/`) was previously admin-only end to
+   end. `data/config/dev-users.json` records gained an optional
+   `canJynxComment` boolean (default absent/false for every existing
+   user — nothing was pre-set); `DevAdminUsersScreen.jsx` got a wand-icon
+   toggle per row (plus a small badge) that PATCHes it via the *existing*
+   `PATCH /admin/dev-users/:id` (that route already merges arbitrary body
+   fields onto the record, so no new dev-users route was needed).
+   `GET /dev/me` (in `dev-auth.js`) now also returns the calling user's
+   own `canJynxComment`, looked up fresh from the roster file on every
+   call — not baked into the session token — specifically so a grant/
+   revoke takes effect immediately, no re-login required.
+   `POST /admin/jynx-feedback` (submit new Jynx feedback) is the *only*
+   route in `jynx-feedback.js` that widened: a new local
+   `requireAdminOrJynxCommenter` middleware, defined in that same file,
+   passes either a valid `X-Admin-Session` (unchanged admin path) or a
+   `req.devUser` whose fresh-read roster record has `canJynxComment` (and
+   `active !== false`). `requireAdmin` itself was not touched, and every
+   other route in the file (GET, PATCH, the reply route, export) is
+   still built with plain `requireAdmin`, exactly as before — deliberate,
+   per the work item's own instruction not to widen those. On the client,
+   `useHoverTarget.js`'s `allowJynxChrome` param was already
+   generically named (not literally `isAdmin`); what changed is the
+   *caller* — `DevAuthGate.jsx` now fetches `canJynxComment` from
+   `/dev/me` and passes `canJynxChrome={isAdmin || canJynxComment}` into
+   `DevOverlay.jsx` as its own prop, separate from `isAdmin` (which
+   `DevOverlay.jsx` still uses, unchanged, for the QA-note action-toggle
+   default and for gating the always-on `AdminAnnotationMarkers` —
+   neither of those opens up to a Jynx commenter). Verified end-to-end
+   against a live local `data/` server (not just `vite build`): created a
+   throwaway dev user, granted `canJynxComment`, logged in as *that* user
+   with no admin token at all, confirmed `POST /admin/jynx-feedback`
+   succeeds (`201`) while `GET`/`export` on the same route still 401 for
+   them; cleaned up the throwaway user and the test note/action files
+   afterward so nothing test-only landed in git.
+
+Scope note: submitted-by tracking (`authorId`/`authorName`) was added to
+new Jynx-feedback entries (previously untracked, since only the admin
+ever wrote there) purely for admin-side display — mirrors the pattern
+`annotations.js` already used. There's still no "my Jynx feedback" view
+for a commenter (out of scope for this item; they submit blind, same as
+before, just through a wider door) — if that's wanted later, it's a new
+ask, not implied by this one.
+
+**Concurrent-duplicate-run gotcha, hit for real this time (not
+hypothetical — the earlier 2026-08-21 entry above only warned it *could*
+happen):** by the time this branch was ready to push, `origin` already
+had *two* other branches/PRs against this exact same work item —
+`jynx-action-jynx-mt30ld1htt72` (PR #7, "Comments sidebar: let a dev
+user edit their own comment text" — turned out to be a *different*
+scope than expected: editing your own **QA-annotation** text via a new
+`PATCH /dev/annotations/:id/edit`, not Jynx-feedback text at all, so not
+actually a duplicate of Part A above) and
+`jynx-action-jynx-mt30ld1htt72-2` (PR #9, "Jynx: add 'Jynx commenter'
+permission tier" — a near-exact duplicate of Part B above, built the
+same session by a different concurrent run). Since the literal branch
+name from the work item was already taken by PR #7's unrelated content,
+this work pushed to `jynx-action-jynx-mt30ld1htt72-3` instead (following
+the same "-2"/"-3" collision-numbering already visible elsewhere on
+`origin`, e.g. `jynx-action-jynx-mt312adsa7al-2`) and the PR opened from this branch explains the
+overlap rather than silently duplicating it.
+
+**A real, worth-knowing divergence found while comparing:** PR #9 (the
+near-duplicate of Part B) also widened `GET /admin/jynx-feedback` (via
+its `requireAdminOrJynxCommenter`) to any Jynx commenter, returning the
+**entire** queue — not filtered to their own entries — as long as
+`CommentsPanel.jsx`'s client-side "just mine" filter is trusted to hide
+the rest. This directly contradicts the work item's own explicit
+instruction ("Keep every OTHER route ... GET, PATCH, the reply route,
+export — admin-only exactly as today; only the POST-a-new-feedback route
+should accept this wider group") — a real, if minor (this is a no-real-
+data public demo), instance of an autonomous run drifting past its
+stated auth boundary. This branch's `GET`/`PATCH`/reply/export all stay
+on the unmodified `requireAdmin`, exactly as asked; only `POST` widens,
+via a route-local `requireAdminOrJynxCommenter` defined *inside*
+`jynx-feedback.js` itself rather than in the shared `adminAuth.js`
+(equally valid per the work item's own "or an inline check" allowance —
+just a smaller footprint since nothing else needs the combined check).
+If you're a future session reconciling PR #7, PR #9, and this branch's
+PR: check which one (if any) got merged before assuming any of this is
+still accurate, and specifically re-verify the `GET` auth boundary
+before trusting whichever version of Part B wins.
+
 ### 2026-08-21 — Work item `ann-mt2vf3rhva2m` closed out by three converging sessions on one branch
 The routine described above picked up this admin note (asking for
 click-to-jump, show/hide-all, delete-or-archive, and edit-your-own-comment)

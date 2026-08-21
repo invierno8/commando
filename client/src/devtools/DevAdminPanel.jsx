@@ -135,6 +135,10 @@ const CSS = `
   background:none; border:1px solid var(--line); border-radius:7px; padding:5px; color:var(--text-dim); cursor:pointer;
 }
 .dev-admin-user-actions button:hover{ color:var(--text); border-color:var(--text-dim); }
+.dev-admin-user-actions button.jynx-perm-active{ color:var(--jynx); border-color:var(--jynx); }
+.dev-admin-user-jynx-badge{
+  color:var(--jynx); font-size:11px; border:1px solid var(--jynx); border-radius:4px; padding:1px 6px;
+}
 
 .dev-admin-add-form{ display:flex; gap:8px; flex-wrap:wrap; }
 .dev-admin-add-form input{
@@ -161,6 +165,13 @@ const CSS = `
 .dev-admin-annotation-route{ font-family:var(--font-mono); font-size:10.5px; color:var(--jynx); text-transform:uppercase; }
 .dev-admin-annotation-target{ font-size:11.5px; color:var(--text-dim); }
 .dev-admin-annotation-comment{ margin:2px 0; font-size:13px; color:var(--text); }
+.dev-admin-comment-row{ display:flex; align-items:flex-start; gap:6px; }
+.dev-admin-comment-row .dev-admin-annotation-comment{ flex:1; }
+.dev-admin-edit-btn{
+  flex:none; margin-top:4px; background:none; border:none; color:var(--text-dim); cursor:pointer;
+  padding:2px; display:inline-flex; opacity:.55;
+}
+.dev-admin-edit-btn:hover{ color:var(--jynx); opacity:1; }
 .dev-admin-attachment-link{ display:inline-flex; align-self:flex-start; margin:2px 0; }
 .dev-admin-attachment-thumb{
   width:56px; height:56px; object-fit:cover; border-radius:7px; border:1px solid var(--line);

@@ -30,10 +30,14 @@ function parseSecondaryTargetsFromComment(comment) {
   return found.slice(0, 10);
 }
 
-export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
-  // isAdmin גם קובע אם מותר לגלוש בכלל על ה-UI של Jynx עצמו (.jynx-chrome) —
-  // ראו useHoverTarget.js. משתמשי-פיתוח רגילים אף פעם לא רואים הילה שם.
-  const target = useHoverTarget(active, isAdmin);
+export default function DevOverlay({ active, route, isAdmin, canJynxChrome, onSubmitted }) {
+  // canJynxChrome (isAdmin OR a per-user canJynxComment grant, combined
+  // upstream in DevAuthGate.jsx) קובע אם מותר לגלוש בכלל על ה-UI של Jynx
+  // עצמו (.jynx-chrome) — ראו useHoverTarget.js. משתמשי-פיתוח רגילים בלי
+  // ההרשאה הזו אף פעם לא רואים הילה שם. isAdmin עצמו נשאר נפרד — עדיין שולט
+  // על ברירת-המחדל של "פעולה" בהערות על האפליקציה ועל הסימונים הקבועים
+  // (AdminAnnotationMarkers), שלא נפתחים לג'ינקס-קומנטר.
+  const target = useHoverTarget(active, canJynxChrome);
   const [popover, setPopover] = useState(null); // { x, y, label, secondaryTargets: [], isJynxMeta } | null
   const [markersRefreshKey, setMarkersRefreshKey] = useState(0);
   const isJynxHover = !!target?.closest(".jynx-chrome");
@@ -53,7 +57,7 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
       // להעביר" במקום לתאר את זה במילים, בלי צורך בכפתור נפרד קודם.
       if (popover) {
         if (!el || el.closest(".dev-overlay-ignore")) return;
-        if (el.closest(".jynx-chrome") && !isAdmin) return;
+        if (el.closest(".jynx-chrome") && !canJynxChrome) return;
         e.preventDefault();
         e.stopPropagation();
         const lbl = labelForElement(target || el);
@@ -68,10 +72,11 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
       if (!(e.ctrlKey || e.metaKey)) return;
       if (!el || el.closest(".dev-overlay-ignore")) return;
       // Jynx-chrome (ה-FAB/סרגל/פאנל ניהול עצמם) — משוב עליהם נכנס לתור
-      // נפרד לגמרי (jynx-feedback, ראו submit() למטה), ורק המנהל רואה אותו
+      // נפרד לגמרי (jynx-feedback, ראו submit() למטה); רק מי שיש לו
+      // canJynxChrome (מנהל, או משתמש-פיתוח עם canJynxComment) רואה אותו
       // בכלל בתור useHoverTarget למעלה, אז כאן זו רק בדיקת-הגנה כפולה.
       const isJynx = !!el.closest(".jynx-chrome");
-      if (isJynx && !isAdmin) return;
+      if (isJynx && !canJynxChrome) return;
       e.preventDefault();
       e.stopPropagation();
       setPopover({ x: e.clientX, y: e.clientY, label: labelForElement(target || el), secondaryTargets: [], isJynxMeta: isJynx });
@@ -85,7 +90,7 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
       window.removeEventListener("click", onClickCapture, true);
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [active, target, popover, isAdmin]);
+  }, [active, target, popover, canJynxChrome]);
 
   if (!active) return null;
 
@@ -96,9 +101,11 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
     if (popover.isJynxMeta) {
       // משוב על Jynx עצמו — תור נפרד לגמרי מהמשוב על האפליקציה (ראו
       // data/routes/jynx-feedback.js). כמו במשוב הרגיל, כפתור "יישלח כפעולה"
-      // נותן למנהל לבחור אם זו הערה בלבד או שהיא תיכנס לתור הפעולות. אין
-      // תמיכה בקובץ מצורף כאן בכוונה — AnnotationPopover.jsx לא מציג את
-      // הבורר הזה כשisJynxMeta, אז attachment תמיד undefined בנתיב הזה.
+      // נותן למנהל לבחור אם זו הערה בלבד או שהיא תיכנס לתור הפעולות. מאז
+      // 2026-08-21 לא רק המנהל כותב לכאן — גם משתמש-פיתוח עם canJynxComment
+      // (ראו למעלה), אבל זה תמיד אותו תור אחד בדיוק. אין תמיכה בקובץ מצורף
+      // כאן בכוונה — AnnotationPopover.jsx לא מציג את הבורר הזה כשisJynxMeta,
+      // אז attachment תמיד undefined בנתיב הזה.
       await submitJynxFeedback({
         route, targetLabel: popover.label, comment, actionRequested: actionOn,
         secondaryTargets,

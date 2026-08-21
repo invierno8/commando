@@ -39,7 +39,13 @@ router.post("/dev/login", loginLimiter, asyncRoute(async (req, res) => {
 }));
 
 router.get("/dev/me", (req, res) => {
-  res.json(req.devUser ? { id: req.devUser.id, name: req.devUser.name } : null);
+  if (!req.devUser) return res.json(null);
+  // canJynxComment נטען טרי מהמרשם בכל בקשה (לא מהטוקן/הסשן) — כך שביטול/הענקת
+  // ההרשאה על ידי מנהל (ראו routes/dev-users.js) נכנס לתוקף מיד, בלי לדרוש
+  // מהמשתמש להתחבר מחדש. משתמש-אדמין הפסאודו (id:"admin") לא קיים ברשימה,
+  // אז יוצא false עבורו — זה בסדר, המנהל כבר מקבל גישה מלאה דרך isAdmin נפרד.
+  const record = readDevUsers().find((u) => u.id === req.devUser.id);
+  res.json({ id: req.devUser.id, name: req.devUser.name, canJynxComment: !!record?.canJynxComment });
 });
 
 router.post("/dev/logout", (req, res) => {
