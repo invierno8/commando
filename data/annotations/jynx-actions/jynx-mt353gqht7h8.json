@@ -1,8 +1,0 @@
-{
-  "id": "jynx-mt353gqht7h8",
-  "route": "dashboard",
-  "targetLabel": "dev-toolbar-icon-btn",
-  "secondaryTargets": [],
-  "comment": "make the comment card that opens also jyxy commented optional beacuse right now the comments and the comments card that opens is not posible to leave jyxy instructions",
-  "requestedAt": "2026-08-21T16:04:17.692Z"
-}

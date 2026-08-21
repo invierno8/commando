@@ -9,8 +9,8 @@
   "resolvedAt": null,
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T13:58:13.061Z",
-  "actionPrUrl": "https://github.com/invierno8/commando/pull/7",
-  "actionLog": "This request had two halves, delivered as two separate PRs: #7 lets a dev user edit their own comment's text from the sidebar, and #9 adds the \"Jynx commenter\" permission tier (admin can grant a regular dev user permission to leave Jynx-meta feedback, previously admin-only).",
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/12",
+  "actionLog": "A concurrent routine run raced on this same item and produced three PRs; #12 is the one that correctly and completely covers this request — it lets you edit a Jynx-feedback comment's own text (via the admin's Jynx tab) and adds a grantable \"Jynx commenter\" permission tier so an admin can let a regular dev user leave Jynx-meta feedback too, while keeping viewing/resolving/exporting the full Jynx queue admin-only exactly as asked. #9 attempted the same permission tier but accidentally also exposed the full admin feedback queue to any Jynx commenter (not just their own entries) and was closed in #12's favor. #7 (still open, separate PR) adds edit-your-own-text for regular QA-annotation comments — a related but distinct feature, not this note's own edit capability.",
   "replies": [
     {
       "id": "rep-mt31n8y41fu0",

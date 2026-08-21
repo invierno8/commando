@@ -25,6 +25,11 @@ const ACTIONS_DIR = path.join(__dirname, "..", "annotations", "jynx-actions");
 const GITHUB_NOTES_DIR = "data/annotations/jynx-notes";
 const GITHUB_ACTIONS_DIR = "data/annotations/jynx-actions";
 
+// אותה פלטה בדיוק כמו data/routes/annotations.js (ראו שם) — מוגדרת שוב פה
+// ולא משותפת, כי כל route מודול כאן עצמאי לגמרי (אין ייבוא צולב בין קבצי
+// routes/), בדיוק כמו הכלל של "כל מסך נושא <style> משלו" בצד הלקוח.
+const REACTION_EMOJI = ["👍", "😄", "🤔", "❤️"];
+
 function readAll() {
   try {
     return fs.readdirSync(NOTES_DIR)
@@ -79,6 +84,7 @@ router.post("/admin/jynx-feedback", requireAdmin, asyncRoute(async (req, res) =>
     actionRequestedAt: actionRequested ? new Date().toISOString() : null,
     actionPrUrl: null, actionLog: null,
     replies: [],
+    reactions: Object.fromEntries(REACTION_EMOJI.map((e) => [e, []])),
   };
   await persistNote(entry, `Jynx feedback (${entry.route || "?"}) — ${entry.targetLabel || "?"}`);
   if (actionRequested) await queueAction(entry);
@@ -115,6 +121,27 @@ router.post("/admin/jynx-feedback/:id/reply", requireAdmin, asyncRoute(async (re
   const updated = { ...found, replies: [...(found.replies || []), reply] };
   await persistNote(updated, `reply on ${updated.id}`);
   res.status(201).json(updated);
+}));
+
+// ריאקציית אימוג'י — נשאר מגודר-מנהל בדיוק כמו שאר תור המשוב הזה (אין עדיין
+// הרשאה רחבה יותר לקריאת/כתיבת jynx-feedback בקוד הזה). req.devUser זמין
+// כאן כי attachDevUser רץ גלובלית (ראו server.js) והמנהל תמיד מחובר קודם
+// כמשתמש-פיתוח לפני אימות המנהל — אבל ליתר ביטחון, נופלים חזרה ל-"admin"
+// אם אין סשן dev מצורף, כמו ה-authorName הקבוע ב-reply למעלה.
+router.post("/admin/jynx-feedback/:id/react", requireAdmin, asyncRoute(async (req, res) => {
+  requireFields(req.body, ["emoji"]);
+  if (!REACTION_EMOJI.includes(req.body.emoji)) return res.status(400).json({ error: "אימוג'י לא נתמך" });
+  const found = readAll().find((a) => a.id === req.params.id);
+  if (!found) return res.status(404).json({ error: "לא נמצא" });
+  const reactorId = req.devUser?.id || "admin";
+  const reactions = { ...Object.fromEntries(REACTION_EMOJI.map((e) => [e, []])), ...(found.reactions || {}) };
+  const current = reactions[req.body.emoji] || [];
+  reactions[req.body.emoji] = current.includes(reactorId)
+    ? current.filter((id) => id !== reactorId)
+    : [...current, reactorId];
+  const updated = { ...found, reactions };
+  await persistNote(updated, `reaction on ${updated.id}`);
+  res.json(updated);
 }));
 
 router.get("/admin/jynx-feedback/export", requireAdmin, (_req, res) => {
