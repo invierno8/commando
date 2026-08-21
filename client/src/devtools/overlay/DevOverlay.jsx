@@ -38,8 +38,10 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
   const [markersRefreshKey, setMarkersRefreshKey] = useState(0);
   const isJynxHover = !!target?.closest(".jynx-chrome");
   // "בוחר יעד משני" עכשיו הוא פשוט: יש popover פתוח. אין יותר שלב-ביניים של
-  // כפתור "+ קשר אלמנט נוסף" — ברגע שהתגובה פתוחה, כל קליק על אלמנט תקין
-  // מוסיף אותו כיעד משני מיד (ראו AnnotationPopover.jsx להזרקת הטוקן לטקסט).
+  // כפתור "+ קשר אלמנט נוסף" — ברגע שהתגובה פתוחה, Ctrl/Cmd+קליק על אלמנט
+  // תקין מוסיף אותו כיעד משני מיד (ראו AnnotationPopover.jsx להזרקת הטוקן
+  // לטקסט). קליק רגיל (בלי Ctrl/Cmd) לא נלכד בכלל, כדי שאפשר עדיין ללחוץ על
+  // כפתורים/אלמנטים באפליקציה מתחת בזמן שהתגובה פתוחה בלי שזה ייחשב כקישור.
   const pickingSecondary = !!popover;
 
   useEffect(() => {
@@ -47,11 +49,14 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
     function onClickCapture(e) {
       const el = document.elementFromPoint(e.clientX, e.clientY);
 
-      // popover פתוח: כל קליק על אלמנט תקין (לא חלק מה-UI של ה-overlay עצמו)
-      // מוסיף אותו כיעד משני לתגובה הפתוחה מיד — בלי לסגור אותה ובלי לתת
-      // לקליק להגיע לאפליקציה האמיתית מתחתיו — כך אפשר להצביע על "לאן
-      // להעביר" במקום לתאר את זה במילים, בלי צורך בכפתור נפרד קודם.
+      // popover פתוח: Ctrl/Cmd+קליק על אלמנט תקין (לא חלק מה-UI של ה-overlay
+      // עצמו) מוסיף אותו כיעד משני לתגובה הפתוחה מיד — בלי לסגור אותה ובלי
+      // לתת לקליק להגיע לאפליקציה האמיתית מתחתיו — כך אפשר להצביע על "לאן
+      // להעביר" במקום לתאר את זה במילים. קליק בלי Ctrl/Cmd מוחזק לא נלכד כאן
+      // בכלל (מדלג ישר החוצה), כדי לא להפריע ללחיצה רגילה על כפתורים וכו' של
+      // האפליקציה האמיתית בזמן שהתגובה פתוחה.
       if (popover) {
+        if (!(e.ctrlKey || e.metaKey)) return;
         if (!el || el.closest(".dev-overlay-ignore")) return;
         if (el.closest(".jynx-chrome") && !isAdmin) return;
         e.preventDefault();
@@ -213,7 +218,8 @@ const CSS = `
 .dev-annotate-btn:disabled{ opacity:.5; cursor:not-allowed; }
 
 /* רמז "עדיין בוחר יעדים" — תמיד גלוי כל עוד ה-popover פתוח (אין יותר כפתור
-   "+ קשר אלמנט נוסף" נפרד — כל קליק תקין על העמוד עכשיו מוסיף תג לטקסט). */
+   "+ קשר אלמנט נוסף" נפרד — Ctrl/Cmd+קליק על אלמנט תקין בעמוד מוסיף תג
+   לטקסט; קליק רגיל בלי Ctrl/Cmd עובר כרגיל לאפליקציה מתחת). */
 .dev-annotate-picking-hint{
   font-size:11.5px; color:var(--dev); background:color-mix(in srgb, var(--dev) 10%, transparent);
   border-radius:6px; padding:5px 9px; animation:devAdminPulse 1.2s ease-in-out infinite;
