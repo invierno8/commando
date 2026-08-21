@@ -1058,3 +1058,88 @@ never pushes to `main` directly** — the user chose this specifically for
 safety given the admin panel is reachable from a public link. If you're
 picking this work back up, preserve that constraint unless the user
 explicitly says otherwise.
+
+**Update — the routine now exists and is live**: named `jynx-action-worker`
+(`trig_01BNgRVT2RxXJixQZtHGbHy6`), created via `RemoteTrigger`. The GitHub
+App install was blocked earlier by an ownership-transfer gap; once the
+user connected it (through claude.ai connectors, then separately
+installing the actual "Claude" GitHub App at
+`github.com/apps/claude/installations/select_target` — these are two
+different integrations, the first alone was not sufficient), both halves
+worked:
+- **Cron backstop**: `0 * * * *` (hourly), the reliable floor.
+- **Webhook trigger**: also successfully attached via
+  `create_webhook_trigger` — turned out to require an undocumented body
+  shape discovered by trial and error against the API's validation
+  errors: `{routine_trigger_id, source:"github", hook_type:"app",
+  scope_id:"invierno8/commando", events:["push"]}`. Both `source` as an
+  object and a `filter.paths`/`filter.branch` narrowing were rejected by
+  the API ("Extra inputs are not permitted") — **there is currently no
+  way to scope the webhook to only fire on pushes touching
+  `data/annotations/{actions,jynx-actions}/`**; it fires on every push to
+  the repo. This is safe (the routine's own prompt checks whether the
+  queue directories are non-empty and exits quietly if not) but means
+  every commit to `main` — including the frequent GitHub-as-database
+  writes from mock-data/annotation persistence — triggers a cloud-agent
+  run that does a quick no-op check. If the API adds real path filtering
+  later, revisit this.
+- **The routine's prompt** (full text is in the trigger's `job_config` —
+  fetch via `RemoteTrigger get` rather than duplicating it here and
+  risking drift) processes both `data/annotations/actions/*.json` and
+  `data/annotations/jynx-actions/*.json`, implements each on a new
+  branch, opens a PR (never pushes to main — the constraint above is
+  restated explicitly inside the prompt itself, not just here), updates
+  the corresponding note's `actionStatus`/`actionPrUrl` via a direct
+  bookkeeping commit, and deletes the processed queue file. Genuinely
+  ambiguous requests are supposed to get a reply via the new
+  `/dev/annotations/:id/reply` /
+  `/admin/jynx-feedback/:id/reply` endpoints (see below) instead of a
+  guess — but the routine has no pre-provisioned credentials for that
+  call, so treat it as best-effort, not guaranteed.
+- **First real test run**: manually fired via `RemoteTrigger run` right
+  after setup (session `cse_01K4WwzFqQn32dP4Ji29wsxV`) — confirmed it
+  actually clones the repo, reads `FORCLAUDE.md`, and lists/reads the real
+  queued items rather than erroring out. Whether it produced correct PRs
+  is unverified as of this writing (check `list_runs`/`get_run_log` on
+  the trigger to see the outcome) — don't assume success just because the
+  routine exists and started cleanly.
+- **A cleanup gotcha this surfaced**: several `notes/*.json` had already
+  been resolved by hand (direct code edits earlier the same session,
+  outside the routine), but their paired `actions/*.json` /
+  `jynx-actions/*.json` work-item files were never deleted — the "action"
+  and "note" records are separate files by design (see the top of
+  `annotations.js`/`jynx-feedback.js`) and nothing kept them in sync
+  automatically. The first real routine run picked up all of them,
+  including the already-fixed ones, because it had already cloned/listed
+  before the stale queue files got deleted. If you resolve something by
+  hand instead of letting the routine do it, **always delete the matching
+  `actions/`/`jynx-actions/` file too** (same `<id>.json`, different
+  directory) — otherwise it sits there forever getting reprocessed on
+  every future run.
+
+**Reply/thread system (built same session)**: `annotations.js` and
+`jynx-feedback.js` both gained a `replies: []` array and a
+`resolutionNote` field on every entry, plus `POST
+/dev/annotations/:id/reply` (any dev user) and `POST
+/admin/jynx-feedback/:id/reply` (admin only, matching that queue's
+submission gating). Resolving a comment via `PATCH .../:id` now accepts
+`resolutionNote` and auto-flips `actionStatus` to `"done"` if it wasn't
+`"none"`. This is what closes the loop the user asked for: "when a
+comment has been worked on, the person who filed it sees a status change
+and can follow up" — both `DevAnnotationsScreen.jsx` (admin) and
+`CommentsPanel.jsx` (every dev user, their own sidebar) render the note +
+thread + a reply box, polling every 5s like everything else in this
+system. `CommentsPanel.jsx` also grew: Open/Done tabs, a "just mine"
+filter, click-a-comment-to-jump-to-its-element (scrolls + flashes), and
+the whole sidebar is draggable/collapsible via the same
+`useDraggableFab.js` hook used by the main Jynx chrome (generalized to
+support a `left`-anchored variant — the sidebar defaults to the *left*
+side specifically so it doesn't collide with the right-side
+button cluster; this was a real bug caught by testing, not a hypothetical).
+
+**Standing instruction from the user this same session**: "feel free to
+commit and push as well from now on" — a general grant for this
+conversation's direct interactive work (Claude committing/pushing code it
+writes while talking to the user), separate from and not overriding the
+autonomous-routine PR-only rule above, which the user did not revisit or
+walk back.
