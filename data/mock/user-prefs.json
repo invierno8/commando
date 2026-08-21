@@ -2,10 +2,6 @@
   "guest:dashboard-layout:system_admin": {
     "order": [
       "kpis",
-      "priority",
-      "responseTime",
-      "categoryAnalytics",
-      "ticketTypes",
       "procurementCost",
       "repairLeaderboard",
       "openRequests",
@@ -14,7 +10,11 @@
       "activityLog"
     ],
     "hidden": [
-      "trend"
+      "trend",
+      "priority",
+      "responseTime",
+      "categoryAnalytics",
+      "ticketTypes"
     ]
   }
 }
