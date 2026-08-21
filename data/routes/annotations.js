@@ -139,6 +139,23 @@ router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req,
   res.status(201).json(updated);
 }));
 
+// עריכת טקסט ההערה על ידי מי שכתב אותה בעצמו — שונה מ-PATCH
+// /admin/annotations/:id למעלה/מטה (שדורש מנהל ויכול לערוך כל הערה): זו
+// הדרך של CommentsPanel.jsx לתת לכל משתמש-פיתוח לערוך רק את מה שהוא עצמו
+// כתב, מתוך "כל ההערות שהשארתי פיזית על המסך הזה" — בלי לעבור דרך פאנל
+// הניהול, ובלי הרשאת מנהל בכלל.
+router.patch("/dev/annotations/:id", requireDevUser, asyncRoute(async (req, res) => {
+  requireFields(req.body, ["comment"]);
+  const found = readAll().find((a) => a.id === req.params.id);
+  if (!found) return res.status(404).json({ error: "לא נמצא" });
+  if (found.authorId !== req.devUser.id) {
+    return res.status(403).json({ error: "אפשר לערוך רק הערות שכתבת בעצמך" });
+  }
+  const updated = { ...found, comment: req.body.comment };
+  await persistNote(updated, `comment edited by author — ${updated.id}`);
+  res.json(updated);
+}));
+
 router.get("/admin/annotations", requireAdmin, (_req, res) => {
   res.json(readAll());
 });

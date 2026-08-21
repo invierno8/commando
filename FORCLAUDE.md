@@ -1143,3 +1143,60 @@ conversation's direct interactive work (Claude committing/pushing code it
 writes while talking to the user), separate from and not overriding the
 autonomous-routine PR-only rule above, which the user did not revisit or
 walk back.
+
+### 2026-08-21 — Work item `ann-mt2vf3rhva2m` closed out by three converging sessions on one branch
+The routine described above picked up this admin note (asking for
+click-to-jump, show/hide-all, delete-or-archive, and edit-your-own-comment)
+in **three separate sessions**, all targeting the same deterministic
+branch name `jynx-action-ann-mt2vf3rhva2m` — worth knowing this can happen
+and how it resolved, if you see a `git push` rejected with "fetch first"
+on a freshly-created work-item branch:
+1. First session confirmed click-to-jump and show/hide-all were already
+   built, then shipped **archive** (`archived`/`archivedAt` fields,
+   non-destructive) as PR #4.
+2. Second session added **delete** (`DELETE /admin/annotations/:id` +
+   `deleteFileFromGithub()` in `data/lib/githubPersist.js`, same
+   read-sha-then-call-the-Contents-API shape as `commitFileToGithub`) and
+   an **admin-editable comment field** (`PATCH /admin/annotations/:id`
+   extended to accept `comment`, surfaced as a pencil/inline-textarea in
+   `DevAnnotationsScreen.jsx`) — pushed straight onto the same branch as an
+   additional commit rather than opening a second PR.
+3. **This session** found the branch already had both of the above when
+   its own push was rejected, and — per this file's standing rule about
+   never force-pushing over another session's work — fetched, inspected
+   the diff, and added only what was still genuinely missing rather than
+   redoing or duplicating anything: the admin's edit-any-comment control
+   does not satisfy the original ask's "so that on a screen I'm on, I can
+   see all comments I left **and edit them from there**" — that "there" is
+   the physical per-screen sidebar (`CommentsPanel.jsx`), not the admin
+   management screen, and it needs to work for *any* dev user editing
+   *their own* comment, not just the admin. Added a dedicated
+   **`PATCH /dev/annotations/:id`** route (`requireDevUser`, not
+   `requireAdmin`) gated by `req.devUser.id === found.authorId` (403
+   otherwise), a matching `editMyAnnotation()` in `devApi.js` (named
+   distinctly from the second session's admin-facing
+   `editAnnotationComment()` to avoid confusion between the two), and a
+   pencil-icon-to-inline-textarea control in `CommentsPanel.jsx` shown only
+   when `a.authorId === currentDevUserId`. Deliberately excluded for
+   `kind:"jynx"` items in that panel's merged item list (Jynx meta-feedback
+   has no matching edit endpoint and only the admin ever writes it anyway).
+
+**Lesson for the next session that hits this**: the branch name is
+deterministic per work-item id specifically so concurrent sessions
+converge onto one PR instead of opening duplicates. When `git push` is
+rejected on such a branch, `git fetch` + inspect what's already there
+(`git show <tip>`, and check `list_pull_requests` with
+`head:"<owner>:<branch>"` for the open PR) before adding anything — reset
+onto the real tip and add only the delta, don't force-push, don't
+re-implement something that's already shipped under a different name, and
+don't skip a genuinely still-missing requirement just because *something*
+with a similar name already landed.
+
+Verified with `npx vite build` (clean at every stage of the three-way
+convergence) and a live `curl` smoke pass against a running `data/`
+server confirming all three layers coexist without route conflicts:
+admin delete (session 2's route) still works, the new author-only edit
+succeeds for the actual author and 403s for a different dev user, using
+throwaway dev-user accounts created and deleted again through the real
+admin API — `git status` on `data/config/dev-users.json` and
+`data/annotations/notes/` confirmed clean before committing.

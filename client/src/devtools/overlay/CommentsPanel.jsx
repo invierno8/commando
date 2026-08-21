@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle } from "lucide-react";
-import { fetchDevAnnotations, replyToAnnotation, fetchJynxFeedback, replyToJynxFeedback } from "../devApi.js";
+import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Pencil } from "lucide-react";
+import { fetchDevAnnotations, replyToAnnotation, editMyAnnotation, fetchJynxFeedback, replyToJynxFeedback } from "../devApi.js";
 import { useDraggableFab } from "../useDraggableFab.js";
 
 /* ================================================================== */
@@ -18,6 +18,14 @@ import { useDraggableFab } from "../useDraggableFab.js";
 /*  3. Reply threads per comment — any dev user can add a follow-up,      */
 /*     so a resolved comment's author can react to the fix (or anyone     */
 /*     can ask a clarifying question before it's resolved).               */
+/*  4. Inline self-edit — a pencil icon shown only on your own comments    */
+/*     (authorId === currentDevUserId), swapping the text for a textarea   */
+/*     + Save/Cancel, calling editMyAnnotation() then reload(). Server-    */
+/*     side enforced too (PATCH /dev/annotations/:id 403s for anyone       */
+/*     else's comment) — this is just where the UI for it lives. Distinct  */
+/*     from the admin's own edit-any-comment control in                    */
+/*     DevAnnotationsScreen.jsx (PATCH /admin/annotations/:id) — that one  */
+/*     needs admin rights, this one needs nothing but being the author.    */
 /* ================================================================== */
 
 export default function CommentsPanel({ active, route, currentDevUserId, isAdmin }) {
@@ -29,6 +37,8 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   const [flashId, setFlashId] = useState(null);
   const [openThreadId, setOpenThreadId] = useState(null);
   const [replyText, setReplyText] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const [tick, setTick] = useState(0);
   // עוגן שמאלי בכוונה — הצד ההפוך מאשכול הכפתורים הימני (הבועה/הסרגל/בורר
@@ -112,6 +122,14 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     reload();
   }
 
+  async function saveEdit(a) {
+    if (!editText.trim()) return;
+    await editMyAnnotation(a.id, editText.trim());
+    setEditingId(null);
+    setEditText("");
+    reload();
+  }
+
   if (!active) return null;
 
   const shown = items
@@ -168,13 +186,18 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
             <div className="comments-sidebar-list">
               {shown.map((a) => {
                 const replies = a.replies || [];
+                // עריכה עצמית זמינה רק על הערות "אפליקציה" רגילות (kind
+                // "app"/undefined) שאתה בעצמך כתבת — לא על משוב Jynx (תור
+                // נפרד, אין לו endpoint עריכה מקביל, וממילא רק מנהל כותב שם).
+                const canEdit = a.kind !== "jynx" && a.authorId === currentDevUserId;
+                const isEditing = editingId === a.id;
                 return (
                   <div key={a.id} className="comments-sidebar-item-wrap">
                     <div
                       className="comments-sidebar-item"
                       onMouseEnter={() => setHoveredListId(a.id)}
                       onMouseLeave={() => setHoveredListId((h) => (h === a.id ? null : h))}
-                      onClick={() => jumpTo(a)}
+                      onClick={() => !isEditing && jumpTo(a)}
                     >
                       {a.targetLabel && (
                         <span className="comments-sidebar-item-target">
@@ -183,7 +206,27 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                           {a.resolved && <span className="comments-done-badge"><CheckCircle2 size={10} /> Done</span>}
                         </span>
                       )}
-                      <p className="comments-sidebar-item-comment">{a.comment}</p>
+                      {isEditing ? (
+                        <div className="comments-edit-box" onClick={(e) => e.stopPropagation()}>
+                          <textarea autoFocus rows={3} value={editText} onChange={(e) => setEditText(e.target.value)} />
+                          <div className="comments-edit-actions">
+                            <button type="button" onClick={() => { setEditingId(null); setEditText(""); }}>Cancel</button>
+                            <button type="button" className="primary" onClick={() => saveEdit(a)} disabled={!editText.trim()}>Save</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="comments-sidebar-item-comment">
+                          {a.comment}
+                          {canEdit && (
+                            <button
+                              type="button" className="comments-edit-btn" title="Edit your comment"
+                              onClick={(e) => { e.stopPropagation(); setEditingId(a.id); setEditText(a.comment); }}
+                            >
+                              <Pencil size={11} />
+                            </button>
+                          )}
+                        </p>
+                      )}
                       <span className="comments-sidebar-item-meta">{a.authorName} · {new Date(a.createdAt).toLocaleString("en-US")}</span>
                       {a.resolved && a.resolutionNote && (
                         <div className="comments-resolution-note"><CheckCircle2 size={11} /> {a.resolutionNote}</div>
@@ -292,6 +335,23 @@ const CSS_TEXT = `
 .comments-sidebar-item:hover{ background:color-mix(in srgb, var(--jynx) 8%, transparent); }
 .comments-sidebar-item-target{ font-family:var(--font-mono); font-size:10px; color:var(--jynx); text-transform:uppercase; display:flex; align-items:center; gap:6px; }
 .comments-sidebar-item-comment{ margin:2px 0; font-size:12.5px; color:var(--text); }
+.comments-edit-btn{
+  display:inline-flex; align-items:center; justify-content:center; background:none; border:none;
+  color:var(--text-dim); cursor:pointer; padding:0 0 0 6px; vertical-align:middle;
+}
+.comments-edit-btn:hover{ color:var(--jynx); }
+.comments-edit-box{ display:flex; flex-direction:column; gap:5px; margin:3px 0; }
+.comments-edit-box textarea{
+  width:100%; background:var(--bg); border:1px solid var(--jynx); border-radius:7px; padding:6px 8px;
+  font-size:12.5px; font-family:var(--font-sans); color:var(--text); resize:vertical;
+}
+.comments-edit-actions{ display:flex; justify-content:flex-end; gap:6px; }
+.comments-edit-actions button{
+  border:none; border-radius:7px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;
+  background:var(--panel-raised); color:var(--text-dim);
+}
+.comments-edit-actions button.primary{ background:var(--jynx); color:#fff; }
+.comments-edit-actions button.primary:disabled{ opacity:.5; cursor:not-allowed; }
 .comments-sidebar-item-meta{ font-size:10.5px; color:var(--text-dim); }
 .comments-done-badge{ display:inline-flex; align-items:center; gap:2px; color:var(--green); font-size:9.5px; text-transform:none; }
 .comments-jynx-badge{
