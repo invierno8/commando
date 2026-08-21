@@ -1143,3 +1143,73 @@ conversation's direct interactive work (Claude committing/pushing code it
 writes while talking to the user), separate from and not overriding the
 autonomous-routine PR-only rule above, which the user did not revisit or
 walk back.
+
+### 2026-08-21 — Action pipeline: first two real items processed (edit-in-place + Jynx commenter tier), on a branch/PR per the routine's own rule
+The `jynx-action-worker` routine (or a Claude session working the same
+action-item file by hand) picked up work item `jynx-mt30ld1htt72`
+(route `dashboard`, target `dev-toolbar-icon-btn`) — the note whose
+admin reply already recorded that the per-dev-user comments view
+(Open/Done split, "just me" filter, jump-to-element, reply) was done in
+an earlier pass. The two genuinely open pieces from that note:
+
+1. **Edit-in-place for Jynx feedback text.** `data/routes/jynx-feedback.js`'s
+   `PATCH /admin/jynx-feedback/:id` (previously `resolved`-only) now also
+   accepts a `comment` field, independently of `resolved` — the two are
+   handled via separate `Object.prototype.hasOwnProperty.call(req.body,
+   "resolved")` / `typeof req.body.comment === "string"` checks so a
+   comment-only edit can never accidentally flip `resolved` back to
+   `false` (verified live: resolve an entry, then PATCH just `{comment}`,
+   confirm `resolved`/`resolvedAt`/`resolutionNote` are untouched).
+   `JynxFeedbackScreen.jsx` (the admin's Jynx-feedback list, inside
+   `DevAdminPanel.jsx`'s "🔮 Jynx" tab) got a pencil icon next to each
+   comment → inline textarea → Save/Cancel, reusing the existing
+   `.dev-admin-resolve-note-box`/`-actions` classes from
+   `DevAdminPanel.jsx`'s shared `<style>` (that file's tabs have never
+   carried their own `<style>` block — they're always mounted as children
+   of `DevAdminPanel.jsx`, which injects one shared block first; this PR
+   follows that existing convention rather than introducing per-tab
+   styles). `devApi.js` grew `editJynxFeedback(id, comment)`.
+2. **A new "Jynx commenter" permission tier**, since Jynx meta-feedback
+   (comments about the FAB/toolbar/admin-panel itself, separate from
+   `data/annotations/{notes,actions}/`) was previously admin-only end to
+   end. `data/config/dev-users.json` records gained an optional
+   `canJynxComment` boolean (default absent/false for every existing
+   user — nothing was pre-set); `DevAdminUsersScreen.jsx` got a wand-icon
+   toggle per row (plus a small badge) that PATCHes it via the *existing*
+   `PATCH /admin/dev-users/:id` (that route already merges arbitrary body
+   fields onto the record, so no new dev-users route was needed).
+   `GET /dev/me` (in `dev-auth.js`) now also returns the calling user's
+   own `canJynxComment`, looked up fresh from the roster file on every
+   call — not baked into the session token — specifically so a grant/
+   revoke takes effect immediately, no re-login required.
+   `POST /admin/jynx-feedback` (submit new Jynx feedback) is the *only*
+   route in `jynx-feedback.js` that widened: a new local
+   `requireAdminOrJynxCommenter` middleware, defined in that same file,
+   passes either a valid `X-Admin-Session` (unchanged admin path) or a
+   `req.devUser` whose fresh-read roster record has `canJynxComment` (and
+   `active !== false`). `requireAdmin` itself was not touched, and every
+   other route in the file (GET, PATCH, the reply route, export) is
+   still built with plain `requireAdmin`, exactly as before — deliberate,
+   per the work item's own instruction not to widen those. On the client,
+   `useHoverTarget.js`'s `allowJynxChrome` param was already
+   generically named (not literally `isAdmin`); what changed is the
+   *caller* — `DevAuthGate.jsx` now fetches `canJynxComment` from
+   `/dev/me` and passes `canJynxChrome={isAdmin || canJynxComment}` into
+   `DevOverlay.jsx` as its own prop, separate from `isAdmin` (which
+   `DevOverlay.jsx` still uses, unchanged, for the QA-note action-toggle
+   default and for gating the always-on `AdminAnnotationMarkers` —
+   neither of those opens up to a Jynx commenter). Verified end-to-end
+   against a live local `data/` server (not just `vite build`): created a
+   throwaway dev user, granted `canJynxComment`, logged in as *that* user
+   with no admin token at all, confirmed `POST /admin/jynx-feedback`
+   succeeds (`201`) while `GET`/`export` on the same route still 401 for
+   them; cleaned up the throwaway user and the test note/action files
+   afterward so nothing test-only landed in git.
+
+Scope note: submitted-by tracking (`authorId`/`authorName`) was added to
+new Jynx-feedback entries (previously untracked, since only the admin
+ever wrote there) purely for admin-side display — mirrors the pattern
+`annotations.js` already used. There's still no "my Jynx feedback" view
+for a commenter (out of scope for this item; they submit blind, same as
+before, just through a wider door) — if that's wanted later, it's a new
+ask, not implied by this one.

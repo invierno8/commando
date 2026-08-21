@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Plus, Trash2, ShieldOff, ShieldCheck, KeyRound } from "lucide-react";
+import { Plus, Trash2, ShieldOff, ShieldCheck, KeyRound, Wand2 } from "lucide-react";
 import { fetchDevUsers, createDevUser, updateDevUser, deleteDevUser } from "./devApi.js";
 
 /* לא נושא <style> משלו — תמיד ממוסגר בתוך DevAdminPanel.jsx, שכבר מזריק     */
@@ -37,6 +37,14 @@ export default function DevAdminUsersScreen() {
     await updateDevUser(u.id, { active: !u.active });
     reload();
   }
+  // הרשאת "Jynx commenter" (2026-08-21) — מי שמסומן ככה רואה גם את הילת
+  // ה-.jynx-chrome ב-hover (ראו useHoverTarget.js) ויכול לשלוח משוב חדש על
+  // Jynx עצמו (POST /admin/jynx-feedback, ראו jynx-feedback.js) — בלי לקבל
+  // שום הרשאת ניהול אחרת (לא רואה/עורך את התור, לא פותח את הפאנל הזה).
+  async function toggleJynxComment(u) {
+    await updateDevUser(u.id, { canJynxComment: !u.canJynxComment });
+    reload();
+  }
   async function removeUser(id) {
     await deleteDevUser(id);
     reload();
@@ -57,6 +65,8 @@ export default function DevAdminUsersScreen() {
         Dev users (product managers / commanders / engineers) who can activate dev mode on the public link and leave QA comments.
         The file itself (data/config/dev-users.json) is the source of truth in Git; this screen edits it directly on the server.
         Passwords are encrypted (bcrypt) — there's no way to show an existing password, only reset to a new one.
+        The wand icon grants/revokes "Jynx commenter" — lets that specific user also see and leave feedback about Jynx
+        itself (normally admin-only), without giving them any other admin permission.
       </p>
       {users.length === 0 && <div className="dev-admin-empty">No dev users yet.</div>}
       {users.length > 0 && (
@@ -68,11 +78,18 @@ export default function DevAdminUsersScreen() {
                 <b>{u.name}</b>
                 {u.role && <span className="dev-admin-user-role">{u.role}</span>}
                 {!u.active && <span className="dev-admin-user-inactive">Disabled</span>}
+                {u.canJynxComment && <span className="dev-admin-user-jynx-badge">Jynx commenter</span>}
                 {u.createdAt && <span className="dev-admin-user-created">Created {new Date(u.createdAt).toLocaleDateString("en-US")}</span>}
               </div>
               <div className="dev-admin-user-actions">
                 <button type="button" onClick={() => { setChangingId(changingId === u.id ? null : u.id); setNewPassword(""); }} title="Reset password">
                   <KeyRound size={14} />
+                </button>
+                <button
+                  type="button" className={u.canJynxComment ? "jynx-perm-active" : ""} onClick={() => toggleJynxComment(u)}
+                  title={u.canJynxComment ? "Revoke Jynx commenter permission (can see/leave Jynx-meta feedback)" : "Grant Jynx commenter permission (see/leave Jynx-meta feedback)"}
+                >
+                  <Wand2 size={14} />
                 </button>
                 <button type="button" onClick={() => toggleActive(u)} title={u.active ? "Disable" : "Enable"}>
                   {u.active ? <ShieldOff size={14} /> : <ShieldCheck size={14} />}

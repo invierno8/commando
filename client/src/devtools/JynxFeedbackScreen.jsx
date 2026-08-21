@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Check, Download, Loader2, GitPullRequest, CheckCircle2, XCircle, MessageCircle, Undo2 } from "lucide-react";
-import { fetchJynxFeedback, resolveJynxFeedback, exportJynxFeedbackMarkdown, replyToJynxFeedback } from "./devApi.js";
+import { Check, Download, Loader2, GitPullRequest, CheckCircle2, XCircle, MessageCircle, Undo2, Pencil } from "lucide-react";
+import { fetchJynxFeedback, resolveJynxFeedback, exportJynxFeedbackMarkdown, replyToJynxFeedback, editJynxFeedback } from "./devApi.js";
 
 const ACTION_STATUS_LABEL = { queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed" };
 const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: GitPullRequest, done: CheckCircle2, failed: XCircle };
 const ACTION_STATUS_TONE = { queued: "blue", in_progress: "blue", pr_opened: "green", done: "green", failed: "red" };
 
 /* תור המשוב על Jynx עצמו — נפרד לגמרי מ-DevAnnotationsScreen.jsx (משוב על
-   האפליקציה). כל רשומה כאן נכתבה על ידי המנהל בלבד ותמיד מסומנת אוטומטית
-   כפעולה, אז אין כאן כפתור "הפעל" ידני — רק סקירה, סימון-כטופל וייצוא. */
+   האפליקציה). מ-2026-08-21 לא רק המנהל כותב לכאן — גם משתמש-פיתוח שסומן
+   canJynxComment:true (ראו data/routes/jynx-feedback.js), אבל עדיין תמיד
+   אותו תור אחד, ותמיד מסומן אוטומטית כפעולה — אין כאן כפתור "הפעל" ידני,
+   רק סקירה (כולל מי כתב מה, בשדה "meta" למטה), עריכת-טקסט, סימון-כטופל
+   וייצוא — כל אלה עדיין מנהל-בלבד. */
 export default function JynxFeedbackScreen() {
   const [items, setItems] = useState(null);
   const [filter, setFilter] = useState("open");
@@ -17,6 +20,8 @@ export default function JynxFeedbackScreen() {
   const [resolveNote, setResolveNote] = useState("");
   const [openThreadId, setOpenThreadId] = useState(null);
   const [replyText, setReplyText] = useState("");
+  const [editingId, setEditingId] = useState(null); // מי כרגע במצב עריכת-טקסט (פנקה→שדה→שמור/בטל)
+  const [editText, setEditText] = useState("");
 
   function reload() {
     fetchJynxFeedback().then(setItems);
@@ -44,6 +49,21 @@ export default function JynxFeedbackScreen() {
     if (!replyText.trim()) return;
     await replyToJynxFeedback(a.id, replyText.trim());
     setReplyText("");
+    reload();
+  }
+  function startEdit(a) {
+    setEditingId(a.id);
+    setEditText(a.comment);
+  }
+  function cancelEdit() {
+    setEditingId(null);
+    setEditText("");
+  }
+  async function saveEdit(a) {
+    if (!editText.trim()) return;
+    await editJynxFeedback(a.id, editText.trim());
+    setEditingId(null);
+    setEditText("");
     reload();
   }
 
@@ -77,8 +97,25 @@ export default function JynxFeedbackScreen() {
                       {a.secondaryTargets?.length > 0 && ` → ${a.secondaryTargets.join(", ")}`}
                     </span>
                   )}
-                  <p className="dev-admin-annotation-comment">{a.comment}</p>
-                  <span className="dev-admin-annotation-meta">{new Date(a.createdAt).toLocaleString("en-US")}</span>
+                  {editingId === a.id ? (
+                    <div className="dev-admin-resolve-note-box">
+                      <textarea autoFocus rows={2} value={editText} onChange={(e) => setEditText(e.target.value)} />
+                      <div className="dev-admin-resolve-note-actions">
+                        <button type="button" onClick={cancelEdit}>Cancel</button>
+                        <button type="button" className="primary" onClick={() => saveEdit(a)} disabled={!editText.trim()}>Save</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="dev-admin-comment-row">
+                      <p className="dev-admin-annotation-comment">{a.comment}</p>
+                      <button type="button" className="dev-admin-edit-btn" onClick={() => startEdit(a)} title="Edit comment text">
+                        <Pencil size={11} />
+                      </button>
+                    </div>
+                  )}
+                  <span className="dev-admin-annotation-meta">
+                    {a.authorName ? `${a.authorName} · ` : ""}{new Date(a.createdAt).toLocaleString("en-US")}
+                  </span>
                   {a.actionStatus && (
                     <span className={`pill pill-${ACTION_STATUS_TONE[a.actionStatus] || "neutral"} dev-admin-action-pill`}>
                       {StatusIcon && <StatusIcon size={11} className={a.actionStatus === "queued" || a.actionStatus === "in_progress" ? "dev-admin-spin" : ""} />}

@@ -51,6 +51,10 @@ export async function fetchJynxFeedback() {
 export async function resolveJynxFeedback(id, resolved, resolutionNote) {
   return http.patch(`/admin/jynx-feedback/${id}`, { resolved, resolutionNote });
 }
+// עריכת טקסט ההערה עצמה (לא resolved) — כפתור-עיפרון ב-JynxFeedbackScreen.jsx.
+export async function editJynxFeedback(id, comment) {
+  return http.patch(`/admin/jynx-feedback/${id}`, { comment });
+}
 export async function replyToJynxFeedback(id, text) {
   return http.post(`/admin/jynx-feedback/${id}/reply`, { text });
 }

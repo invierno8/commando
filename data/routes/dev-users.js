@@ -18,7 +18,14 @@ const router = Router();
 // "להציג את הסיסמה הקיימת" (ראו admin/dev-users/:id PATCH — אפשר רק לאפס
 // לסיסמה חדשה). online נגזר בזמן אמת ממפת הסשנים, לא נשמר בשום מקום.
 function publicView(u, onlineIds) {
-  return { id: u.id, name: u.name, role: u.role, active: u.active, createdAt: u.createdAt, online: onlineIds.has(u.id) };
+  return {
+    id: u.id, name: u.name, role: u.role, active: u.active,
+    // הרשאת "Jynx commenter" (2026-08-21) — ברירת מחדל false/נעדר עבור כל
+    // משתמש קיים; מוענקת/מבוטלת דרך PATCH /admin/dev-users/:id הקיים
+    // (כבר מקבל שדות שרירותיים, לא נזקק לroute נפרד), ראו DevAdminUsersScreen.jsx.
+    canJynxComment: !!u.canJynxComment,
+    createdAt: u.createdAt, online: onlineIds.has(u.id),
+  };
 }
 
 router.get("/admin/dev-users", requireAdmin, (_req, res) => {

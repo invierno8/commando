@@ -3,10 +3,16 @@
 /* data/annotations/{notes,actions}/, which is QA feedback about the    */
 /* underlying HANGAR app. This one is meta: comments about the Jynx     */
 /* dev-tool overlay itself (the FAB, the toolbar, the admin panel...),  */
-/* meant to evolve Jynx into its own standalone product later. Only the */
-/* admin can write to it (no per-person dev-user roster for this one),  */
-/* so every entry is auto-queued as an action — same "everything I      */
-/* write becomes an action" rule already used for admin QA notes.       */
+/* meant to evolve Jynx into its own standalone product later.          */
+/*                                                                      */
+/* Historically admin-only end to end. As of 2026-08-21, submitting a   */
+/* NEW note (POST) is also open to any dev user whose roster record has */
+/* canJynxComment:true (see data/lib/devUsers.js / DevAdminUsersScreen  */
+/* .jsx) — "collect what the Jynx commenter says" — landing in this     */
+/* exact same queue, still auto-queued as an action. Every OTHER route  */
+/* here (GET, PATCH, reply, export) stays admin-only exactly as before; */
+/* requireAdmin itself is untouched — the wider POST gate is a small,   */
+/* local addition below, not a change to that shared middleware.        */
 /* ================================================================== */
 
 import { Router } from "express";
@@ -14,6 +20,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requireAdmin } from "../middleware/adminAuth.js";
+import { resolveSession } from "../lib/sessions.js";
+import { readDevUsers } from "../lib/devUsers.js";
 import { asyncRoute, requireFields } from "../middleware/validate.js";
 import { commitFileToGithub, githubPersistEnabled, listDirFromGithub, readFileFromGithub } from "../lib/githubPersist.js";
 
@@ -58,15 +66,34 @@ async function queueAction(note) {
   }
 }
 
+// שער-הרשאה מקומי, רק לroute הזה — לא נוגע ב-requireAdmin עצמו. עובר אם
+// יש X-Admin-Session תקין (מנהל, בדיוק כמו היום) *או* אם req.devUser
+// (מ-middleware/auth.js הגלובלי) מצביע על משתמש-פיתוח שהמנהל סימן לו
+// canJynxComment:true ברשימה. נטען טרי מהקובץ בכל בקשה, לא מהטוקן, כדי
+// שביטול הרשאה ייכנס לתוקף מיד.
+function requireAdminOrJynxCommenter(req, res, next) {
+  const adminToken = req.headers["x-admin-session"] || req.cookies?.hangar_admin_session;
+  if (resolveSession(adminToken)) return next();
+  if (req.devUser) {
+    const record = readDevUsers().find((u) => u.id === req.devUser.id);
+    if (record && record.active !== false && record.canJynxComment) return next();
+  }
+  return res.status(401).json({ error: "נדרש אימות מנהל, או הרשאת Jynx commenter" });
+}
+
 const router = Router();
 
-router.post("/admin/jynx-feedback", requireAdmin, asyncRoute(async (req, res) => {
+router.post("/admin/jynx-feedback", requireAdminOrJynxCommenter, asyncRoute(async (req, res) => {
   requireFields(req.body, ["comment"]);
   const secondaryTargets = Array.isArray(req.body.secondaryTargets)
     ? req.body.secondaryTargets.filter((t) => typeof t === "string" && t.trim()).slice(0, 10)
     : [];
   const entry = {
     id: "jynx-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    // authorId/authorName: לפני 2026-08-21 היה תמיד המנהל (השדה לא נשמר
+    // בכלל); עכשיו יכול להיות גם Jynx commenter — נשמר לצורך תצוגה בלבד,
+    // אין עדיין UI לכתוב "ההערות שלי" על התור הזה (ראו FORCLAUDE.md).
+    authorId: req.devUser?.id || null, authorName: req.devUser?.name || "Admin",
     createdAt: new Date().toISOString(),
     route: req.body.route || null, targetLabel: req.body.targetLabel || null, secondaryTargets,
     comment: req.body.comment, resolved: false, resolvedAt: null, resolutionNote: null,
@@ -74,7 +101,7 @@ router.post("/admin/jynx-feedback", requireAdmin, asyncRoute(async (req, res) =>
     actionPrUrl: null, actionLog: null,
     replies: [],
   };
-  await persistNote(entry, `Jynx feedback (${entry.route || "?"}) — ${entry.targetLabel || "?"}`);
+  await persistNote(entry, `Jynx feedback (${entry.route || "?"}) — ${entry.authorName}`);
   await queueAction(entry);
   res.status(201).json({ ok: true });
 }));
@@ -83,18 +110,30 @@ router.get("/admin/jynx-feedback", requireAdmin, (_req, res) => {
   res.json(readAll());
 });
 
+// גם resolve/reopen (כמו קודם) וגם, מ-2026-08-21, עריכת טקסט ההערה עצמה
+// (comment) — ראו הכפתור-עיפרון ב-JynxFeedbackScreen.jsx. השדות בלתי-תלויים
+// בכוונה: "resolved" מטופל רק אם הוא בפועל הגיע ב-body (כדי שקריאת עריכה
+// שמעבירה רק {comment} לא תאפס resolved=false בטעות ותפתח מחדש הערה סגורה).
 router.patch("/admin/jynx-feedback/:id", requireAdmin, asyncRoute(async (req, res) => {
   const found = readAll().find((a) => a.id === req.params.id);
   if (!found) return res.json(null);
-  const resolved = !!req.body.resolved;
+  const resolvedProvided = Object.prototype.hasOwnProperty.call(req.body, "resolved");
+  const resolved = resolvedProvided ? !!req.body.resolved : found.resolved;
+  const commentProvided = typeof req.body.comment === "string" && req.body.comment.trim().length > 0;
   const updated = {
     ...found,
+    comment: commentProvided ? req.body.comment.trim() : found.comment,
     resolved,
-    resolvedAt: resolved ? new Date().toISOString() : null,
-    resolutionNote: resolved ? (req.body.resolutionNote || found.resolutionNote || null) : found.resolutionNote,
-    actionStatus: resolved ? "done" : found.actionStatus,
+    resolvedAt: resolvedProvided ? (resolved ? new Date().toISOString() : null) : found.resolvedAt,
+    resolutionNote: resolvedProvided
+      ? (resolved ? (req.body.resolutionNote || found.resolutionNote || null) : found.resolutionNote)
+      : found.resolutionNote,
+    actionStatus: resolvedProvided && resolved ? "done" : found.actionStatus,
   };
-  await persistNote(updated, `Jynx feedback ${updated.resolved ? "resolved" : "reopened"} — ${updated.id}`);
+  const message = resolvedProvided
+    ? `Jynx feedback ${updated.resolved ? "resolved" : "reopened"} — ${updated.id}`
+    : `Jynx feedback edited — ${updated.id}`;
+  await persistNote(updated, message);
   res.json(updated);
 }));
 
