@@ -95,8 +95,12 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
     const secondaryTargets = parseSecondaryTargetsFromComment(comment);
     if (popover.isJynxMeta) {
       // משוב על Jynx עצמו — תור נפרד לגמרי מהמשוב על האפליקציה (ראו
-      // data/routes/jynx-feedback.js), תמיד "פעולה" כי רק המנהל כותב לכאן.
-      await submitJynxFeedback({ route, targetLabel: popover.label, comment, secondaryTargets });
+      // data/routes/jynx-feedback.js). כמו במשוב הרגיל, כפתור "יישלח כפעולה"
+      // נותן למנהל לבחור אם זו הערה בלבד או שהיא תיכנס לתור הפעולות.
+      await submitJynxFeedback({
+        route, targetLabel: popover.label, comment, actionRequested: actionOn,
+        secondaryTargets,
+      });
     } else {
       // כפתור "יישלח כפעולה" ב-AnnotationPopover.jsx נותן למנהל שליטה
       // מפורשת (ברירת מחדל דלוקה, אבל ניתן לכיבוי); למשתמש-פיתוח רגיל
