@@ -102,7 +102,10 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
       <style>{CSS}</style>
       {rect && (
         <div
-          className={"dev-overlay-highlight" + (isJynxHover ? " dev-overlay-highlight-jynx" : "")}
+          className={
+            "dev-overlay-highlight" +
+            (pickingSecondary ? " dev-overlay-highlight-secondary" : isJynxHover ? " dev-overlay-highlight-jynx" : "")
+          }
           style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height }}
         />
       )}
@@ -140,14 +143,25 @@ const CSS = `
   box-shadow:0 0 0 3px color-mix(in srgb, var(--dev) 28%, transparent),
              0 0 18px color-mix(in srgb, var(--dev) 50%, transparent);
 }
+.dev-overlay-highlight-secondary{
+  border-color:#2F8FCE;
+  box-shadow:0 0 0 3px color-mix(in srgb, #2F8FCE 28%, transparent),
+             0 0 18px color-mix(in srgb, #2F8FCE 50%, transparent);
+}
 .dev-annotate-popover{
   position:fixed; z-index:100000; width:290px; background:var(--panel); border:1px solid var(--dev);
   border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow-md);
   animation:devAnnotateIn .12s ease;
 }
 @keyframes devAnnotateIn{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:translateY(0); } }
+.dev-annotate-popover-head{ display:flex; align-items:center; gap:6px; }
+.dev-annotate-popover-grip{
+  display:flex; align-items:center; flex:0 0 auto; color:var(--text-dim); cursor:grab; touch-action:none;
+}
+.dev-annotate-popover-grip:active{ cursor:grabbing; }
+.dev-annotate-popover-grip:hover{ color:var(--dev); }
 .dev-annotate-popover-label{
-  font-family:var(--font-mono); font-size:10.5px; color:var(--dev); text-transform:uppercase; letter-spacing:.04em;
+  flex:1; font-family:var(--font-mono); font-size:10.5px; color:var(--dev); text-transform:uppercase; letter-spacing:.04em;
 }
 .dev-annotate-popover-admin-hint{
   font-size:11px; color:#2F8FCE; background:color-mix(in srgb, #2F8FCE 12%, transparent);

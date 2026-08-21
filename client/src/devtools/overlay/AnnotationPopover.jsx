@@ -1,9 +1,12 @@
-import React, { useState } from "react";
-import { Zap } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { GripVertical, Zap } from "lucide-react";
 
 /* קופסת התגובה שנפתחת ב-Ctrl/Cmd+קליק — לא נושאת <style> משלה בכוונה,      */
 /* תמיד ממוסגרת בתוך ה-portal של DevOverlay.jsx וסומכת על ה-<style> היחיד   */
 /* שהוא כבר מזריק (בדיוק כמו תת-רכיבי מודל בתוך מסך אחר בקודבייס הזה).      */
+/* גרירה: מצב מקומי בלבד ({top,left}, מאותחל מ-x/y) — לא useDraggableFab,   */
+/* כי הפופאובר הזה חולף (נוצר מחדש בכל פתיחה, נעלם בשליחה/ביטול) ולא צריך   */
+/* להישמר בין רענונים כמו רכיבי ה-chrome הקבועים.                          */
 export default function AnnotationPopover({ x, y, label, secondaryTargets, pickingSecondary, isAdmin, isJynxMeta, onCancel, onSubmit, onAddSecondary, onRemoveSecondary }) {
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
@@ -12,6 +15,11 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, picki
   // הופך לפעולה" הקיימת), אבל עכשיו גם ניתן לכיבוי לפני שליחה, למי שרוצה
   // הפעם רק להשאיר הערה בלי להפעיל את הצינור האוטומטי.
   const [actionOn, setActionOn] = useState(true);
+  const [pos, setPos] = useState(() => ({
+    top: Math.min(y, window.innerHeight - 200),
+    left: Math.min(x, window.innerWidth - 300),
+  }));
+  const dragRef = useRef({ dragging: false, startX: 0, startY: 0, startPos: pos });
 
   async function submit() {
     if (!comment.trim() || sending) return;
@@ -26,17 +34,39 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, picki
     }
   }
 
-  const top = Math.min(y, window.innerHeight - 200);
-  const left = Math.min(x, window.innerWidth - 300);
+  function onGripPointerDown(e) {
+    dragRef.current = { dragging: true, startX: e.clientX, startY: e.clientY, startPos: pos };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  }
+  function onGripPointerMove(e) {
+    const d = dragRef.current;
+    if (!d.dragging) return;
+    setPos({ top: d.startPos.top + (e.clientY - d.startY), left: d.startPos.left + (e.clientX - d.startX) });
+  }
+  function onGripPointerUp(e) {
+    dragRef.current.dragging = false;
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+  }
 
   return (
     <div
       className={"dev-overlay-ignore dev-annotate-popover jynx-ui" + (isJynxMeta ? " dev-annotate-popover-jynx" : "")}
-      style={{ top, left }}
+      style={{ top: pos.top, left: pos.left }}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.key === "Escape" && onCancel()}
     >
-      <div className={"dev-annotate-popover-label" + (isJynxMeta ? " dev-annotate-popover-label-jynx" : "")}>{label}</div>
+      <div className="dev-annotate-popover-head">
+        <span
+          className="dev-annotate-popover-grip"
+          onPointerDown={onGripPointerDown}
+          onPointerMove={onGripPointerMove}
+          onPointerUp={onGripPointerUp}
+          title="Drag to move"
+        >
+          <GripVertical size={13} />
+        </span>
+        <div className={"dev-annotate-popover-label" + (isJynxMeta ? " dev-annotate-popover-label-jynx" : "")}>{label}</div>
+      </div>
       {isJynxMeta ? (
         <div className="dev-annotate-popover-jynx-hint">🔮 Feedback about Jynx itself — separate queue, unrelated to the app</div>
       ) : (
