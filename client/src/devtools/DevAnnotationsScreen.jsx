@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Check, Download, Zap, Loader2, GitPullRequest, CheckCircle2, XCircle, MessageCircle, Undo2, Archive, ArchiveRestore, Pencil, Save, Trash2, X } from "lucide-react";
+import { Check, Download, Zap, Loader2, GitPullRequest, CheckCircle2, XCircle, MessageCircle, Undo2, Archive, ArchiveRestore, Pencil, Save, Trash2, X, Paperclip } from "lucide-react";
 import { fetchAnnotations, resolveAnnotation, archiveAnnotation, editAnnotationComment, deleteAnnotation, exportAnnotationsMarkdown, requestAnnotationAction, replyToAnnotation } from "./devApi.js";
 
 const ACTION_STATUS_LABEL = {
@@ -124,6 +124,17 @@ export default function DevAnnotationsScreen() {
                     </div>
                   ) : (
                     <p className="dev-admin-annotation-comment">{a.comment}</p>
+                  )}
+                  {a.attachment && (
+                    a.attachment.startsWith("data:image/") ? (
+                      <a href={a.attachment} target="_blank" rel="noreferrer" className="dev-admin-attachment-link">
+                        <img src={a.attachment} alt={a.attachmentName || "attachment"} className="dev-admin-attachment-thumb" />
+                      </a>
+                    ) : (
+                      <a href={a.attachment} download={a.attachmentName || "attachment"} className="dev-admin-attachment-link dev-admin-attachment-file">
+                        <Paperclip size={11} /> {a.attachmentName || "attachment"}
+                      </a>
+                    )
                   )}
                   <span className="dev-admin-annotation-meta">{a.authorName} · {new Date(a.createdAt).toLocaleString("en-US")}</span>
                   {hasAction && (

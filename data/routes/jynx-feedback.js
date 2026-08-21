@@ -4,9 +4,11 @@
 /* underlying HANGAR app. This one is meta: comments about the Jynx     */
 /* dev-tool overlay itself (the FAB, the toolbar, the admin panel...),  */
 /* meant to evolve Jynx into its own standalone product later. Only the */
-/* admin can write to it (no per-person dev-user roster for this one),  */
-/* so every entry is auto-queued as an action — same "everything I      */
-/* write becomes an action" rule already used for admin QA notes.       */
+/* admin can write to it (no per-person dev-user roster for this one).  */
+/* Whether an entry queues as an action is the admin's explicit choice  */
+/* (the same "will send as action" toggle already used for admin QA     */
+/* notes) — it's not implicitly always-on, so a plain comment about     */
+/* Jynx can be left without it turning into an automated work item.     */
 /* ================================================================== */
 
 import { Router } from "express";
@@ -22,6 +24,11 @@ const NOTES_DIR = path.join(__dirname, "..", "annotations", "jynx-notes");
 const ACTIONS_DIR = path.join(__dirname, "..", "annotations", "jynx-actions");
 const GITHUB_NOTES_DIR = "data/annotations/jynx-notes";
 const GITHUB_ACTIONS_DIR = "data/annotations/jynx-actions";
+
+// אותה פלטה בדיוק כמו data/routes/annotations.js (ראו שם) — מוגדרת שוב פה
+// ולא משותפת, כי כל route מודול כאן עצמאי לגמרי (אין ייבוא צולב בין קבצי
+// routes/), בדיוק כמו הכלל של "כל מסך נושא <style> משלו" בצד הלקוח.
+const REACTION_EMOJI = ["👍", "😄", "🤔", "❤️"];
 
 function readAll() {
   try {
@@ -65,17 +72,22 @@ router.post("/admin/jynx-feedback", requireAdmin, asyncRoute(async (req, res) =>
   const secondaryTargets = Array.isArray(req.body.secondaryTargets)
     ? req.body.secondaryTargets.filter((t) => typeof t === "string" && t.trim()).slice(0, 10)
     : [];
+  // ברירת מחדל דלוקה (תואם להתנהגות הקודמת) כשלא נשלח בכלל — אבל כפתור
+  // "יישלח כפעולה" ב-AnnotationPopover.jsx נותן למנהל לכבות את זה מראש.
+  const actionRequested = req.body.actionRequested === undefined ? true : !!req.body.actionRequested;
   const entry = {
     id: "jynx-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     createdAt: new Date().toISOString(),
     route: req.body.route || null, targetLabel: req.body.targetLabel || null, secondaryTargets,
     comment: req.body.comment, resolved: false, resolvedAt: null, resolutionNote: null,
-    actionStatus: "queued", actionRequestedAt: new Date().toISOString(),
+    actionStatus: actionRequested ? "queued" : "none",
+    actionRequestedAt: actionRequested ? new Date().toISOString() : null,
     actionPrUrl: null, actionLog: null,
     replies: [],
+    reactions: Object.fromEntries(REACTION_EMOJI.map((e) => [e, []])),
   };
   await persistNote(entry, `Jynx feedback (${entry.route || "?"}) — ${entry.targetLabel || "?"}`);
-  await queueAction(entry);
+  if (actionRequested) await queueAction(entry);
   res.status(201).json({ ok: true });
 }));
 
@@ -92,7 +104,7 @@ router.patch("/admin/jynx-feedback/:id", requireAdmin, asyncRoute(async (req, re
     resolved,
     resolvedAt: resolved ? new Date().toISOString() : null,
     resolutionNote: resolved ? (req.body.resolutionNote || found.resolutionNote || null) : found.resolutionNote,
-    actionStatus: resolved ? "done" : found.actionStatus,
+    actionStatus: resolved && found.actionStatus && found.actionStatus !== "none" ? "done" : found.actionStatus,
   };
   await persistNote(updated, `Jynx feedback ${updated.resolved ? "resolved" : "reopened"} — ${updated.id}`);
   res.json(updated);
@@ -109,6 +121,27 @@ router.post("/admin/jynx-feedback/:id/reply", requireAdmin, asyncRoute(async (re
   const updated = { ...found, replies: [...(found.replies || []), reply] };
   await persistNote(updated, `reply on ${updated.id}`);
   res.status(201).json(updated);
+}));
+
+// ריאקציית אימוג'י — נשאר מגודר-מנהל בדיוק כמו שאר תור המשוב הזה (אין עדיין
+// הרשאה רחבה יותר לקריאת/כתיבת jynx-feedback בקוד הזה). req.devUser זמין
+// כאן כי attachDevUser רץ גלובלית (ראו server.js) והמנהל תמיד מחובר קודם
+// כמשתמש-פיתוח לפני אימות המנהל — אבל ליתר ביטחון, נופלים חזרה ל-"admin"
+// אם אין סשן dev מצורף, כמו ה-authorName הקבוע ב-reply למעלה.
+router.post("/admin/jynx-feedback/:id/react", requireAdmin, asyncRoute(async (req, res) => {
+  requireFields(req.body, ["emoji"]);
+  if (!REACTION_EMOJI.includes(req.body.emoji)) return res.status(400).json({ error: "אימוג'י לא נתמך" });
+  const found = readAll().find((a) => a.id === req.params.id);
+  if (!found) return res.status(404).json({ error: "לא נמצא" });
+  const reactorId = req.devUser?.id || "admin";
+  const reactions = { ...Object.fromEntries(REACTION_EMOJI.map((e) => [e, []])), ...(found.reactions || {}) };
+  const current = reactions[req.body.emoji] || [];
+  reactions[req.body.emoji] = current.includes(reactorId)
+    ? current.filter((id) => id !== reactorId)
+    : [...current, reactorId];
+  const updated = { ...found, reactions };
+  await persistNote(updated, `reaction on ${updated.id}`);
+  res.json(updated);
 }));
 
 router.get("/admin/jynx-feedback/export", requireAdmin, (_req, res) => {

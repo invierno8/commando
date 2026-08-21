@@ -1,0 +1,22 @@
+{
+  "id": "jynx-mt36d092rib5",
+  "createdAt": "2026-08-21T16:39:40.934Z",
+  "route": "permissions",
+  "targetLabel": "dev-toolbar-icon-btn",
+  "secondaryTargets": [],
+  "comment": "כאשר אני כותב תגובה כל לחיצה הופכת להיות עוד אלמנט מקושר תעשה שכדי להוסיף אלמנט נוסף הדיוק כמו שזה עכשיו אבל הלחיצה חייבת להיות עם ctrl מוחזק כדי לא להפריע ללחיצה על כפתורים וכו..",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-21T16:39:40.934Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}

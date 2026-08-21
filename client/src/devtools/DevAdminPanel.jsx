@@ -161,6 +161,15 @@ const CSS = `
 .dev-admin-annotation-route{ font-family:var(--font-mono); font-size:10.5px; color:var(--jynx); text-transform:uppercase; }
 .dev-admin-annotation-target{ font-size:11.5px; color:var(--text-dim); }
 .dev-admin-annotation-comment{ margin:2px 0; font-size:13px; color:var(--text); }
+.dev-admin-attachment-link{ display:inline-flex; align-self:flex-start; margin:2px 0; }
+.dev-admin-attachment-thumb{
+  width:56px; height:56px; object-fit:cover; border-radius:7px; border:1px solid var(--line);
+}
+.dev-admin-attachment-file{
+  align-items:center; gap:5px; background:var(--panel); border:1px solid var(--line);
+  border-radius:14px; padding:4px 10px; font-size:11px; color:var(--text-dim); text-decoration:none;
+}
+.dev-admin-attachment-file:hover{ color:var(--jynx); border-color:var(--jynx); }
 .dev-admin-annotation-meta{ font-size:11px; color:var(--text-dim); }
 .dev-admin-annotation-actions{ display:flex; flex-direction:column; gap:6px; align-items:center; flex:none; }
 .dev-admin-resolve-btn{
