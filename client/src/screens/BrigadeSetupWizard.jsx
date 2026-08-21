@@ -50,33 +50,50 @@ function Wizard({ steps, state, setState, onFinish }) {
   const step = steps[i];
   const isLast = i === steps.length - 1;
   const canProceed = step.canProceed ? step.canProceed(state) : true;
+  // ניווט חופשי בתפריט הצד מאפשר לקפוץ ישירות לשלב "סיכום" בלי לעבור דרך כל
+  // שלב באמצעות "המשך" — כדי לא לאבד את בדיקת שדות החובה הקיימת בכל שלב,
+  // כפתור הסיום בודק שכל השלבים תקינים (לא רק השלב הנוכחי), ולא רק את שלב הסיכום עצמו.
+  const allStepsValid = steps.every((s) => (s.canProceed ? s.canProceed(state) : true));
+  const canFinish = isLast ? allStepsValid : canProceed;
 
   return (
-    <div className="wizard">
-      <div className="wizard-progress">
-        {steps.map((s, idx) => (
-          <div key={s.key} className={"wizard-dot" + (idx <= i ? " done" : "")}>
-            <span className="wizard-dot-mark" />
-            <span className="wizard-dot-label">{s.short}</span>
-          </div>
-        ))}
-      </div>
+    <div className="wizard-shell">
+      {/* תפריט צד בסגנון הגדרות (כמו Discord) — קפיצה ישירה לכל שלב, במקום רק */}
+      {/* המשך/חזרה ליניארי. מוצג בצד הימני-חזותי בזכות dir="rtl" על wizard-view. */}
+      <nav className="wizard-sidenav" aria-label="ניווט בין שלבי ההתקנה">
+        {steps.map((s, idx) => {
+          const stepValid = s.canProceed ? s.canProceed(state) : true;
+          return (
+            <button
+              type="button"
+              key={s.key}
+              className={"wizard-sidenav-item" + (idx === i ? " active" : "")}
+              onClick={() => setI(idx)}
+            >
+              <span className={"wizard-sidenav-dot" + (stepValid ? " complete" : "")} />
+              <span className="wizard-sidenav-label">{s.short}</span>
+            </button>
+          );
+        })}
+      </nav>
 
-      <div className="wizard-body">{step.render(state, setState)}</div>
+      <div className="wizard-main">
+        <div className="wizard-body">{step.render(state, setState)}</div>
 
-      <div className="wizard-actions">
-        <button className="btn-ghost" disabled={i === 0} onClick={() => setI((n) => n - 1)}>
-          חזרה
-        </button>
-        {!isLast ? (
-          <button className="btn-primary" disabled={!canProceed} onClick={() => setI((n) => n + 1)}>
-            המשך
+        <div className="wizard-actions">
+          <button className="btn-ghost" disabled={i === 0} onClick={() => setI((n) => n - 1)}>
+            חזרה
           </button>
-        ) : (
-          <button className="btn-primary" disabled={!canProceed} onClick={onFinish}>
-            סיום התקנה
-          </button>
-        )}
+          {!isLast ? (
+            <button className="btn-primary" disabled={!canProceed} onClick={() => setI((n) => n + 1)}>
+              המשך
+            </button>
+          ) : (
+            <button className="btn-primary" disabled={!canFinish} onClick={onFinish}>
+              סיום התקנה
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -538,18 +555,42 @@ const CSS = `
 @keyframes fadeSlideUp{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
 
 .wizard-view{
-  max-width:760px; margin:0 auto;
+  max-width:920px; margin:0 auto;
   color:var(--text); font-family:var(--font-sans);
   padding:32px 36px;
 }
 .wizard, .completed{ animation:fadeSlideUp .3s ease; }
 
-.wizard-progress{ display:flex; gap:6px; margin-bottom:30px; }
-.wizard-dot{ flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; }
-.wizard-dot-mark{ width:100%; height:3px; background:var(--line); border-radius:2px; transition:background .25s ease; }
-.wizard-dot.done .wizard-dot-mark{ background:var(--accent); }
-.wizard-dot-label{ font-family:var(--font-mono); font-size:11px; color:var(--text-dim); }
-.wizard-dot.done .wizard-dot-label{ color:var(--accent); }
+/* תפריט צד בסגנון "הגדרות" (כמו Discord) — רשימת שלבים לחיצה, קפיצה ישירה   */
+/* לכל שלב במקום רק המשך/חזרה ליניארי. wizard-shell הוא flex row רגיל;      */
+/* בזכות dir="rtl" על wizard-view, הפריט הראשון ב-DOM (הניווט) מוצג בצד     */
+/* הימני-חזותי — אותה טכניקה בדיוק כמו app-sidebar ב-App.jsx.               */
+.wizard-shell{ display:flex; gap:28px; align-items:flex-start; }
+.wizard-sidenav{
+  flex:none; width:168px; display:flex; flex-direction:column; gap:2px;
+  padding-inline-end:18px; border-inline-end:1px solid var(--line);
+  position:sticky; top:20px;
+}
+.wizard-sidenav-item{
+  display:flex; align-items:center; gap:9px; background:transparent; border:none;
+  border-radius:5px; padding:9px 10px; cursor:pointer; text-align:right;
+  color:var(--text-dim); font-family:var(--font-sans); font-size:13px; font-weight:600;
+  transition:background .15s ease, color .15s ease;
+}
+.wizard-sidenav-item:hover{ background:var(--panel); color:var(--text); }
+.wizard-sidenav-item.active{ background:var(--panel-raised); color:var(--accent); }
+.wizard-sidenav-dot{ width:7px; height:7px; border-radius:50%; flex:none; background:var(--line); }
+.wizard-sidenav-dot.complete{ background:var(--accent); }
+.wizard-sidenav-item.active .wizard-sidenav-dot{ background:var(--accent); }
+.wizard-main{ flex:1; min-width:0; }
+@media (max-width: 640px){
+  .wizard-shell{ flex-direction:column; }
+  .wizard-sidenav{
+    width:100%; flex-direction:row; flex-wrap:wrap; gap:6px; position:static;
+    padding-inline-end:0; border-inline-end:none; border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:6px;
+  }
+  .wizard-sidenav-item{ flex:none; }
+}
 
 .setup-mark{ font-family:var(--font-mono); font-size:12px; color:var(--accent);
   border:1px solid var(--accent); display:inline-block; padding:2px 9px; border-radius:3px; margin-bottom:14px; letter-spacing:.04em; }

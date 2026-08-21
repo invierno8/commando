@@ -78,10 +78,12 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
 
   const rect = target?.getBoundingClientRect();
 
-  async function submit(comment, actionOn) {
+  async function submit(comment, actionOn, attachment) {
     if (popover.isJynxMeta) {
       // משוב על Jynx עצמו — תור נפרד לגמרי מהמשוב על האפליקציה (ראו
       // data/routes/jynx-feedback.js), תמיד "פעולה" כי רק המנהל כותב לכאן.
+      // אין תמיכה בקובץ מצורף כאן בכוונה — AnnotationPopover.jsx לא מציג את
+      // הבורר הזה כשisJynxMeta, אז attachment תמיד undefined בנתיב הזה.
       await submitJynxFeedback({ route, targetLabel: popover.label, comment, secondaryTargets: popover.secondaryTargets });
     } else {
       // כפתור "יישלח כפעולה" ב-AnnotationPopover.jsx נותן למנהל שליטה
@@ -90,6 +92,7 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
       await submitAnnotation({
         route, targetLabel: popover.label, comment, actionRequested: isAdmin && actionOn,
         secondaryTargets: popover.secondaryTargets,
+        attachment: attachment?.dataUrl || null, attachmentName: attachment?.name || null,
       });
     }
     setPopover(null);
@@ -199,4 +202,22 @@ const CSS = `
   border-radius:6px; padding:5px 9px; animation:devAdminPulse 1.2s ease-in-out infinite;
 }
 @keyframes devAdminPulse{ 50%{ opacity:.55; } }
+
+.dev-annotate-attachment-block{ display:flex; }
+.dev-annotate-attachment-preview{
+  display:flex; align-items:center; gap:7px; background:var(--bg); border:1px solid var(--line);
+  border-radius:7px; padding:5px 8px; max-width:100%;
+}
+.dev-annotate-attachment-preview img{
+  width:32px; height:32px; object-fit:cover; border-radius:5px; flex:none;
+}
+.dev-annotate-attachment-file{
+  display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text-dim);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.dev-annotate-attachment-preview button{
+  background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:14px; line-height:1;
+  padding:0; margin-inline-start:auto; flex:none;
+}
+.dev-annotate-attachment-preview button:hover{ color:var(--red); }
 `;
