@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "id": "dev-mt2u2o790o62",
+    "name": "אילאיל",
+    "role": "מנהלת מוצר הטובה בעולם",
+    "passwordHash": "$2a$12$h59YS903XQsHngXA4DQlR.jVCgi9pqpftG8SZtCqGtJd8qtBJKhWC",
+    "active": true,
+    "createdAt": "2026-08-21T10:55:46.235Z"
+  }
+]
