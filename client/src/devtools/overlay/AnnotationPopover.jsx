@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Zap } from "lucide-react";
 
 /* קופסת התגובה שנפתחת ב-Ctrl/Cmd+קליק — לא נושאת <style> משלה בכוונה,      */
 /* תמיד ממוסגרת בתוך ה-portal של DevOverlay.jsx וסומכת על ה-<style> היחיד   */
@@ -7,13 +8,17 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, picki
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  // כפתור פעולה מפורש — ברירת מחדל דלוקה למנהל (התנהגות ה"כל מה שאני כותב
+  // הופך לפעולה" הקיימת), אבל עכשיו גם ניתן לכיבוי לפני שליחה, למי שרוצה
+  // הפעם רק להשאיר הערה בלי להפעיל את הצינור האוטומטי.
+  const [actionOn, setActionOn] = useState(true);
 
   async function submit() {
     if (!comment.trim() || sending) return;
     setSending(true);
     setError("");
     try {
-      await onSubmit(comment.trim());
+      await onSubmit(comment.trim(), actionOn);
     } catch (e) {
       setError(e.message || "שליחה נכשלה, נסה/י שוב");
     } finally {
@@ -35,7 +40,16 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, picki
       {isJynxMeta ? (
         <div className="dev-annotate-popover-jynx-hint">🔮 משוב על Jynx עצמו — תור נפרד, לא קשור לאפליקציה</div>
       ) : (
-        isAdmin && <div className="dev-annotate-popover-admin-hint">⚡ מנהל — ההערה תופעל אוטומטית כפעולה</div>
+        isAdmin && (
+          <button
+            type="button"
+            className={"dev-annotate-action-toggle" + (actionOn ? " on" : "")}
+            onClick={() => setActionOn((v) => !v)}
+            title={actionOn ? "ההערה תישלח כפעולה — לחיצה כדי לבטל" : "ההערה תישלח כהערה רגילה בלבד — לחיצה להפוך לפעולה"}
+          >
+            <Zap size={12} /> {actionOn ? "יישלח כפעולה" : "רק הערה (לא פעולה)"}
+          </button>
+        )
       )}
       <textarea
         autoFocus

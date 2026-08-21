@@ -78,16 +78,17 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
 
   const rect = target?.getBoundingClientRect();
 
-  async function submit(comment) {
+  async function submit(comment, actionOn) {
     if (popover.isJynxMeta) {
       // משוב על Jynx עצמו — תור נפרד לגמרי מהמשוב על האפליקציה (ראו
       // data/routes/jynx-feedback.js), תמיד "פעולה" כי רק המנהל כותב לכאן.
       await submitJynxFeedback({ route, targetLabel: popover.label, comment, secondaryTargets: popover.secondaryTargets });
     } else {
-      // כשמי שכותב מאומת גם כמנהל, ההערה שלו הופכת אוטומטית לפריט פעולה —
-      // "כל מה שאני כותב הופך לפעולה", בלי צעד נוסף.
+      // כפתור "יישלח כפעולה" ב-AnnotationPopover.jsx נותן למנהל שליטה
+      // מפורשת (ברירת מחדל דלוקה, אבל ניתן לכיבוי); למשתמש-פיתוח רגיל
+      // (לא מנהל) זה תמיד false בלי קשר למה שהתקבל.
       await submitAnnotation({
-        route, targetLabel: popover.label, comment, actionRequested: isAdmin,
+        route, targetLabel: popover.label, comment, actionRequested: isAdmin && actionOn,
         secondaryTargets: popover.secondaryTargets,
       });
     }
@@ -152,6 +153,12 @@ const CSS = `
   font-size:11px; color:#2F8FCE; background:color-mix(in srgb, #2F8FCE 12%, transparent);
   border-radius:6px; padding:4px 8px;
 }
+.dev-annotate-action-toggle{
+  display:inline-flex; align-items:center; gap:5px; align-self:flex-start; border:1px solid var(--line);
+  background:none; color:var(--text-dim); border-radius:20px; padding:4px 10px; font-size:11px; font-weight:700;
+  cursor:pointer; font-family:var(--font-sans);
+}
+.dev-annotate-action-toggle.on{ border-color:#2F8FCE; color:#2F8FCE; background:color-mix(in srgb, #2F8FCE 12%, transparent); }
 .dev-annotate-popover-jynx{ border-color:var(--jynx); }
 .dev-annotate-popover-label-jynx{ color:var(--jynx); }
 .dev-annotate-popover-jynx-hint{

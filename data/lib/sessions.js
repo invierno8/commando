@@ -37,6 +37,17 @@ export function destroySession(token) {
   sessions.delete(token);
 }
 
+// עבור פאנל הניהול — "מי מחובר/ת כרגע" בלי לשמור/לתעד שום דבר בדיסק (ראו
+// דיון על רעש-קומיטים): נגזר ישירות ממפת הסשנים החיה בזיכרון, בזמן אמת.
+export function listActiveDevUserIds() {
+  const now = Date.now();
+  const ids = new Set();
+  for (const entry of sessions.values()) {
+    if (entry.expiresAt >= now && entry.payload?.id) ids.add(entry.payload.id);
+  }
+  return ids;
+}
+
 // ניקוי תקופתי של טוקנים שפגו — מונע דליפת זיכרון על שרת ארוך-טווח.
 setInterval(() => {
   const now = Date.now();

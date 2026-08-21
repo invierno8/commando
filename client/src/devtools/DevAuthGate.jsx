@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Lock, Settings2, Eye, EyeOff } from "lucide-react";
+import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare } from "lucide-react";
 import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
 import MockDataToggle from "./MockDataToggle.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
 import DevOverlay from "./overlay/DevOverlay.jsx";
+import CommentsPanel from "./overlay/CommentsPanel.jsx";
 
 const FAB_POS_KEY = "jynx-fab-pos";
 const DEFAULT_POS = { right: 20, bottom: 20 };
@@ -26,11 +27,13 @@ function readStoredPos() {
 export default function DevAuthGate({ route, devFabProps }) {
   const [checking, setChecking] = useState(true);
   const [devName, setDevName] = useState(null); // null = לא מחובר
+  const [devUserId, setDevUserId] = useState(null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [adminOpen, setAdminOpen] = useState(false);
   const [overlayOn, setOverlayOn] = useState(true);
+  const [commentsOn, setCommentsOn] = useState(false);
   // ידוע מראש (בלי לפתוח את פאנל הניהול) כדי ש-DevOverlay יוכל לסמן
   // אוטומטית "פעולה" על הערות שהמנהל עצמו כותב, ולהציג סימוני מנהל קבועים
   // על המסך — גם מיד אחרי רענון דף, כל עוד עוגיית המנהל עדיין תקפה.
@@ -74,7 +77,7 @@ export default function DevAuthGate({ route, devFabProps }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetchDevMe().then((d) => { if (!cancelled) { setDevName(d?.name || null); setChecking(false); } });
+    fetchDevMe().then((d) => { if (!cancelled) { setDevName(d?.name || null); setDevUserId(d?.id || null); setChecking(false); } });
     fetchAdminMe().then((d) => { if (!cancelled) setIsAdmin(!!d?.authenticated); });
     return () => { cancelled = true; };
   }, []);
@@ -87,6 +90,8 @@ export default function DevAuthGate({ route, devFabProps }) {
       if (res.isAdmin) setIsAdmin(true);
       setLoginOpen(false);
       setPassword("");
+      const me = await fetchDevMe();
+      setDevUserId(me?.id || null);
     } catch (e) {
       setError(e.message);
     }
@@ -94,6 +99,7 @@ export default function DevAuthGate({ route, devFabProps }) {
   async function logout() {
     await devLogout();
     setDevName(null);
+    setDevUserId(null);
     setIsAdmin(false);
   }
 
@@ -141,16 +147,21 @@ export default function DevAuthGate({ route, devFabProps }) {
     <>
       <style>{CSS}</style>
       <DevOverlay active={overlayOn} route={route} isAdmin={isAdmin} />
+      <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} />
       <div className="dev-fab-toolbar jynx-chrome">
         <MockDataToggle />
         <button type="button" className="dev-toolbar-icon-btn" onClick={() => setOverlayOn((v) => !v)} title={overlayOn ? "כיבוי תצפית Dev" : "הפעלת תצפית Dev"}>
           {overlayOn ? <Eye size={13} /> : <EyeOff size={13} />}
         </button>
+        <button type="button" className={"dev-toolbar-icon-btn" + (commentsOn ? " active" : "")} onClick={() => setCommentsOn((v) => !v)} title={commentsOn ? "הסתרת הערות המסך" : "הצגת כל ההערות על המסך"}>
+          <MessageSquare size={13} />
+        </button>
         <button type="button" className="dev-toolbar-icon-btn" onClick={() => setAdminOpen(true)} title="ניהול (מנהל בלבד)">
           <Settings2 size={13} />
         </button>
-        <button type="button" className="dev-toolbar-devname" onClick={logout} title="לחיצה להתנתקות">
-          שלום, {devName}
+        <span className="dev-toolbar-devname">שלום, {devName}</span>
+        <button type="button" className="dev-toolbar-icon-btn" onClick={logout} title="התנתקות מ-Jynx">
+          <LogOut size={13} />
         </button>
       </div>
       <DevFab {...devFabProps} />
@@ -176,9 +187,10 @@ const CSS = `
   color:var(--dev); display:flex; align-items:center; justify-content:center; cursor:pointer;
 }
 .dev-toolbar-icon-btn:hover{ background:color-mix(in srgb, var(--dev) 10%, var(--panel)); }
+.dev-toolbar-icon-btn.active{ background:var(--dev); color:#fff; }
 .dev-toolbar-devname{
   background:var(--panel); border:1px solid var(--dev); color:var(--dev); border-radius:20px;
-  padding:6px 12px; font-family:var(--font-mono); font-size:11px; font-weight:700; cursor:pointer;
+  padding:6px 12px; font-family:var(--font-mono); font-size:11px; font-weight:700; white-space:nowrap;
 }
 
 .mock-toggle{

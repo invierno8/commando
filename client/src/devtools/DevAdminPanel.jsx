@@ -112,12 +112,24 @@ const CSS = `
 
 .dev-admin-user-list, .dev-admin-annotation-list{ display:flex; flex-direction:column; gap:8px; }
 .dev-admin-user-row{
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
   background:var(--panel-raised); border:1px solid var(--line); border-radius:9px; padding:9px 12px;
 }
 .dev-admin-user-info{ display:flex; align-items:center; gap:8px; font-size:13px; }
 .dev-admin-user-role{ color:var(--text-dim); font-size:11.5px; }
 .dev-admin-user-inactive{ color:var(--red); font-size:11px; border:1px solid var(--red); border-radius:4px; padding:1px 6px; }
+.dev-admin-user-created{ color:var(--text-dim); font-size:10.5px; }
+.dev-admin-online-dot{ width:8px; height:8px; border-radius:50%; background:var(--line); flex:none; }
+.dev-admin-online-dot.online{ background:var(--green); box-shadow:0 0 0 2px color-mix(in srgb, var(--green) 25%, transparent); }
+.dev-admin-password-reset{ display:flex; gap:6px; margin-top:6px; width:100%; }
+.dev-admin-password-reset input{
+  flex:1; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:6px 9px;
+  font-size:12px; font-family:var(--font-mono); color:var(--text);
+}
+.dev-admin-password-reset button{
+  background:var(--dev); color:#fff; border:none; border-radius:7px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer;
+}
+.dev-admin-password-reset button:disabled{ opacity:.5; cursor:not-allowed; }
 .dev-admin-user-actions{ display:flex; gap:6px; }
 .dev-admin-user-actions button{
   background:none; border:1px solid var(--line); border-radius:7px; padding:5px; color:var(--text-dim); cursor:pointer;

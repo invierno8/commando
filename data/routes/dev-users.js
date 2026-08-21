@@ -10,15 +10,20 @@ import { readDevUsers, writeDevUsers } from "../lib/devUsers.js";
 import { hashPassword } from "../lib/passwords.js";
 import { requireAdmin } from "../middleware/adminAuth.js";
 import { asyncRoute, requireFields } from "../middleware/validate.js";
+import { listActiveDevUserIds } from "../lib/sessions.js";
 
 const router = Router();
 
-function publicView(u) {
-  return { id: u.id, name: u.name, role: u.role, active: u.active, createdAt: u.createdAt };
+// passwordHash אף פעם לא חוזר — bcrypt הוא חד-כיווני מיסודו, אין דרך
+// "להציג את הסיסמה הקיימת" (ראו admin/dev-users/:id PATCH — אפשר רק לאפס
+// לסיסמה חדשה). online נגזר בזמן אמת ממפת הסשנים, לא נשמר בשום מקום.
+function publicView(u, onlineIds) {
+  return { id: u.id, name: u.name, role: u.role, active: u.active, createdAt: u.createdAt, online: onlineIds.has(u.id) };
 }
 
 router.get("/admin/dev-users", requireAdmin, (_req, res) => {
-  res.json(readDevUsers().map(publicView));
+  const onlineIds = listActiveDevUserIds();
+  res.json(readDevUsers().map((u) => publicView(u, onlineIds)));
 });
 
 router.post("/admin/dev-users", requireAdmin, asyncRoute(async (req, res) => {
@@ -38,7 +43,7 @@ router.post("/admin/dev-users", requireAdmin, asyncRoute(async (req, res) => {
     createdAt: new Date().toISOString(),
   };
   await writeDevUsers([...users, user]);
-  res.status(201).json(publicView(user));
+  res.status(201).json(publicView(user, listActiveDevUserIds()));
 }));
 
 router.patch("/admin/dev-users/:id", requireAdmin, asyncRoute(async (req, res) => {
@@ -56,7 +61,7 @@ router.patch("/admin/dev-users/:id", requireAdmin, asyncRoute(async (req, res) =
     next.push(updated);
   }
   await writeDevUsers(next);
-  res.json(updated ? publicView(updated) : null);
+  res.json(updated ? publicView(updated, listActiveDevUserIds()) : null);
 }));
 
 router.delete("/admin/dev-users/:id", requireAdmin, asyncRoute(async (req, res) => {

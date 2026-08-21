@@ -102,6 +102,15 @@ router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
   res.status(201).json({ ok: true });
 }));
 
+// כל משתמש-פיתוח מחובר (לא רק מנהל) — תצוגת "כל ההערות על המסך הזה", ראו
+// CommentsPanel.jsx. שונה בכוונה מ-GET /admin/annotations (שדורש מנהל):
+// זו רק רשימת ההערות הפתוחות על המסך הנוכחי, לא פאנל הניהול/פעולות.
+router.get("/dev/annotations", requireDevUser, (req, res) => {
+  const route = req.query.route;
+  const items = readAll().filter((a) => !a.resolved && (!route || a.route === route));
+  res.json(items);
+});
+
 router.get("/admin/annotations", requireAdmin, (_req, res) => {
   res.json(readAll());
 });

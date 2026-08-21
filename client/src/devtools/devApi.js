@@ -32,6 +32,11 @@ export async function setDataMode(mode) {
 export async function submitAnnotation(data) {
   return http.post(`/dev/annotations`, data);
 }
+// כל משתמש-פיתוח מחובר (לא רק מנהל) — רשימת ההערות הפתוחות על מסך נתון,
+// עבור CommentsPanel.jsx.
+export async function fetchDevAnnotations(route) {
+  return http.get(`/dev/annotations?route=${encodeURIComponent(route)}`);
+}
 
 // משוב על Jynx עצמו — תור נפרד לגמרי, מנהל בלבד (ראו data/routes/jynx-feedback.js).
 export async function submitJynxFeedback(data) {

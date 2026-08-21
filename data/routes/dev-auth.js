@@ -39,7 +39,7 @@ router.post("/dev/login", loginLimiter, asyncRoute(async (req, res) => {
 }));
 
 router.get("/dev/me", (req, res) => {
-  res.json(req.devUser ? { name: req.devUser.name } : null);
+  res.json(req.devUser ? { id: req.devUser.id, name: req.devUser.name } : null);
 });
 
 router.post("/dev/logout", (req, res) => {
