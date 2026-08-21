@@ -92,6 +92,9 @@ export async function fetchAnnotations() {
 export async function resolveAnnotation(id, resolved, resolvedBy, resolutionNote) {
   return http.patch(`/admin/annotations/${id}`, { resolved, resolvedBy, resolutionNote });
 }
+export async function archiveAnnotation(id, archived) {
+  return http.patch(`/admin/annotations/${id}`, { archived });
+}
 export async function requestAnnotationAction(id, requestedBy) {
   return http.post(`/admin/annotations/${id}/action`, { requestedBy });
 }

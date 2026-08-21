@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { Check, Download, Zap, Loader2, GitPullRequest, CheckCircle2, XCircle, MessageCircle, Undo2 } from "lucide-react";
-import { fetchAnnotations, resolveAnnotation, exportAnnotationsMarkdown, requestAnnotationAction, replyToAnnotation } from "./devApi.js";
+import { Check, Download, Zap, Loader2, GitPullRequest, CheckCircle2, XCircle, MessageCircle, Undo2, Archive, ArchiveRestore } from "lucide-react";
+import { fetchAnnotations, resolveAnnotation, archiveAnnotation, exportAnnotationsMarkdown, requestAnnotationAction, replyToAnnotation } from "./devApi.js";
 
 const ACTION_STATUS_LABEL = {
   none: null, queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed",
@@ -36,6 +36,10 @@ export default function DevAnnotationsScreen() {
     await resolveAnnotation(a.id, false);
     reload();
   }
+  async function toggleArchive(a) {
+    await archiveAnnotation(a.id, !a.archived);
+    reload();
+  }
   async function triggerAction(a) {
     await requestAnnotationAction(a.id);
     reload();
@@ -51,15 +55,21 @@ export default function DevAnnotationsScreen() {
   }
 
   if (!items) return <div className="dev-admin-empty">Loading...</div>;
-  const shown = filter === "open" ? items.filter((a) => !a.resolved) : filter === "done" ? items.filter((a) => a.resolved) : items;
+  const unarchived = items.filter((a) => !a.archived);
+  const shown =
+    filter === "open" ? unarchived.filter((a) => !a.resolved)
+    : filter === "done" ? unarchived.filter((a) => a.resolved)
+    : filter === "archived" ? items.filter((a) => a.archived)
+    : unarchived;
 
   return (
     <div className="dev-admin-tab">
       <div className="dev-admin-annotations-head">
         <div className="pill-tabs">
-          <button type="button" className={"pill-tab" + (filter === "open" ? " active" : "")} onClick={() => setFilter("open")}>Open ({items.filter((a) => !a.resolved).length})</button>
-          <button type="button" className={"pill-tab" + (filter === "done" ? " active" : "")} onClick={() => setFilter("done")}>Done ({items.filter((a) => a.resolved).length})</button>
-          <button type="button" className={"pill-tab" + (filter === "all" ? " active" : "")} onClick={() => setFilter("all")}>All ({items.length})</button>
+          <button type="button" className={"pill-tab" + (filter === "open" ? " active" : "")} onClick={() => setFilter("open")}>Open ({unarchived.filter((a) => !a.resolved).length})</button>
+          <button type="button" className={"pill-tab" + (filter === "done" ? " active" : "")} onClick={() => setFilter("done")}>Done ({unarchived.filter((a) => a.resolved).length})</button>
+          <button type="button" className={"pill-tab" + (filter === "all" ? " active" : "")} onClick={() => setFilter("all")}>All ({unarchived.length})</button>
+          <button type="button" className={"pill-tab" + (filter === "archived" ? " active" : "")} onClick={() => setFilter("archived")}>Archived ({items.filter((a) => a.archived).length})</button>
         </div>
         <button type="button" className="dev-admin-export-btn" onClick={exportMd}><Download size={13} /> Export Markdown</button>
       </div>
@@ -71,7 +81,7 @@ export default function DevAnnotationsScreen() {
             const hasAction = a.actionStatus && a.actionStatus !== "none";
             const replies = a.replies || [];
             return (
-              <div className={"dev-admin-annotation-row" + (a.resolved ? " resolved" : "")} key={a.id}>
+              <div className={"dev-admin-annotation-row" + (a.resolved || a.archived ? " resolved" : "")} key={a.id}>
                 <div className="dev-admin-annotation-main">
                   <span className="dev-admin-annotation-route">{a.route}</span>
                   {a.targetLabel && (
@@ -143,6 +153,9 @@ export default function DevAnnotationsScreen() {
                       <Check size={14} />
                     </button>
                   )}
+                  <button type="button" className="dev-admin-archive-btn" onClick={() => toggleArchive(a)} title={a.archived ? "Unarchive" : "Archive (hide from the everyday comments view)"}>
+                    {a.archived ? <ArchiveRestore size={14} /> : <Archive size={14} />}
+                  </button>
                 </div>
               </div>
             );

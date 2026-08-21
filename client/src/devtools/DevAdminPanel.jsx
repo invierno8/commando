@@ -168,6 +168,11 @@ const CSS = `
   color:var(--text-dim); cursor:pointer; display:flex; align-items:center; justify-content:center;
 }
 .dev-admin-resolve-btn.active{ background:var(--green); border-color:var(--green); color:#fff; }
+.dev-admin-archive-btn{
+  flex:none; width:28px; height:28px; border-radius:50%; border:1px solid var(--line); background:var(--panel);
+  color:var(--text-dim); cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.dev-admin-archive-btn:hover{ color:var(--text); border-color:var(--text-dim); }
 .dev-admin-action-btn{
   display:inline-flex; align-items:center; gap:4px; background:#2F8FCE; color:#fff; border:none;
   border-radius:14px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap;

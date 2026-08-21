@@ -92,6 +92,7 @@ router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
     route: req.body.route, targetLabel: req.body.targetLabel || null, targetSelector: req.body.targetSelector || null,
     secondaryTargets,
     comment: req.body.comment, resolved: false, resolvedAt: null, resolvedBy: null, resolutionNote: null,
+    archived: false, archivedAt: null,
     actionStatus: actionRequested ? "queued" : "none",
     actionRequestedAt: actionRequested ? new Date().toISOString() : null,
     actionRequestedBy: actionRequested ? req.devUser.name : null,
@@ -109,7 +110,7 @@ router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
 // אותה זזה ל"טופל" עם התשובה, לא רק שתיעלם), לא פאנל הניהול/פעולות.
 router.get("/dev/annotations", requireDevUser, (req, res) => {
   const route = req.query.route;
-  const items = readAll().filter((a) => !route || a.route === route);
+  const items = readAll().filter((a) => !route || a.route === route).filter((a) => !a.archived);
   res.json(items);
 });
 
@@ -136,18 +137,29 @@ router.get("/admin/annotations", requireAdmin, (_req, res) => {
 router.patch("/admin/annotations/:id", requireAdmin, asyncRoute(async (req, res) => {
   const found = readAll().find((a) => a.id === req.params.id);
   if (!found) return res.json(null);
-  const resolved = !!req.body.resolved;
+  // resolved ו-archived מגיעים בקריאות נפרדות (Mark done / Archive הם שני
+  // כפתורים שונים) — נוגעים רק בשדה שבאמת נשלח, כדי שקריאה שמעדכנת אחד
+  // מהם לא תדרוס בטעות את מצב השני.
+  const hasResolvedField = req.body.resolved !== undefined;
+  const hasArchivedField = req.body.archived !== undefined;
+  const resolved = hasResolvedField ? !!req.body.resolved : found.resolved;
+  const archived = hasArchivedField ? !!req.body.archived : !!found.archived;
   const updated = {
     ...found,
     resolved,
-    resolvedAt: resolved ? new Date().toISOString() : null,
-    resolvedBy: resolved ? (req.body.resolvedBy || "admin") : null,
-    resolutionNote: resolved ? (req.body.resolutionNote || found.resolutionNote || null) : found.resolutionNote,
+    resolvedAt: hasResolvedField ? (resolved ? new Date().toISOString() : null) : found.resolvedAt,
+    resolvedBy: hasResolvedField ? (resolved ? (req.body.resolvedBy || "admin") : null) : found.resolvedBy,
+    resolutionNote: hasResolvedField
+      ? (resolved ? (req.body.resolutionNote || found.resolutionNote || null) : found.resolutionNote)
+      : found.resolutionNote,
+    archived,
+    archivedAt: hasArchivedField ? (archived ? new Date().toISOString() : null) : (found.archivedAt || null),
     // סימון "טופל" גם על תור הפעולות — "מעבר לטופל" שהמנהל ביקש, לא רק
     // resolved נפרד מ-actionStatus שלא באמת מסתנכרן.
     actionStatus: resolved && found.actionStatus && found.actionStatus !== "none" ? "done" : found.actionStatus,
   };
-  await persistNote(updated, `QA note ${updated.resolved ? "resolved" : "reopened"} — ${updated.id}`);
+  const verb = hasArchivedField ? (archived ? "archived" : "unarchived") : (resolved ? "resolved" : "reopened");
+  await persistNote(updated, `QA note ${verb} — ${updated.id}`);
   res.json(updated);
 }));
 
@@ -168,7 +180,7 @@ router.post("/admin/annotations/:id/action", requireAdmin, asyncRoute(async (req
 // Markdown, סעיפים לא-פתורים בלבד, מקובצים לפי מסך — נועד להיות עותק-הדבק
 // ישיר לתור עבודה.
 router.get("/admin/annotations/export", requireAdmin, (_req, res) => {
-  const open = readAll().filter((a) => !a.resolved);
+  const open = readAll().filter((a) => !a.resolved && !a.archived);
   const byRoute = {};
   open.forEach((a) => { (byRoute[a.route] ||= []).push(a); });
 
