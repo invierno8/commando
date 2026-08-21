@@ -12,3 +12,6 @@ data/.env
 data/.env.local
 
 .DS_Store
+
+# Claude Code local tooling scratch space (e.g. isolated agent worktrees) — never real repo content
+.claude/
