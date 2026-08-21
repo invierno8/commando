@@ -129,6 +129,21 @@ router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req,
   res.status(201).json(updated);
 }));
 
+// עריכת טקסט ההערה — כל משתמש-פיתוח מחובר, אבל רק על הערה שהוא-עצמו כתב
+// (ראו CommentsPanel.jsx). נפרד בכוונה מ-PATCH /admin/annotations/:id
+// (שדורש מנהל ומטפל גם ב-resolved/archived) — כאן זו רק עריכת טקסט עצמית.
+router.patch("/dev/annotations/:id/edit", requireDevUser, asyncRoute(async (req, res) => {
+  requireFields(req.body, ["comment"]);
+  const found = readAll().find((a) => a.id === req.params.id);
+  if (!found) return res.status(404).json({ error: "לא נמצא" });
+  if (found.authorId !== req.devUser.id) return res.status(403).json({ error: "ניתן לערוך רק הערות שכתבת בעצמך" });
+  const comment = req.body.comment.trim();
+  if (!comment) return res.status(400).json({ error: "התגובה לא יכולה להיות ריקה" });
+  const updated = { ...found, comment };
+  await persistNote(updated, `QA note edited — ${updated.id}`);
+  res.json(updated);
+}));
+
 router.get("/admin/annotations", requireAdmin, (_req, res) => {
   res.json(readAll());
 });

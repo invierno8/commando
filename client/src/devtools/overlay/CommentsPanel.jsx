@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Zap, Loader2, GitPullRequest, XCircle } from "lucide-react";
-import { fetchDevAnnotations, replyToAnnotation, fetchJynxFeedback, replyToJynxFeedback, requestAnnotationAction } from "../devApi.js";
+import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Zap, Loader2, GitPullRequest, XCircle, Pencil } from "lucide-react";
+import { fetchDevAnnotations, replyToAnnotation, fetchJynxFeedback, replyToJynxFeedback, requestAnnotationAction, editOwnAnnotation } from "../devApi.js";
 import { useDraggableFab } from "../useDraggableFab.js";
 
 const ACTION_STATUS_LABEL = { queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed" };
@@ -32,6 +32,8 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   const [flashId, setFlashId] = useState(null);
   const [openThreadId, setOpenThreadId] = useState(null);
   const [replyText, setReplyText] = useState("");
+  const [editingId, setEditingId] = useState(null); // עריכת טקסט הערה שלי-עצמי
+  const [editText, setEditText] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const [tick, setTick] = useState(0);
   // עוגן שמאלי בכוונה — הצד ההפוך מאשכול הכפתורים הימני (הבועה/הסרגל/בורר
@@ -120,6 +122,13 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     reload();
   }
 
+  async function saveEdit(a) {
+    if (!editText.trim()) return;
+    await editOwnAnnotation(a.id, editText.trim());
+    setEditingId(null);
+    reload();
+  }
+
   if (!active) return null;
 
   const shown = items
@@ -191,7 +200,17 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                           {a.resolved && <span className="comments-done-badge"><CheckCircle2 size={10} /> Done</span>}
                         </span>
                       )}
-                      <p className="comments-sidebar-item-comment">{a.comment}</p>
+                      {editingId === a.id ? (
+                        <div className="comments-edit-box" onClick={(e) => e.stopPropagation()}>
+                          <textarea autoFocus rows={2} value={editText} onChange={(e) => setEditText(e.target.value)} />
+                          <div className="comments-edit-actions">
+                            <button type="button" onClick={() => setEditingId(null)}>Cancel</button>
+                            <button type="button" className="primary" onClick={() => saveEdit(a)} disabled={!editText.trim()}>Save</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="comments-sidebar-item-comment">{a.comment}</p>
+                      )}
                       <span className="comments-sidebar-item-meta">{a.authorName} · {new Date(a.createdAt).toLocaleString("en-US")}</span>
                       {a.resolved && a.resolutionNote && (
                         <div className="comments-resolution-note"><CheckCircle2 size={11} /> {a.resolutionNote}</div>
@@ -209,6 +228,11 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                       {isAdmin && a.kind === "app" && (!a.actionStatus || a.actionStatus === "none") && (
                         <button type="button" className="comments-action-btn" onClick={(e) => { e.stopPropagation(); triggerAction(a); }} title="Run the automated agent on this comment">
                           <Zap size={11} /> Action
+                        </button>
+                      )}
+                      {a.kind === "app" && a.authorId === currentDevUserId && editingId !== a.id && (
+                        <button type="button" className="comments-edit-btn" onClick={(e) => { e.stopPropagation(); setEditingId(a.id); setEditText(a.comment); }} title="Edit your comment">
+                          <Pencil size={11} /> Edit
                         </button>
                       )}
                     </div>
@@ -337,6 +361,23 @@ const CSS_TEXT = `
   border-radius:12px; padding:3px 9px; font-size:10.5px; font-weight:700; cursor:pointer; margin:4px 0;
 }
 .comments-action-btn:hover{ filter:brightness(1.08); }
+.comments-edit-btn{
+  display:inline-flex; align-items:center; gap:4px; background:none; color:var(--text-dim); border:1px solid var(--line);
+  border-radius:12px; padding:2px 8px; font-size:10px; font-weight:700; cursor:pointer; margin:4px 4px 4px 0;
+}
+.comments-edit-btn:hover{ color:var(--jynx); border-color:var(--jynx); }
+.comments-edit-box{ display:flex; flex-direction:column; gap:5px; margin:2px 0; }
+.comments-edit-box textarea{
+  width:100%; background:var(--bg); border:1px solid var(--jynx); border-radius:7px; padding:6px 8px;
+  font-size:12.5px; font-family:var(--font-sans); color:var(--text); resize:vertical;
+}
+.comments-edit-actions{ display:flex; justify-content:flex-end; gap:5px; }
+.comments-edit-actions button{
+  border:none; border-radius:6px; padding:4px 9px; font-size:10.5px; font-weight:700; cursor:pointer;
+  background:var(--panel-raised); color:var(--text-dim);
+}
+.comments-edit-actions button.primary{ background:var(--jynx); color:#fff; }
+.comments-edit-actions button:disabled{ opacity:.5; cursor:not-allowed; }
 .comments-thread-toggle{
   display:inline-flex; align-items:center; gap:4px; background:none; border:none; color:var(--text-dim);
   font-size:10.5px; cursor:pointer; padding:2px 12px 8px;

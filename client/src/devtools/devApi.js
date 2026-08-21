@@ -40,6 +40,10 @@ export async function fetchDevAnnotations(route) {
 export async function replyToAnnotation(id, text) {
   return http.post(`/dev/annotations/${id}/reply`, { text });
 }
+// עריכת טקסט הערה — רק על הערה שהמשתמש-פיתוח המחובר כתב בעצמו (ראו devApi.js/annotations.js).
+export async function editOwnAnnotation(id, comment) {
+  return http.patch(`/dev/annotations/${id}/edit`, { comment });
+}
 
 // משוב על Jynx עצמו — תור נפרד לגמרי, מנהל בלבד (ראו data/routes/jynx-feedback.js).
 export async function submitJynxFeedback(data) {
