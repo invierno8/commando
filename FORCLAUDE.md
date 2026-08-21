@@ -463,12 +463,47 @@ discussing the product/domain since the UI and data are Hebrew-first.
   - **Admin review** (`DevAdminPanel.jsx`, admin-secret-gated, composes
     `DevAdminUsersScreen.jsx` + `DevAnnotationsScreen.jsx` as tabs) — manage
     the dev-user roster, and review/resolve/export (Markdown, grouped by
-    screen, unresolved-only) the QA annotation queue. This Markdown export
-    is meant to become an actual Claude to-do list — see the user's original
-    framing of this feature in the architecture plan.
+    screen, unresolved-only) the QA annotation queue.
+  - **"Action" pipeline (added 2026-08-21)** — turns a QA comment into real
+    autonomous code work, not just a to-do list entry. Every annotation now
+    carries `actionStatus` (`none`/`queued`/`in_progress`/`pr_opened`/
+    `done`/`failed`), `actionRequestedAt/By`, `actionPrUrl`, `actionLog`.
+    Two ways a note gets flagged: (a) **automatically** — any note the
+    *admin themselves* writes while logged in (checked via `isAdmin` prop
+    threaded from `DevAuthGate.jsx`'s own `fetchAdminMe()` check down
+    through `DevOverlay.jsx`) is queued the instant it's submitted, no
+    extra click; (b) **manually** — the admin clicks the "⚡ פעולה" button
+    next to *any* comment, in `DevAnnotationsScreen.jsx` or directly on the
+    live page (see next bullet), via `POST /admin/annotations/:id/action`.
+    Either path writes a **second, small file** to
+    `data/annotations/actions/<id>.json` (git-committed, same mechanism as
+    notes) — a distinct signal path a scheduled cloud-agent routine
+    watches, kept deliberately separate from the permanent note record in
+    `data/annotations/notes/`. The routine (not yet created as of this
+    writing — needs the Claude GitHub App installed on `invierno8/commando`
+    first, see the chronological log) is expected to: read each pending
+    action-item file, implement the change **on a branch and open a PR —
+    never push to main directly** (the user's explicit safety choice),
+    then update the corresponding note's `actionStatus`/`actionPrUrl`
+    fields (plain bookkeeping — committed directly, unlike the code change
+    itself) and delete the now-processed action-item file.
+  - **`AdminAnnotationMarkers.jsx`** — admin-only, always-on (not
+    hover-triggered) colored borders directly on the live page for every
+    *open* comment on the current screen, re-located via
+    `document.querySelector('[data-devblock="<label>"]')` — a deliberately
+    different color (red/blue/green by `actionStatus`) from the hover-glow,
+    so it reads as a distinct signal. Each marker carries its own inline
+    "⚡ פעולה" trigger. Comments whose target has no matching `data-devblock`
+    element on the current page simply don't get an on-page marker (still
+    visible in the admin panel's list) — a known, accepted degradation, not
+    a bug to chase.
   - Verified end-to-end with a real headless-browser (Playwright) smoke
     pass, not just a build check — see "Testing / verification workflow"
-    below for a real gotcha found doing that.
+    below for a real gotcha found doing that. The action-queueing logic
+    itself (auto-flag on admin notes, manual-flag via the button, the
+    distinct `actions/` file appearing/disappearing correctly) was verified
+    against the real `data/` server with real GitHub commits, repeatedly
+    cleaned up afterward — see the chronological log.
 
 ## Explicitly deferred (see `TODO.md` for the full writeup)
 
@@ -606,13 +641,17 @@ flagged for later on purpose.
   Vite's asset pipeline, so this is the one seam that does.
 - **`devtools/`** — everything dev-mode/QA-overlay related, entirely
   separate from the real app. `devApi.js` (every dev/admin HTTP call),
-  `DevAuthGate.jsx` (entry point), `DevFab.jsx` (the moved role/brigade
-  picker), `MockDataToggle.jsx`, `DevAdminPanel.jsx` (admin-secret-gated
-  modal, composes `DevAdminUsersScreen.jsx` + `DevAnnotationsScreen.jsx` as
-  tabs), `overlay/DevOverlay.jsx` + `overlay/useHoverTarget.js` +
-  `overlay/AnnotationPopover.jsx` (hover-highlight + Ctrl/Cmd+click
-  annotate). See "Dev-mode / QA feedback overlay" above for the full
-  picture.
+  `DevAuthGate.jsx` (entry point — also the one place that checks and owns
+  `isAdmin`, threaded down into the overlay), `DevFab.jsx` (the moved
+  role/brigade picker), `MockDataToggle.jsx`, `DevAdminPanel.jsx`
+  (admin-secret-gated modal, composes `DevAdminUsersScreen.jsx` +
+  `DevAnnotationsScreen.jsx` as tabs, the latter now with the "⚡ פעולה"
+  action-trigger button + a live status pill per row), `overlay/
+  DevOverlay.jsx` + `overlay/useHoverTarget.js` + `overlay/
+  AnnotationPopover.jsx` (hover-highlight + Ctrl/Cmd+click annotate) +
+  `overlay/AdminAnnotationMarkers.jsx` (admin-only persistent on-page
+  markers for open comments — see "Action pipeline" above). See "Dev-mode
+  / QA feedback overlay" above for the full picture.
 - `assets/` — placeholder demo media (abstract/technical, not fake product
   photography — a deliberate design choice, see the chronological log).
 
@@ -930,3 +969,92 @@ before this existed. The actual GitHub-commit path itself (with a real
 `GITHUB_TOKEN`) has **not** been live-tested — that requires a real PAT
 only the user can create; verify it once one exists before trusting it
 blindly in production.
+
+### 2026-08-21 — Render deployed, repo ownership transferred, "Action" pipeline started
+Two threads, same session as the previous entry, continued the next day.
+
+**Render deployment**: walked the user through connecting `data/` to
+Render step by step (their Render UI didn't surface a "Blueprint" option
+at all — only a generic "New Service" picker with Web Services/Postgres/
+etc. — so `render.yaml` went unused for the actual deploy; configured the
+same settings by hand via "New Web Service" instead). Confirmed live via
+`/api/health` on the real Render URL. Wired `VITE_API_BASE_URL` through as
+a GitHub Actions repo Variable (not a Secret — it's just a public URL) so
+the Pages build knows where to find it.
+
+**Repo ownership transfer**: blocked on creating the `GITHUB_TOKEN` — the
+repo was on a coworker's account (`joshuael120`) and fine-grained PATs can
+only scope to repos the token-creator already has access to. Discussed
+transfer vs. fork vs. "coworker creates the token" as options (transfer:
+confirmed via web search that GitHub does **not** redirect the GitHub
+Pages site after a transfer, only the repo/git URLs — a real gotcha worth
+knowing before doing this again). User transferred ownership to
+`invierno8` (their own account). This touched real infrastructure:
+updated `git remote`, `render.yaml`, `data/.env.example`,
+`data/lib/githubPersist.js`'s default, and every reference in this file —
+the live Pages URL is now `https://invierno8.github.io/commando/`, not
+the old owner's domain. **The real `GITHUB_TOKEN` the user generated was
+verified for real** — a live write test via the Contents API (create a
+throwaway file, confirm `201`, delete it again) before trusting it
+anywhere, then the actual annotation-submission flow was exercised
+end-to-end through the running app and produced a genuine commit on
+`invierno8/commando`'s `main` — this is the first time the
+previously-untested git-commit persistence path was proven against the
+real API, not just reasoned about. Found and fixed a real bug while doing
+this: local disk writes for `dev-users.json`/notes didn't match the
+trailing-newline convention used for GitHub commits, causing a spurious
+one-byte diff on every hydration — fixed in `devUsers.js` and
+`routes/annotations.js`.
+
+**Also discovered mid-session**: the user and Claude were editing the same
+working tree from two different tools simultaneously (the user's own IDE,
+this Claude Code session) — a `git status` check that should have shown a
+huge pile of uncommitted work instead showed a clean tree, because the
+user had already committed and pushed everything themselves (commit
+message: "big guns upload") before asking Claude to "make sure it's
+done." Worth remembering: **always verify actual repo state
+(`git log`/`git status`/`git fetch` + compare SHAs) before assuming your
+own mental model of what's committed is still accurate** — it silently
+diverged here and would have caused real confusion if not caught by
+checking rather than assuming.
+
+**"Action" pipeline (in progress, not finished)**: the user's next ask —
+QA comments shouldn't just sit in a queue, the *admin's own* notes should
+automatically become real autonomous code changes, and any comment should
+be actionable via a button. Two real technical corrections had to happen
+before building this: (1) explained clearly that "you" (this conversation)
+cannot be triggered by a browser click — only a separate, unattended agent
+session can be, and that's a fundamentally different thing than the user
+first pictured; (2) investigated the actual scheduling/routine system
+(`RemoteTrigger` tool, `/schedule` skill) and found the documented,
+reliable path is **cron-based polling with a hard 1-hour minimum
+interval**, not true instant webhook-triggering — `create_webhook_trigger`
+exists on the tool but isn't covered by the `/schedule` skill's own
+documented workflow, so it's being treated as unproven rather than relied
+on blindly. Plan: hourly cron routine as the reliable floor, attempt a
+webhook on top for near-instant reaction as a bonus, not a requirement.
+**Blocked on**: the Claude GitHub App isn't installed on the `invierno8`
+account for this repo yet (ownership only just transferred) — routines
+can't see the repo at all until that happens. User was mid-installing
+this when the session's work was written up.
+
+What *was* built and verified while waiting on that: the full data-model
+and UI half of the feature (see "Action pipeline" and
+`AdminAnnotationMarkers.jsx` in the Domain model section above) — the
+`actionStatus` lifecycle, the `data/annotations/actions/` work-queue
+folder (separate from the permanent `notes/` record, git-committed the
+same way), the admin-auto-flag-on-write behavior, the manual "⚡ פעולה"
+trigger both in the admin panel and directly on the live page. **The
+routine that actually reads the queue and does the work does not exist
+yet** — everything up to "a work-item file lands in `data/annotations/
+actions/`" is real and tested; everything past that point (an agent
+picking it up, implementing it, opening a PR, writing the status back) is
+designed but not built. Don't assume marking a comment "⚡ פעולה" today
+does anything beyond queueing it — there's no consumer yet.
+
+**Decision explicitly made and should not be silently changed**: any
+autonomous action taken by the eventual routine **opens a pull request,
+never pushes to `main` directly** — the user chose this specifically for
+safety given the admin panel is reachable from a public link. If you're
+picking this work back up, preserve that constraint unless the user
+explicitly says otherwise.

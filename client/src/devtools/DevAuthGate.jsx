@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Lock, Settings2, Eye, EyeOff } from "lucide-react";
-import { devLogin, devLogout, fetchDevMe } from "./devApi.js";
+import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
 import MockDataToggle from "./MockDataToggle.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
@@ -21,10 +21,15 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [error, setError] = useState("");
   const [adminOpen, setAdminOpen] = useState(false);
   const [overlayOn, setOverlayOn] = useState(true);
+  // ידוע מראש (בלי לפתוח את פאנל הניהול) כדי ש-DevOverlay יוכל לסמן
+  // אוטומטית "פעולה" על הערות שהמנהל עצמו כותב, ולהציג סימוני מנהל קבועים
+  // על המסך — גם מיד אחרי רענון דף, כל עוד עוגיית המנהל עדיין תקפה.
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     fetchDevMe().then((d) => { if (!cancelled) { setDevName(d?.name || null); setChecking(false); } });
+    fetchAdminMe().then((d) => { if (!cancelled) setIsAdmin(!!d?.authenticated); });
     return () => { cancelled = true; };
   }, []);
 
@@ -78,7 +83,7 @@ export default function DevAuthGate({ route, devFabProps }) {
   return (
     <>
       <style>{CSS}</style>
-      <DevOverlay active={overlayOn} route={route} />
+      <DevOverlay active={overlayOn} route={route} isAdmin={isAdmin} />
       <div className="dev-fab-toolbar">
         <MockDataToggle />
         <button type="button" className="dev-toolbar-icon-btn" onClick={() => setOverlayOn((v) => !v)} title={overlayOn ? "כיבוי תצפית Dev" : "הפעלת תצפית Dev"}>
@@ -92,7 +97,7 @@ export default function DevAuthGate({ route, devFabProps }) {
         </button>
       </div>
       <DevFab {...devFabProps} />
-      {adminOpen && <DevAdminPanel onClose={() => setAdminOpen(false)} />}
+      {adminOpen && <DevAdminPanel onClose={() => setAdminOpen(false)} onVerified={() => setIsAdmin(true)} />}
     </>
   );
 }

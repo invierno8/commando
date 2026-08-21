@@ -10,7 +10,7 @@ import DevAnnotationsScreen from "./DevAnnotationsScreen.jsx";
 /* SECRET), לא חשבון-פר-אדם, בכוונה (ראו plan doc). מציג שתי לשוניות:    */
 /* ניהול משתמשי הפיתוח, וסקירת הערות ה-QA שנאספו מה-overlay.             */
 /* ================================================================== */
-export default function DevAdminPanel({ onClose }) {
+export default function DevAdminPanel({ onClose, onVerified }) {
   const [checking, setChecking] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [secret, setSecret] = useState("");
@@ -19,8 +19,14 @@ export default function DevAdminPanel({ onClose }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetchAdminMe().then((d) => { if (!cancelled) { setAuthenticated(!!d.authenticated); setChecking(false); } });
+    fetchAdminMe().then((d) => {
+      if (cancelled) return;
+      setAuthenticated(!!d.authenticated);
+      setChecking(false);
+      if (d.authenticated) onVerified?.();
+    });
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function verify() {
@@ -28,6 +34,7 @@ export default function DevAdminPanel({ onClose }) {
     try {
       await adminVerify(secret);
       setAuthenticated(true);
+      onVerified?.();
     } catch (e) {
       setError(e.message);
     }
@@ -139,11 +146,22 @@ const CSS = `
 .dev-admin-annotation-target{ font-size:11.5px; color:var(--text-dim); }
 .dev-admin-annotation-comment{ margin:2px 0; font-size:13px; color:var(--text); }
 .dev-admin-annotation-meta{ font-size:11px; color:var(--text-dim); }
+.dev-admin-annotation-actions{ display:flex; flex-direction:column; gap:6px; align-items:center; flex:none; }
 .dev-admin-resolve-btn{
   flex:none; width:28px; height:28px; border-radius:50%; border:1px solid var(--line); background:var(--panel);
   color:var(--text-dim); cursor:pointer; display:flex; align-items:center; justify-content:center;
 }
 .dev-admin-resolve-btn.active{ background:var(--green); border-color:var(--green); color:#fff; }
+.dev-admin-action-btn{
+  display:inline-flex; align-items:center; gap:4px; background:#2F8FCE; color:#fff; border:none;
+  border-radius:14px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap;
+}
+.dev-admin-action-btn:hover{ filter:brightness(1.08); }
+.dev-admin-action-pill{ align-self:flex-start; margin-top:2px; }
+.dev-admin-action-pill a{ color:inherit; text-decoration:underline; margin-inline-start:4px; }
+.dev-admin-spin{ animation:devAdminSpin 1s linear infinite; }
+@keyframes devAdminSpin{ to{ transform:rotate(360deg); } }
+.dev-admin-action-log{ font-size:11px; color:var(--red); }
 .dev-admin-export-box{ display:flex; flex-direction:column; gap:8px; }
 .dev-admin-export-box textarea{
   width:100%; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:10px;

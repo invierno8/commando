@@ -2,21 +2,27 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useHoverTarget, labelForElement } from "./useHoverTarget.js";
 import AnnotationPopover from "./AnnotationPopover.jsx";
+import AdminAnnotationMarkers from "./AdminAnnotationMarkers.jsx";
 import { submitAnnotation } from "../devApi.js";
 
 /* ================================================================== */
 /* LEGO BLOCK — mounted once (only while dev mode is authenticated AND  */
-/* the overlay toggle is on). Two jobs:                                 */
+/* the overlay toggle is on). Three jobs:                               */
 /*  1. Hover: glowing outline over whatever container the cursor is     */
 /*     over (see useHoverTarget.js for the detection heuristic).        */
 /*  2. Ctrl/Cmd+click: stops the real app's own click handler from      */
 /*     firing (capture-phase stopPropagation) and opens a small comment */
-/*     box, submitting straight to data/routes/annotations.js.          */
+/*     box, submitting straight to data/routes/annotations.js. When the */
+/*     logged-in dev user is ALSO admin-verified, every note they write */
+/*     is automatically flagged as an action item — no extra click.     */
+/*  3. Admin-only: persistent (not hover-only) markers on every open     */
+/*     comment on the current screen, see AdminAnnotationMarkers.jsx.    */
 /* ================================================================== */
 
-export default function DevOverlay({ active, route, onSubmitted }) {
+export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
   const target = useHoverTarget(active);
   const [popover, setPopover] = useState(null); // { x, y, label } | null
+  const [markersRefreshKey, setMarkersRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!active) return;
@@ -37,8 +43,11 @@ export default function DevOverlay({ active, route, onSubmitted }) {
   const rect = target?.getBoundingClientRect();
 
   async function submit(comment) {
-    await submitAnnotation({ route, targetLabel: popover.label, comment });
+    // כשמי שכותב מאומת גם כמנהל, ההערה שלו הופכת אוטומטית לפריט פעולה —
+    // "כל מה שאני כותב הופך לפעולה", בלי צעד נוסף.
+    await submitAnnotation({ route, targetLabel: popover.label, comment, actionRequested: isAdmin });
     setPopover(null);
+    setMarkersRefreshKey((k) => k + 1);
     onSubmitted?.();
   }
 
@@ -56,10 +65,12 @@ export default function DevOverlay({ active, route, onSubmitted }) {
           x={popover.x}
           y={popover.y}
           label={popover.label}
+          isAdmin={isAdmin}
           onCancel={() => setPopover(null)}
           onSubmit={submit}
         />
       )}
+      <AdminAnnotationMarkers isAdmin={isAdmin} route={route} refreshKey={markersRefreshKey} />
     </div>,
     document.body
   );
@@ -81,6 +92,10 @@ const CSS = `
 @keyframes devAnnotateIn{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:translateY(0); } }
 .dev-annotate-popover-label{
   font-family:var(--font-mono); font-size:10.5px; color:var(--dev); text-transform:uppercase; letter-spacing:.04em;
+}
+.dev-annotate-popover-admin-hint{
+  font-size:11px; color:#2F8FCE; background:color-mix(in srgb, #2F8FCE 12%, transparent);
+  border-radius:6px; padding:4px 8px;
 }
 .dev-annotate-popover textarea{
   width:100%; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:7px 9px;

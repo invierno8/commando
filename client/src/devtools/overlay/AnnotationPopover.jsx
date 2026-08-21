@@ -3,7 +3,7 @@ import React, { useState } from "react";
 /* קופסת התגובה שנפתחת ב-Ctrl/Cmd+קליק — לא נושאת <style> משלה בכוונה,      */
 /* תמיד ממוסגרת בתוך ה-portal של DevOverlay.jsx וסומכת על ה-<style> היחיד   */
 /* שהוא כבר מזריק (בדיוק כמו תת-רכיבי מודל בתוך מסך אחר בקודבייס הזה).      */
-export default function AnnotationPopover({ x, y, label, onCancel, onSubmit }) {
+export default function AnnotationPopover({ x, y, label, isAdmin, onCancel, onSubmit }) {
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -25,6 +25,7 @@ export default function AnnotationPopover({ x, y, label, onCancel, onSubmit }) {
       onKeyDown={(e) => e.key === "Escape" && onCancel()}
     >
       <div className="dev-annotate-popover-label">{label}</div>
+      {isAdmin && <div className="dev-annotate-popover-admin-hint">⚡ מנהל — ההערה תופעל אוטומטית כפעולה</div>}
       <textarea
         autoFocus
         rows={3}

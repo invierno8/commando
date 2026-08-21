@@ -59,6 +59,9 @@ export async function fetchAnnotations() {
 export async function resolveAnnotation(id, resolved, resolvedBy) {
   return http.patch(`/admin/annotations/${id}`, { resolved, resolvedBy });
 }
+export async function requestAnnotationAction(id, requestedBy) {
+  return http.post(`/admin/annotations/${id}/action`, { requestedBy });
+}
 export async function exportAnnotationsMarkdown() {
   return http.getText(`/admin/annotations/export`);
 }
