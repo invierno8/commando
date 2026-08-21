@@ -41,6 +41,11 @@ const GITHUB_ACTIONS_DIR = "data/annotations/actions";
 // githubPersist.js אז לא סומכים רק על הלקוח. ~2.75MB base64 ≈ 2MB בינארי.
 const MAX_ATTACHMENT_CHARS = 2.8 * 1024 * 1024;
 
+// פלטת אימוג'ים קבועה וקטנה — לא ספריית emoji-picker (אין ספריות UI חיצוניות
+// נוספות בקודבייס הזה, ראו FORCLAUDE.md). מוגדרת גם כאן (לא רק בקליינט) כדי
+// שהשרת ידחה ריאקציה עם אימוג'י שרירותי, לא רק יסמוך על הצד השני.
+const REACTION_EMOJI = ["👍", "😄", "🤔", "❤️"];
+
 function readAll() {
   try {
     return fs.readdirSync(NOTES_DIR)
@@ -113,6 +118,11 @@ router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
     actionRequestedBy: actionRequested ? req.devUser.name : null,
     actionPrUrl: null, actionLog: null,
     replies: [],
+    // מפתח = אימוג'י, ערך = מערך מזהי dev-user שריאקטו איתו (ראו
+    // POST /dev/annotations/:id/react למטה) — אין ספירה נפרדת, אורך המערך
+    // הוא הספירה, וזה גם מה שקובע אם המשתמש הנוכחי כבר ריאקט (מחפשים
+    // req.devUser.id בתוך המערך).
+    reactions: Object.fromEntries(REACTION_EMOJI.map((e) => [e, []])),
   };
   await persistNote(entry, `QA note (${entry.route}) — ${entry.authorName}`);
   if (actionRequested) await queueAction(entry, req.devUser.name);
@@ -143,6 +153,24 @@ router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req,
   const updated = { ...found, replies: [...(found.replies || []), reply] };
   await persistNote(updated, `reply on ${updated.id} — ${req.devUser.name}`);
   res.status(201).json(updated);
+}));
+
+// ריאקציית אימוג'י — כל משתמש-פיתוח מחובר, גם על הערה שהוא לא כתב (בדיוק
+// כמו התגובות). קליק על אימוג'י שכבר ריאקטתי איתו מסיר אותו (toggle רגיל),
+// לא מוסיף שוב — כמו כל UI ריאקציות מוכר.
+router.post("/dev/annotations/:id/react", requireDevUser, asyncRoute(async (req, res) => {
+  requireFields(req.body, ["emoji"]);
+  if (!REACTION_EMOJI.includes(req.body.emoji)) return res.status(400).json({ error: "אימוג'י לא נתמך" });
+  const found = readAll().find((a) => a.id === req.params.id);
+  if (!found) return res.status(404).json({ error: "לא נמצא" });
+  const reactions = { ...Object.fromEntries(REACTION_EMOJI.map((e) => [e, []])), ...(found.reactions || {}) };
+  const current = reactions[req.body.emoji] || [];
+  reactions[req.body.emoji] = current.includes(req.devUser.id)
+    ? current.filter((id) => id !== req.devUser.id)
+    : [...current, req.devUser.id];
+  const updated = { ...found, reactions };
+  await persistNote(updated, `reaction on ${updated.id} — ${req.devUser.name}`);
+  res.json(updated);
 }));
 
 router.get("/admin/annotations", requireAdmin, (_req, res) => {

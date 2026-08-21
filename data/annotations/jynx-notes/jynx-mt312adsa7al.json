@@ -7,10 +7,10 @@
   "comment": "הרשימה צריכי להיות נגררת ואוציה לצמצם אותה או להרחיב אותה, כאשר אני שם את העכבר בהובר מעל תגובה מסויימת, שהאלמנט שעליו היא נכתבה יעשה אפקט בורדר בצבע jynx ככה שכבר בהובר על תגובה מסויימת אני רואה על מה התגובה נכתבה וגם האלמנט המשני שיסומן בצבע אחר אבל. ושיהיה אפשר ללחוץ על תגובה ולקפוץ אליה ישירות עם פרטים נוספים בלחיצה ואופציה לתת תת תגובה אם התגובה לא שלי יש לי אופציה להגיב באימוגי או בתת תגובה או שאלה שיופיע ליוזר שכתב את התגובה ולהתחיל לנהל דיסקשיין על תגובה .. תרחיב את הכוון וההגיון, זה כלי עבודה שיתופית מורחב ובנוסף בעריכה של jynx עם גינקס לא ניתן לתת תגובה בתוך רשימת התגובות",
   "resolved": false,
   "resolvedAt": null,
-  "actionStatus": "queued",
+  "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T14:11:22.768Z",
-  "actionPrUrl": null,
-  "actionLog": null,
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/8",
+  "actionLog": "Corrected: PR #6 (opened by a concurrent duplicate run of this routine) was closed as a redundant duplicate of sibling PR #5's secondary-highlight work. The actual PR for this item is #8, which adds emoji reactions on comments and a \"+ Feedback about Jynx\" composer inside the comments list. Secondary-element highlight color is covered by #5. \"Extra details on click\" and \"expand the direction/reasoning\" were left open — too open-ended to implement without a product decision.",
   "replies": [
     {
       "id": "rep-mt31n9uo4t7f",

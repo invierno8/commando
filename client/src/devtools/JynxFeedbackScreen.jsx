@@ -79,7 +79,7 @@ export default function JynxFeedbackScreen() {
                   )}
                   <p className="dev-admin-annotation-comment">{a.comment}</p>
                   <span className="dev-admin-annotation-meta">{new Date(a.createdAt).toLocaleString("en-US")}</span>
-                  {a.actionStatus && (
+                  {a.actionStatus && a.actionStatus !== "none" && (
                     <span className={`pill pill-${ACTION_STATUS_TONE[a.actionStatus] || "neutral"} dev-admin-action-pill`}>
                       {StatusIcon && <StatusIcon size={11} className={a.actionStatus === "queued" || a.actionStatus === "in_progress" ? "dev-admin-spin" : ""} />}
                       {ACTION_STATUS_LABEL[a.actionStatus]}

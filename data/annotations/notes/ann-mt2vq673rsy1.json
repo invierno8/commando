@@ -11,9 +11,17 @@
   "resolved": false,
   "resolvedAt": null,
   "resolvedBy": null,
-  "actionStatus": "queued",
+  "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T11:41:59.391Z",
   "actionRequestedBy": "מנהל",
-  "actionPrUrl": null,
-  "actionLog": null
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/10",
+  "actionLog": null,
+  "replies": [
+    {
+      "id": "rep-mt33ap2f6qz1",
+      "authorName": "Admin",
+      "text": "התגובה הזו כוללת בעצם שני דברים שונים, ואחד מהם (המעבר ממסך-אשף שלבי לתפריט הגדרות בצד, בסגנון דיסקורד) הוא שינוי עיצוב/מבנה גדול שדורש החלטה: אילו קטגוריות/סעיפים יהיו בתפריט הצד, ומה בדיוק יהיה בכל אחד מהם. בלי סקיצה או רשימה כזו אני לא יכול לנחש ולממש את זה נכון בבטחה, אז אני משאיר את הפריט הזה בתור עד שתהיה כיוון ברור יותר. הבקשה השנייה (אפשרות לצרף תמונה/קובץ לתגובות שמשתמשי פיתוח משאירים) קטנה וברורה הרבה יותר — אם תרצה, אפשר לפתוח עבורה פריט פעולה נפרד וקטן, ואטפל בה מיד.",
+      "createdAt": "2026-08-21T16:03:32.000Z"
+    }
+  ]
 }

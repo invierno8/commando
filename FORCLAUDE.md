@@ -1143,3 +1143,69 @@ conversation's direct interactive work (Claude committing/pushing code it
 writes while talking to the user), separate from and not overriding the
 autonomous-routine PR-only rule above, which the user did not revisit or
 walk back.
+
+### 2026-08-21 — Confirmed: the webhook really does spawn concurrent routine
+### runs on the same work items, not just harmless duplicate no-op checks
+A `jynx-action-worker` firing (processing the same batch of 6 queued items
+described in the previous entry) directly observed a **second concurrent
+firing racing on the same queue**, not just the "wasted no-op check" case
+already documented above: mid-run, a `git push` of a freshly-implemented
+branch for `ann-mt2vf3rhva2m` was rejected (403 on a stale ref), and
+re-fetching showed another session had already pushed a branch with the
+*same id* and opened a PR for it minutes earlier — this happened for three
+of the six items in the same batch (`ann-mt2vf3rhva2m`, `ann-mt2vuujbpdkz`,
+`jynx-mt312adsa7al`), all independently implemented and PR'd by a
+concurrent run before this session got to them. No data was lost — this
+session detected the collision, discarded its own duplicate branch/commit
+without pushing, and moved on to the items the other run hadn't reached yet
+— but it confirms the "no way to scope the webhook to only fire on
+actions/ pushes" gap noted above is not just a cheap-no-op inconvenience;
+it can burn real implementation effort racing another live agent run on
+the exact same ticket. **If you're picking up a queued item, always
+re-fetch `main` and check `list_pull_requests` for an open PR whose `head`
+ref matches `jynx-action-<id>`/`jynx-action-jynx-<id>` immediately before
+pushing your own branch for that same id** — not just once at the start of
+the run, since another run can land its PR while you're still mid-implementation.
+If a collision is found, discard your own branch (don't push) rather than
+opening a second PR for the same request.
+
+Also confirmed while doing this: **items queued *after* a routine run has
+already started (i.e. after its step-zero snapshot of `actions/`/
+`jynx-actions/`) are correctly left alone** — a new item
+(`jynx-mt350su1sqjf`) appeared in the queue partway through this run (someone
+left a new comment while the routine was working); it was deliberately not
+touched, since it wasn't part of this run's original batch and any of this
+run's own bookkeeping pushes will re-trigger the webhook and pick it up in a
+fresh firing anyway. Don't expand scope mid-run to "while I'm here" items
+that show up after you've already started.
+
+### 2026-08-21 — A third concurrent run on the same batch, and the final
+### reconciliation once all three finished
+Yet another session ran the identical batch at essentially the same moment
+as the one described in the entry above. Between the two (or more) of them,
+`jynx-mt30ld1htt72` ended up with **three** independently-opened PRs on
+branch suffixes `jynx-action-jynx-mt30ld1htt72` / `-2` / `-3` (#7/#9/#12) —
+worse than the earlier-documented "same id, different content" collision,
+because here every run legitimately found the *first* branch name already
+taken and correctly fell back to a suffixed name instead of clobbering it,
+which is the right per-push behavior but still left three live PRs for one
+work item once all runs finished. Reconciled by hand after the fact: **#12
+kept** (it correctly implements both halves of the request — edit-your-own
+Jynx-feedback-text, and a gated "Jynx commenter" permission tier that keeps
+`GET`/reply/export admin-only as the original comment explicitly asked).
+**#9 closed** — its version of the same permission tier accidentally also
+widened `GET /admin/jynx-feedback` to any Jynx commenter (returning the
+*entire* queue, filtered only client-side), a real deviation from what was
+asked, not just cosmetic duplication. **#7 left open** — despite its branch
+name, it turned out to implement a genuinely different, valid feature (edit-
+your-own-text for regular QA-*annotation* comments via a new
+`PATCH /dev/annotations/:id/edit`, not Jynx-feedback text), so it's not
+actually a duplicate of anything and was kept. The note's `actionPrUrl`/
+`actionLog` were updated by hand to point at #12 with an explanation, since
+automated per-push bookkeeping can only ever record whichever PR happened to
+exist *at that push*, not a later human/session reconciliation across
+several. **Lesson for a future session inheriting this mess:** when you see
+a `-2`/`-3`-suffixed branch (or an `actionLog` mentioning "two separate
+PRs"/"three PRs" for one id), don't trust the note's `actionPrUrl` at face
+value — check `list_pull_requests` for every branch matching that id first,
+since the note may be pointing at a PR that was since closed or superseded.

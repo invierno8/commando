@@ -19,25 +19,39 @@ import { submitAnnotation, submitJynxFeedback } from "../devApi.js";
 /*     comment on the current screen, see AdminAnnotationMarkers.jsx.    */
 /* ================================================================== */
 
+// טוקן טקסט משני בתוך המשפט — "[→ תווית]" — ראו submit() למטה: זה מה שנשלח
+// בפועל לשרת כ-secondaryTargets, מנותח מחדש מתוך הטקסט עצמו בזמן השליחה (לא
+// ממערך נפרד), כך שמחיקת הטוקן מהטקסט = הסרת הקישור, בדיוק כמו כל טקסט אחר.
+function parseSecondaryTargetsFromComment(comment) {
+  const found = [];
+  for (const m of comment.matchAll(/\[→\s*([^\]]+?)\s*\]/g)) {
+    if (m[1] && !found.includes(m[1])) found.push(m[1]);
+  }
+  return found.slice(0, 10);
+}
+
 export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
   // isAdmin גם קובע אם מותר לגלוש בכלל על ה-UI של Jynx עצמו (.jynx-chrome) —
   // ראו useHoverTarget.js. משתמשי-פיתוח רגילים אף פעם לא רואים הילה שם.
   const target = useHoverTarget(active, isAdmin);
   const [popover, setPopover] = useState(null); // { x, y, label, secondaryTargets: [], isJynxMeta } | null
-  const [pickingSecondary, setPickingSecondary] = useState(false);
   const [markersRefreshKey, setMarkersRefreshKey] = useState(0);
   const isJynxHover = !!target?.closest(".jynx-chrome");
+  // "בוחר יעד משני" עכשיו הוא פשוט: יש popover פתוח. אין יותר שלב-ביניים של
+  // כפתור "+ קשר אלמנט נוסף" — ברגע שהתגובה פתוחה, כל קליק על אלמנט תקין
+  // מוסיף אותו כיעד משני מיד (ראו AnnotationPopover.jsx להזרקת הטוקן לטקסט).
+  const pickingSecondary = !!popover;
 
   useEffect(() => {
     if (!active) return;
     function onClickCapture(e) {
       const el = document.elementFromPoint(e.clientX, e.clientY);
 
-      // מצב "בחירת יעד משני": כל קליק (בלי צורך ב-Ctrl) על אלמנט מודגש
-      // מוסיף אותו כ-yed משני ל-popover הפתוח, בלי לסגור אותו ובלי לתת
-      // לקליק להגיע לאפליקציה האמיתית — כך אפשר להצביע על "לאן להעביר"
-      // במקום לתאר את זה במילים.
-      if (pickingSecondary) {
+      // popover פתוח: כל קליק על אלמנט תקין (לא חלק מה-UI של ה-overlay עצמו)
+      // מוסיף אותו כיעד משני לתגובה הפתוחה מיד — בלי לסגור אותה ובלי לתת
+      // לקליק להגיע לאפליקציה האמיתית מתחתיו — כך אפשר להצביע על "לאן
+      // להעביר" במקום לתאר את זה במילים, בלי צורך בכפתור נפרד קודם.
+      if (popover) {
         if (!el || el.closest(".dev-overlay-ignore")) return;
         if (el.closest(".jynx-chrome") && !isAdmin) return;
         e.preventDefault();
@@ -48,7 +62,6 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
           if (p.secondaryTargets.includes(lbl) || lbl === p.label) return p;
           return { ...p, secondaryTargets: [...p.secondaryTargets, lbl] };
         });
-        setPickingSecondary(false);
         return;
       }
 
@@ -64,7 +77,7 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
       setPopover({ x: e.clientX, y: e.clientY, label: labelForElement(target || el), secondaryTargets: [], isJynxMeta: isJynx });
     }
     function onKeyDown(e) {
-      if (e.key === "Escape" && pickingSecondary) setPickingSecondary(false);
+      if (e.key === "Escape" && popover) setPopover(null);
     }
     window.addEventListener("click", onClickCapture, true);
     window.addEventListener("keydown", onKeyDown);
@@ -72,26 +85,31 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
       window.removeEventListener("click", onClickCapture, true);
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [active, target, pickingSecondary, isAdmin]);
+  }, [active, target, popover, isAdmin]);
 
   if (!active) return null;
 
   const rect = target?.getBoundingClientRect();
 
   async function submit(comment, actionOn, attachment) {
+    const secondaryTargets = parseSecondaryTargetsFromComment(comment);
     if (popover.isJynxMeta) {
       // משוב על Jynx עצמו — תור נפרד לגמרי מהמשוב על האפליקציה (ראו
-      // data/routes/jynx-feedback.js), תמיד "פעולה" כי רק המנהל כותב לכאן.
-      // אין תמיכה בקובץ מצורף כאן בכוונה — AnnotationPopover.jsx לא מציג את
+      // data/routes/jynx-feedback.js). כמו במשוב הרגיל, כפתור "יישלח כפעולה"
+      // נותן למנהל לבחור אם זו הערה בלבד או שהיא תיכנס לתור הפעולות. אין
+      // תמיכה בקובץ מצורף כאן בכוונה — AnnotationPopover.jsx לא מציג את
       // הבורר הזה כשisJynxMeta, אז attachment תמיד undefined בנתיב הזה.
-      await submitJynxFeedback({ route, targetLabel: popover.label, comment, secondaryTargets: popover.secondaryTargets });
+      await submitJynxFeedback({
+        route, targetLabel: popover.label, comment, actionRequested: actionOn,
+        secondaryTargets,
+      });
     } else {
       // כפתור "יישלח כפעולה" ב-AnnotationPopover.jsx נותן למנהל שליטה
       // מפורשת (ברירת מחדל דלוקה, אבל ניתן לכיבוי); למשתמש-פיתוח רגיל
       // (לא מנהל) זה תמיד false בלי קשר למה שהתקבל.
       await submitAnnotation({
         route, targetLabel: popover.label, comment, actionRequested: isAdmin && actionOn,
-        secondaryTargets: popover.secondaryTargets,
+        secondaryTargets,
         attachment: attachment?.dataUrl || null, attachmentName: attachment?.name || null,
       });
     }
@@ -105,7 +123,10 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
       <style>{CSS}</style>
       {rect && (
         <div
-          className={"dev-overlay-highlight" + (isJynxHover ? " dev-overlay-highlight-jynx" : "")}
+          className={
+            "dev-overlay-highlight" +
+            (pickingSecondary ? " dev-overlay-highlight-secondary" : isJynxHover ? " dev-overlay-highlight-jynx" : "")
+          }
           style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height }}
         />
       )}
@@ -115,13 +136,10 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
           y={popover.y}
           label={popover.label}
           secondaryTargets={popover.secondaryTargets}
-          pickingSecondary={pickingSecondary}
           isAdmin={isAdmin}
           isJynxMeta={popover.isJynxMeta}
-          onCancel={() => { setPickingSecondary(false); setPopover(null); }}
+          onCancel={() => setPopover(null)}
           onSubmit={submit}
-          onAddSecondary={() => setPickingSecondary(true)}
-          onRemoveSecondary={(lbl) => setPopover((p) => p && { ...p, secondaryTargets: p.secondaryTargets.filter((t) => t !== lbl) })}
         />
       )}
       <AdminAnnotationMarkers isAdmin={isAdmin} route={route} refreshKey={markersRefreshKey} />
@@ -143,14 +161,25 @@ const CSS = `
   box-shadow:0 0 0 3px color-mix(in srgb, var(--dev) 28%, transparent),
              0 0 18px color-mix(in srgb, var(--dev) 50%, transparent);
 }
+.dev-overlay-highlight-secondary{
+  border-color:#2F8FCE;
+  box-shadow:0 0 0 3px color-mix(in srgb, #2F8FCE 28%, transparent),
+             0 0 18px color-mix(in srgb, #2F8FCE 50%, transparent);
+}
 .dev-annotate-popover{
   position:fixed; z-index:100000; width:290px; background:var(--panel); border:1px solid var(--dev);
   border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow-md);
   animation:devAnnotateIn .12s ease;
 }
 @keyframes devAnnotateIn{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:translateY(0); } }
+.dev-annotate-popover-head{ display:flex; align-items:center; gap:6px; }
+.dev-annotate-popover-grip{
+  display:flex; align-items:center; flex:0 0 auto; color:var(--text-dim); cursor:grab; touch-action:none;
+}
+.dev-annotate-popover-grip:active{ cursor:grabbing; }
+.dev-annotate-popover-grip:hover{ color:var(--dev); }
 .dev-annotate-popover-label{
-  font-family:var(--font-mono); font-size:10.5px; color:var(--dev); text-transform:uppercase; letter-spacing:.04em;
+  flex:1; font-family:var(--font-mono); font-size:10.5px; color:var(--dev); text-transform:uppercase; letter-spacing:.04em;
 }
 .dev-annotate-popover-admin-hint{
   font-size:11px; color:#2F8FCE; background:color-mix(in srgb, #2F8FCE 12%, transparent);
@@ -183,20 +212,8 @@ const CSS = `
 .dev-annotate-btn-primary{ background:var(--dev); color:#fff; }
 .dev-annotate-btn:disabled{ opacity:.5; cursor:not-allowed; }
 
-.dev-annotate-secondary-block{ display:flex; flex-direction:column; gap:6px; }
-.dev-annotate-secondary-chips{ display:flex; flex-wrap:wrap; gap:5px; }
-.dev-annotate-secondary-chip{
-  display:inline-flex; align-items:center; gap:5px; background:color-mix(in srgb, var(--dev) 12%, transparent);
-  border:1px solid var(--dev); color:var(--dev); border-radius:20px; padding:3px 8px; font-size:11px; font-family:var(--font-mono);
-}
-.dev-annotate-secondary-chip button{
-  background:none; border:none; color:inherit; cursor:pointer; font-size:13px; line-height:1; padding:0;
-}
-.dev-annotate-add-secondary-btn{
-  align-self:flex-start; background:none; border:1px dashed var(--line); color:var(--text-dim); border-radius:7px;
-  padding:5px 9px; font-size:11.5px; font-family:var(--font-sans); cursor:pointer;
-}
-.dev-annotate-add-secondary-btn:hover{ border-color:var(--dev); color:var(--dev); }
+/* רמז "עדיין בוחר יעדים" — תמיד גלוי כל עוד ה-popover פתוח (אין יותר כפתור
+   "+ קשר אלמנט נוסף" נפרד — כל קליק תקין על העמוד עכשיו מוסיף תג לטקסט). */
 .dev-annotate-picking-hint{
   font-size:11.5px; color:var(--dev); background:color-mix(in srgb, var(--dev) 10%, transparent);
   border-radius:6px; padding:5px 9px; animation:devAdminPulse 1.2s ease-in-out infinite;

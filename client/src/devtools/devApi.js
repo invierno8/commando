@@ -40,6 +40,9 @@ export async function fetchDevAnnotations(route) {
 export async function replyToAnnotation(id, text) {
   return http.post(`/dev/annotations/${id}/reply`, { text });
 }
+export async function reactToAnnotation(id, emoji) {
+  return http.post(`/dev/annotations/${id}/react`, { emoji });
+}
 
 // משוב על Jynx עצמו — תור נפרד לגמרי, מנהל בלבד (ראו data/routes/jynx-feedback.js).
 export async function submitJynxFeedback(data) {
@@ -53,6 +56,9 @@ export async function resolveJynxFeedback(id, resolved, resolutionNote) {
 }
 export async function replyToJynxFeedback(id, text) {
   return http.post(`/admin/jynx-feedback/${id}/reply`, { text });
+}
+export async function reactToJynxFeedback(id, emoji) {
+  return http.post(`/admin/jynx-feedback/${id}/react`, { emoji });
 }
 export async function exportJynxFeedbackMarkdown() {
   return http.getText(`/admin/jynx-feedback/export`);
