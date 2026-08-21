@@ -2,19 +2,19 @@
   "guest:dashboard-layout:system_admin": {
     "order": [
       "kpis",
-      "procurementCost",
-      "repairLeaderboard",
-      "openRequests",
-      "readiness",
       "equipment",
-      "activityLog"
+      "activityLog",
+      "trend"
     ],
     "hidden": [
-      "trend",
       "priority",
       "responseTime",
       "categoryAnalytics",
-      "ticketTypes"
+      "ticketTypes",
+      "procurementCost",
+      "repairLeaderboard",
+      "openRequests",
+      "readiness"
     ]
   }
 }
