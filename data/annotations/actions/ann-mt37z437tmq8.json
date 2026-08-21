@@ -1,0 +1,14 @@
+{
+  "id": "ann-mt37z437tmq8",
+  "route": "catalog",
+  "targetLabel": "catalog-grid",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "mock-toggle",
+    "dev-fab"
+  ],
+  "comment": "[→ mock-toggle] tons of bugs with mock data, the button says empty but it still shows please also move the mock data button to [→ dev-fab] and in dev fab what happend to choosing what brigade youre in? (side note)  also side note apperently you cant link more then 3 or 2 elements make linking more elements in a comment unlimited as long as they hold ctr and if an elemnt tag is writen or pasted again it doesend concider it as a link...",
+  "authorName": "Admin",
+  "requestedAt": "2026-08-21T17:24:53.278Z",
+  "requestedBy": "Admin"
+}

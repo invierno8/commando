@@ -12,8 +12,10 @@ const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
 /* תמיד ממוסגרת בתוך ה-portal של DevOverlay.jsx וסומכת על ה-<style> היחיד   */
 /* שהוא כבר מזריק (בדיוק כמו תת-רכיבי מודל בתוך מסך אחר בקודבייס הזה).      */
 /*                                                                            */
-/* יעדים משניים: כל עוד הקופסה פתוחה, DevOverlay.jsx הופך כל קליק תקין על   */
-/* העמוד ליעד משני (ראו onClickCapture שם) ומוסיף את התווית ל-secondaryTargets */
+/* יעדים משניים: כל עוד הקופסה פתוחה, DevOverlay.jsx הופך Ctrl/Cmd+קליק על  */
+/* אלמנט תקין בעמוד ליעד משני (קליק רגיל בלי Ctrl/Cmd עובר כרגיל לאפליקציה   */
+/* מתחת, כדי לא להפריע ללחיצה על כפתורים וכו' — ראו onClickCapture שם) ומוסיף */
+/* את התווית ל-secondaryTargets                                              */
 /* — האפקט למטה קולט כל תוספת כזו ומזריק טוקן טקסט קריא ("[→ תווית]") ישירות */
 /* לתוך ה-<textarea> במיקום הסמן, כך שהוא חלק אמיתי מהמשפט: ניתן לערוך/למחוק */
 /* אותו כמו כל טקסט אחר. השרת מקבל secondaryTargets מנותח מחדש מתוך הטקסט    */
@@ -136,7 +138,7 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
         onChange={(e) => setComment(e.target.value)}
       />
       <div className="dev-annotate-picking-hint">
-        Click any element on screen to link it here — it'll appear as a tag in your comment
+        Ctrl/Cmd+click any element on screen to link it here — it'll appear as a tag in your comment
         {secondaryTargets.length > 0 && ` (${secondaryTargets.length} linked)`}
       </div>
       {!isJynxMeta && (
