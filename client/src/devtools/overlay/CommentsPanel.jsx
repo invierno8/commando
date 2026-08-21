@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle } from "lucide-react";
-import { fetchDevAnnotations, replyToAnnotation } from "../devApi.js";
+import { fetchDevAnnotations, replyToAnnotation, fetchJynxFeedback, replyToJynxFeedback } from "../devApi.js";
 import { useDraggableFab } from "../useDraggableFab.js";
 
 /* ================================================================== */
@@ -20,7 +20,7 @@ import { useDraggableFab } from "../useDraggableFab.js";
 /*     can ask a clarifying question before it's resolved).               */
 /* ================================================================== */
 
-export default function CommentsPanel({ active, route, currentDevUserId }) {
+export default function CommentsPanel({ active, route, currentDevUserId, isAdmin }) {
   const [items, setItems] = useState([]);
   const [statusFilter, setStatusFilter] = useState("open"); // open | done
   const [mineOnly, setMineOnly] = useState(false);
@@ -35,16 +35,24 @@ export default function CommentsPanel({ active, route, currentDevUserId }) {
   // התפקיד), כדי שהמיקום ההתחלתי לא יתנגש איתם עוד לפני שגוררים משהו.
   const panelFab = useDraggableFab("jynx-comments-panel-pos", { left: 16, bottom: 76 }, "left");
 
+  // מנהל רואה כאן גם משוב על Jynx עצמו (תור נפרד לגמרי — jynx-feedback, ראו
+  // data/routes/jynx-feedback.js) — בלי זה, מנהל שכתב הערה דרך מצב "משוב
+  // Jynx" (הילה סגולה, ראו DevOverlay.jsx) לא היה רואה אותה בכלל כאן, כי
+  // היא לא באה מ-/dev/annotations. מסומנת kind:"jynx" להבחנה.
+  function reload() {
+    const appPromise = fetchDevAnnotations(route).then((d) => d.map((a) => ({ ...a, kind: "app" })));
+    const jynxPromise = isAdmin
+      ? fetchJynxFeedback().then((d) => d.filter((a) => a.route === route).map((a) => ({ ...a, kind: "jynx", authorName: a.authorName || "Admin" })))
+      : Promise.resolve([]);
+    Promise.all([appPromise, jynxPromise]).then(([app, jynx]) => setItems([...app, ...jynx]));
+  }
   useEffect(() => {
     if (!active) return;
-    let cancelled = false;
-    function reload() {
-      fetchDevAnnotations(route).then((d) => { if (!cancelled) setItems(d); });
-    }
     reload();
     const t = setInterval(reload, 5000);
-    return () => { cancelled = true; clearInterval(t); };
-  }, [active, route]);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, route, isAdmin]);
 
   useEffect(() => {
     if (!active) return;
@@ -98,9 +106,10 @@ export default function CommentsPanel({ active, route, currentDevUserId }) {
 
   async function sendReply(a) {
     if (!replyText.trim()) return;
-    await replyToAnnotation(a.id, replyText.trim());
+    if (a.kind === "jynx") await replyToJynxFeedback(a.id, replyText.trim());
+    else await replyToAnnotation(a.id, replyText.trim());
     setReplyText("");
-    fetchDevAnnotations(route).then(setItems);
+    reload();
   }
 
   if (!active) return null;
@@ -169,6 +178,7 @@ export default function CommentsPanel({ active, route, currentDevUserId }) {
                     >
                       {a.targetLabel && (
                         <span className="comments-sidebar-item-target">
+                          {a.kind === "jynx" && <span className="comments-jynx-badge">🔮 Jynx</span>}
                           {a.targetLabel}
                           {a.resolved && <span className="comments-done-badge"><CheckCircle2 size={10} /> Done</span>}
                         </span>
@@ -284,6 +294,10 @@ const CSS_TEXT = `
 .comments-sidebar-item-comment{ margin:2px 0; font-size:12.5px; color:var(--text); }
 .comments-sidebar-item-meta{ font-size:10.5px; color:var(--text-dim); }
 .comments-done-badge{ display:inline-flex; align-items:center; gap:2px; color:var(--green); font-size:9.5px; text-transform:none; }
+.comments-jynx-badge{
+  display:inline-flex; align-items:center; background:color-mix(in srgb, var(--dev) 15%, transparent);
+  color:var(--dev); font-size:9px; font-weight:700; text-transform:none; border-radius:8px; padding:1px 6px;
+}
 .comments-resolution-note{
   display:flex; align-items:flex-start; gap:4px; font-size:11px; color:var(--green);
   background:color-mix(in srgb, var(--green) 10%, transparent); border-radius:6px; padding:4px 7px; margin:4px 0;

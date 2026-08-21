@@ -109,7 +109,7 @@ export default function DevAuthGate({ route, devFabProps }) {
     <>
       <style>{CSS}</style>
       <DevOverlay active={overlayOn} route={route} isAdmin={isAdmin} />
-      <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} />
+      <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} isAdmin={isAdmin} />
       <div className="dev-fab-toolbar jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
         <span className="dev-toolbar-grip" {...toolbarFab.dragHandlers} title="Drag to move toolbar"><GripVertical size={13} /></span>
         <MockDataToggle />
