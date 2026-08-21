@@ -136,20 +136,20 @@ export default function DevAuthGate({ route, devFabProps }) {
         >
           <span className="dev-toolbar-grip" title="Drag anywhere on the toolbar to move it"><GripVertical size={13} /></span>
           <MockDataToggle />
-          <button type="button" className="dev-toolbar-icon-btn" onClick={() => setOverlayOn((v) => !v)} title={overlayOn ? "Turn off hover overlay" : "Turn on hover overlay"}>
+          <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-overlay-toggle" onClick={() => setOverlayOn((v) => !v)} title={overlayOn ? "Turn off hover overlay" : "Turn on hover overlay"}>
             {overlayOn ? <Eye size={13} /> : <EyeOff size={13} />}
           </button>
-          <button type="button" className={"dev-toolbar-icon-btn" + (commentsOn ? " active" : "")} onClick={() => setCommentsOn((v) => !v)} title={commentsOn ? "Hide screen comments" : "Show all comments on this screen"}>
+          <button type="button" className={"dev-toolbar-icon-btn" + (commentsOn ? " active" : "")} data-devblock="dev-toolbar-comments-toggle" onClick={() => setCommentsOn((v) => !v)} title={commentsOn ? "Hide screen comments" : "Show all comments on this screen"}>
             <MessageSquare size={13} />
           </button>
-          <button type="button" className="dev-toolbar-icon-btn" onClick={() => setAdminOpen(true)} title="Admin (admin only)">
+          <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-admin-btn" onClick={() => setAdminOpen(true)} title="Admin (admin only)">
             <Settings2 size={13} />
           </button>
           <span className="dev-toolbar-devname">Hi, {devName}</span>
-          <button type="button" className="dev-toolbar-icon-btn" onClick={logout} title="Log out of Jynx">
+          <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-logout-btn" onClick={logout} title="Log out of Jynx">
             <LogOut size={13} />
           </button>
-          <button type="button" className="dev-toolbar-icon-btn" onClick={toggleToolbarOpen} title="Collapse to the Jynx bubble">
+          <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-collapse-btn" onClick={toggleToolbarOpen} title="Collapse to the Jynx bubble">
             <X size={13} />
           </button>
         </div>
