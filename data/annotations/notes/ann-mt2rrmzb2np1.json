@@ -1,0 +1,18 @@
+{
+  "id": "ann-mt2rrmzb2np1",
+  "authorId": "dev-demo-1",
+  "authorName": "Demo Dev",
+  "createdAt": "2026-08-21T09:51:09.335Z",
+  "route": "catalog",
+  "targetLabel": "test",
+  "targetSelector": null,
+  "comment": "regular comment, not an action",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null
+}
