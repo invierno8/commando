@@ -10,9 +10,9 @@
   "resolved": false,
   "resolvedAt": null,
   "resolvedBy": null,
-  "actionStatus": "none",
-  "actionRequestedAt": null,
-  "actionRequestedBy": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-21T09:52:31.781Z",
+  "actionRequestedBy": "admin-test",
   "actionPrUrl": null,
   "actionLog": null
 }
