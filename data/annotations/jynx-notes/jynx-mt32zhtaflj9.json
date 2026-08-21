@@ -1,0 +1,16 @@
+{
+  "id": "jynx-mt32zhtaflj9",
+  "createdAt": "2026-08-21T15:05:11.662Z",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-icon-btn",
+  "secondaryTargets": [],
+  "comment": "i dont see the comments when i click on it it says no open comments when there are ope comments",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-21T15:05:11.662Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": []
+}
