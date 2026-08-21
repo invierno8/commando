@@ -1,0 +1,13 @@
+{
+  "id": "ann-mt2q9hoc3zyx",
+  "authorId": "dev-demo-1",
+  "authorName": "Demo Dev",
+  "createdAt": "2026-08-21T09:09:03.036Z",
+  "route": "catalog",
+  "targetLabel": "test",
+  "targetSelector": null,
+  "comment": "בדיקת commit אמיתי ל-GitHub דרך githubPersist.js",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null
+}
