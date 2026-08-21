@@ -19,10 +19,13 @@ import { submitAnnotation, submitJynxFeedback } from "../devApi.js";
 /*     comment on the current screen, see AdminAnnotationMarkers.jsx.    */
 /* ================================================================== */
 
-export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
-  // isAdmin גם קובע אם מותר לגלוש בכלל על ה-UI של Jynx עצמו (.jynx-chrome) —
-  // ראו useHoverTarget.js. משתמשי-פיתוח רגילים אף פעם לא רואים הילה שם.
-  const target = useHoverTarget(active, isAdmin);
+export default function DevOverlay({ active, route, isAdmin, canJynxComment, onSubmitted }) {
+  // מי שמותר לו לגלוש/להגיב על ה-UI של Jynx עצמו (.jynx-chrome, ראו
+  // useHoverTarget.js): מנהל, או משתמש-פיתוח שסומן canJynxComment:true
+  // (ראו DevAdminUsersScreen.jsx / data/routes/jynx-feedback.js). שתי
+  // הרשאות עצמאיות — לא נכללות זו בזו.
+  const canAccessJynxChrome = isAdmin || canJynxComment;
+  const target = useHoverTarget(active, canAccessJynxChrome);
   const [popover, setPopover] = useState(null); // { x, y, label, secondaryTargets: [], isJynxMeta } | null
   const [pickingSecondary, setPickingSecondary] = useState(false);
   const [markersRefreshKey, setMarkersRefreshKey] = useState(0);
@@ -39,7 +42,7 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
       // במקום לתאר את זה במילים.
       if (pickingSecondary) {
         if (!el || el.closest(".dev-overlay-ignore")) return;
-        if (el.closest(".jynx-chrome") && !isAdmin) return;
+        if (el.closest(".jynx-chrome") && !canAccessJynxChrome) return;
         e.preventDefault();
         e.stopPropagation();
         const lbl = labelForElement(target || el);
@@ -55,10 +58,11 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
       if (!(e.ctrlKey || e.metaKey)) return;
       if (!el || el.closest(".dev-overlay-ignore")) return;
       // Jynx-chrome (ה-FAB/סרגל/פאנל ניהול עצמם) — משוב עליהם נכנס לתור
-      // נפרד לגמרי (jynx-feedback, ראו submit() למטה), ורק המנהל רואה אותו
-      // בכלל בתור useHoverTarget למעלה, אז כאן זו רק בדיקת-הגנה כפולה.
+      // נפרד לגמרי (jynx-feedback, ראו submit() למטה), ורק מי שמורשה
+      // (canAccessJynxChrome) רואה אותו בכלל בתור useHoverTarget למעלה,
+      // אז כאן זו רק בדיקת-הגנה כפולה.
       const isJynx = !!el.closest(".jynx-chrome");
-      if (isJynx && !isAdmin) return;
+      if (isJynx && !canAccessJynxChrome) return;
       e.preventDefault();
       e.stopPropagation();
       setPopover({ x: e.clientX, y: e.clientY, label: labelForElement(target || el), secondaryTargets: [], isJynxMeta: isJynx });
@@ -72,7 +76,7 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
       window.removeEventListener("click", onClickCapture, true);
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [active, target, pickingSecondary, isAdmin]);
+  }, [active, target, pickingSecondary, canAccessJynxChrome]);
 
   if (!active) return null;
 

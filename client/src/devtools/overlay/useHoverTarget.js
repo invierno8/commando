@@ -40,11 +40,13 @@ function findTarget(el) {
   return el; // שום דבר "מעניין" יותר בדרך — עדיף האלמנט הגולמי מכלום
 }
 
-// allowJynxChrome: כשמאומת גם כמנהל, מותר "לגלוש" גם על ה-UI של Jynx עצמו
-// (ה-FAB, סרגל הכלים, פאנל הניהול — מסומנים .jynx-chrome) כדי לתת משוב על
-// המערכת עצמה. למשתמשי-פיתוח רגילים .jynx-chrome תמיד חסום, בדיוק כמו
-// .dev-overlay-ignore (שנשאר חסום לגמרי לכולם — זה ה-UI של ה-overlay עצמו:
-// הבועה, ההילה, הסימונים — אף פעם לא יעד תקין, גם לא למנהל).
+// allowJynxChrome: מותר "לגלוש" גם על ה-UI של Jynx עצמו (ה-FAB, סרגל הכלים,
+// פאנל הניהול — מסומנים .jynx-chrome) כדי לתת משוב על המערכת עצמה, למי
+// שמורשה — מנהל, או משתמש-פיתוח עם canJynxComment:true (הקורא, DevOverlay.jsx,
+// מעביר isAdmin || canJynxComment כאן). למי שאין לו אף אחת מהשתיים
+// .jynx-chrome תמיד חסום, בדיוק כמו .dev-overlay-ignore (שנשאר חסום לגמרי
+// לכולם — זה ה-UI של ה-overlay עצמו: הבועה, ההילה, הסימונים — אף פעם לא
+// יעד תקין, גם לא למי שמורשה ל-jynx-chrome).
 export function useHoverTarget(active, allowJynxChrome) {
   const [target, setTarget] = useState(null);
   const rafRef = useRef(null);

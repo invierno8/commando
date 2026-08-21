@@ -18,7 +18,14 @@ const router = Router();
 // "להציג את הסיסמה הקיימת" (ראו admin/dev-users/:id PATCH — אפשר רק לאפס
 // לסיסמה חדשה). online נגזר בזמן אמת ממפת הסשנים, לא נשמר בשום מקום.
 function publicView(u, onlineIds) {
-  return { id: u.id, name: u.name, role: u.role, active: u.active, createdAt: u.createdAt, online: onlineIds.has(u.id) };
+  return {
+    id: u.id, name: u.name, role: u.role, active: u.active, createdAt: u.createdAt,
+    online: onlineIds.has(u.id),
+    // הרשאה נפרדת מהרשאת ה-admin — יכולה לתת משוב על Jynx עצמו (ראו
+    // data/routes/jynx-feedback.js / requireAdminOrJynxCommenter). ברירת
+    // מחדל false לכל משתמש קיים/חדש שלא הוגדר לו במפורש.
+    canJynxComment: !!u.canJynxComment,
+  };
 }
 
 router.get("/admin/dev-users", requireAdmin, (_req, res) => {
@@ -40,6 +47,7 @@ router.post("/admin/dev-users", requireAdmin, asyncRoute(async (req, res) => {
     role: req.body.role || "",
     passwordHash: await hashPassword(req.body.password),
     active: true,
+    canJynxComment: false,
     createdAt: new Date().toISOString(),
   };
   await writeDevUsers([...users, user]);
@@ -57,6 +65,7 @@ router.patch("/admin/dev-users/:id", requireAdmin, asyncRoute(async (req, res) =
       patch.passwordHash = await hashPassword(patch.password);
       delete patch.password;
     }
+    if ("canJynxComment" in patch) patch.canJynxComment = !!patch.canJynxComment;
     updated = { ...u, ...patch };
     next.push(updated);
   }

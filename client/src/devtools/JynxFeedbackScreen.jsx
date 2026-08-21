@@ -7,8 +7,10 @@ const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: G
 const ACTION_STATUS_TONE = { queued: "blue", in_progress: "blue", pr_opened: "green", done: "green", failed: "red" };
 
 /* תור המשוב על Jynx עצמו — נפרד לגמרי מ-DevAnnotationsScreen.jsx (משוב על
-   האפליקציה). כל רשומה כאן נכתבה על ידי המנהל בלבד ותמיד מסומנת אוטומטית
-   כפעולה, אז אין כאן כפתור "הפעל" ידני — רק סקירה, סימון-כטופל וייצוא. */
+   האפליקציה). רשומה כאן יכולה להיכתב על ידי המנהל, וגם על ידי משתמש-פיתוח
+   שסומן "Jynx commenter" (ראו DevAdminUsersScreen.jsx) — כל רשומה תמיד
+   מסומנת אוטומטית כפעולה, אז אין כאן כפתור "הפעל" ידני — רק סקירה
+   (כולל מי כתב, authorName), סימון-כטופל וייצוא, כל אלה עדיין admin בלבד. */
 export default function JynxFeedbackScreen() {
   const [items, setItems] = useState(null);
   const [filter, setFilter] = useState("open");
@@ -78,7 +80,7 @@ export default function JynxFeedbackScreen() {
                     </span>
                   )}
                   <p className="dev-admin-annotation-comment">{a.comment}</p>
-                  <span className="dev-admin-annotation-meta">{new Date(a.createdAt).toLocaleString("en-US")}</span>
+                  <span className="dev-admin-annotation-meta">{a.authorName ? `${a.authorName} · ` : ""}{new Date(a.createdAt).toLocaleString("en-US")}</span>
                   {a.actionStatus && (
                     <span className={`pill pill-${ACTION_STATUS_TONE[a.actionStatus] || "neutral"} dev-admin-action-pill`}>
                       {StatusIcon && <StatusIcon size={11} className={a.actionStatus === "queued" || a.actionStatus === "in_progress" ? "dev-admin-spin" : ""} />}

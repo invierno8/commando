@@ -28,6 +28,10 @@ export default function DevAuthGate({ route, devFabProps }) {
   // אוטומטית "פעולה" על הערות שהמנהל עצמו כותב, ולהציג סימוני מנהל קבועים
   // על המסך — גם מיד אחרי רענון דף, כל עוד עוגיית המנהל עדיין תקפה.
   const [isAdmin, setIsAdmin] = useState(false);
+  // הרשאה נפרדת מ-isAdmin — יכולה להתקיים לבד, יחד עם isAdmin, או לא בכלל
+  // (ראו FORCLAUDE.md). נשלפת מ-/dev/me, לא מ-/admin/me, כי כל משתמש-פיתוח
+  // רגיל (לא רק admin) יכול לקבל אותה.
+  const [canJynxComment, setCanJynxComment] = useState(false);
   // כל חלק בכרום של Jynx גרירי בנפרד (מיקום/localStorage משלו) — כך שלא
   // יסתיר בטעות תוכן קבוע במסך כלשהו, גם אחרי שמתחברים ומופיע גם הסרגל.
   const lockedFab = useDraggableFab("jynx-fab-pos");
@@ -41,7 +45,7 @@ export default function DevAuthGate({ route, devFabProps }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetchDevMe().then((d) => { if (!cancelled) { setDevName(d?.name || null); setDevUserId(d?.id || null); setChecking(false); } });
+    fetchDevMe().then((d) => { if (!cancelled) { setDevName(d?.name || null); setDevUserId(d?.id || null); setCanJynxComment(!!d?.canJynxComment); setChecking(false); } });
     fetchAdminMe().then((d) => { if (!cancelled) setIsAdmin(!!d?.authenticated); });
     return () => { cancelled = true; };
   }, []);
@@ -56,6 +60,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       setPassword("");
       const me = await fetchDevMe();
       setDevUserId(me?.id || null);
+      setCanJynxComment(!!me?.canJynxComment);
     } catch (e) {
       setError(e.message);
     }
@@ -65,6 +70,7 @@ export default function DevAuthGate({ route, devFabProps }) {
     setDevName(null);
     setDevUserId(null);
     setIsAdmin(false);
+    setCanJynxComment(false);
   }
 
   if (checking) return null;
@@ -108,8 +114,8 @@ export default function DevAuthGate({ route, devFabProps }) {
   return (
     <>
       <style>{CSS}</style>
-      <DevOverlay active={overlayOn} route={route} isAdmin={isAdmin} />
-      <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} isAdmin={isAdmin} />
+      <DevOverlay active={overlayOn} route={route} isAdmin={isAdmin} canJynxComment={canJynxComment} />
+      <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} isAdmin={isAdmin} canJynxComment={canJynxComment} />
       <div className="dev-fab-toolbar jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
         <span className="dev-toolbar-grip" {...toolbarFab.dragHandlers} title="Drag to move toolbar"><GripVertical size={13} /></span>
         <MockDataToggle />

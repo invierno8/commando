@@ -20,7 +20,7 @@ import { useDraggableFab } from "../useDraggableFab.js";
 /*     can ask a clarifying question before it's resolved).               */
 /* ================================================================== */
 
-export default function CommentsPanel({ active, route, currentDevUserId, isAdmin }) {
+export default function CommentsPanel({ active, route, currentDevUserId, isAdmin, canJynxComment }) {
   const [items, setItems] = useState([]);
   const [statusFilter, setStatusFilter] = useState("open"); // open | done
   const [mineOnly, setMineOnly] = useState(false);
@@ -35,13 +35,17 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   // התפקיד), כדי שהמיקום ההתחלתי לא יתנגש איתם עוד לפני שגוררים משהו.
   const panelFab = useDraggableFab("jynx-comments-panel-pos", { left: 16, bottom: 76 }, "left");
 
-  // מנהל רואה כאן גם משוב על Jynx עצמו (תור נפרד לגמרי — jynx-feedback, ראו
-  // data/routes/jynx-feedback.js) — בלי זה, מנהל שכתב הערה דרך מצב "משוב
+  // מנהל, וכעת גם משתמש-פיתוח עם canJynxComment:true, רואים כאן גם משוב על
+  // Jynx עצמו (תור נפרד לגמרי — jynx-feedback, ראו data/routes/jynx-feedback.js
+  // ו-requireAdminOrJynxCommenter) — בלי זה, מי שכתב הערה דרך מצב "משוב
   // Jynx" (הילה סגולה, ראו DevOverlay.jsx) לא היה רואה אותה בכלל כאן, כי
-  // היא לא באה מ-/dev/annotations. מסומנת kind:"jynx" להבחנה.
+  // היא לא באה מ-/dev/annotations. מסומנת kind:"jynx" להבחנה. השרת מחזיר
+  // את כל הרשומות (לא רק שלי) בדיוק כמו הערות QA רגילות — סינון "Just me"
+  // קורה כאן, בצד הלקוח (a.authorId === currentDevUserId למטה).
+  const canSeeJynxFeedback = isAdmin || canJynxComment;
   function reload() {
     const appPromise = fetchDevAnnotations(route).then((d) => d.map((a) => ({ ...a, kind: "app" })));
-    const jynxPromise = isAdmin
+    const jynxPromise = canSeeJynxFeedback
       ? fetchJynxFeedback().then((d) => d.filter((a) => a.route === route).map((a) => ({ ...a, kind: "jynx", authorName: a.authorName || "Admin" })))
       : Promise.resolve([]);
     Promise.all([appPromise, jynxPromise]).then(([app, jynx]) => setItems([...app, ...jynx]));
@@ -52,7 +56,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     const t = setInterval(reload, 5000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, route, isAdmin]);
+  }, [active, route, canSeeJynxFeedback]);
 
   useEffect(() => {
     if (!active) return;

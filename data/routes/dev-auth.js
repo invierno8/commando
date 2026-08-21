@@ -39,7 +39,14 @@ router.post("/dev/login", loginLimiter, asyncRoute(async (req, res) => {
 }));
 
 router.get("/dev/me", (req, res) => {
-  res.json(req.devUser ? { id: req.devUser.id, name: req.devUser.name } : null);
+  if (!req.devUser) return res.json(null);
+  // הרשאת canJynxComment יכולה להשתנות אחרי ההתחברות (המנהל מפעיל/מכבה
+  // אותה בזמן שהסשן כבר פעיל) — לכן נשלפת כאן מחדש מהמרשם החי בכל בקשה,
+  // לא נשמרת בגוף הטוקן שנוצר בזמן ה-login (ראו createSession ב-login למעלה).
+  // אין רשומה במרשם עבור פסאודו-המשתמש "admin" (כניסת ADMIN_SECRET) — זה
+  // תקין, canJynxComment פשוט false שם, כי ה-admin ממילא עוקף את הבדיקה הזו.
+  const record = readDevUsers().find((u) => u.id === req.devUser.id);
+  res.json({ id: req.devUser.id, name: req.devUser.name, canJynxComment: !!record?.canJynxComment });
 });
 
 router.post("/dev/logout", (req, res) => {

@@ -3,17 +3,22 @@
 /* data/annotations/{notes,actions}/, which is QA feedback about the    */
 /* underlying HANGAR app. This one is meta: comments about the Jynx     */
 /* dev-tool overlay itself (the FAB, the toolbar, the admin panel...),  */
-/* meant to evolve Jynx into its own standalone product later. Only the */
-/* admin can write to it (no per-person dev-user roster for this one),  */
-/* so every entry is auto-queued as an action — same "everything I      */
-/* write becomes an action" rule already used for admin QA notes.       */
+/* meant to evolve Jynx into its own standalone product later. Writable */
+/* by the admin, and also by any dev user granted the "Jynx commenter"  */
+/* permission (canJynxComment:true in data/config/dev-users.json — see  */
+/* requireAdminOrJynxCommenter in middleware/adminAuth.js, and          */
+/* DevAdminUsersScreen.jsx for how the admin grants it). Every entry is */
+/* auto-queued as an action — same "everything written here becomes an  */
+/* action" rule already used for admin QA notes — and now carries       */
+/* authorId/authorName so it's attributable to whoever actually wrote   */
+/* it. Resolving/replying/exporting stay admin-only.                    */
 /* ================================================================== */
 
 import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { requireAdmin } from "../middleware/adminAuth.js";
+import { requireAdmin, requireAdminOrJynxCommenter } from "../middleware/adminAuth.js";
 import { asyncRoute, requireFields } from "../middleware/validate.js";
 import { commitFileToGithub, githubPersistEnabled, listDirFromGithub, readFileFromGithub } from "../lib/githubPersist.js";
 
@@ -60,11 +65,20 @@ async function queueAction(note) {
 
 const router = Router();
 
-router.post("/admin/jynx-feedback", requireAdmin, asyncRoute(async (req, res) => {
+// דלת פתוחה גם למנהל וגם למשתמש-פיתוח עם canJynxComment:true (ראו
+// requireAdminOrJynxCommenter ב-middleware/adminAuth.js) — "כל מה שנכתב
+// הופך לפעולה" נשאר זהה לשני המסלולים; ההבדל היחיד הוא זהות המחבר, שעכשיו
+// נשמרת (authorId/authorName) כדי שהמשוב יהיה משוייך למי שכתב אותו בפועל.
+router.post("/admin/jynx-feedback", requireAdminOrJynxCommenter, asyncRoute(async (req, res) => {
   requireFields(req.body, ["comment"]);
   const secondaryTargets = Array.isArray(req.body.secondaryTargets)
     ? req.body.secondaryTargets.filter((t) => typeof t === "string" && t.trim()).slice(0, 10)
     : [];
+  // authorId "admin" (לא null) גם עבור סשן מנהל — תואם ל-id הפסאודו-משתמש
+  // הקבוע ("admin") שכבר משמש בכניסת ADMIN_SECRET (ראו dev-auth.js), כדי
+  // ש"Just me" ב-CommentsPanel.jsx יעבוד נכון גם עבור מנהל.
+  const authorId = req.jynxCommenterUser?.id || "admin";
+  const authorName = req.jynxCommenterUser?.name || "Admin";
   const entry = {
     id: "jynx-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     createdAt: new Date().toISOString(),
@@ -72,6 +86,7 @@ router.post("/admin/jynx-feedback", requireAdmin, asyncRoute(async (req, res) =>
     comment: req.body.comment, resolved: false, resolvedAt: null, resolutionNote: null,
     actionStatus: "queued", actionRequestedAt: new Date().toISOString(),
     actionPrUrl: null, actionLog: null,
+    authorId, authorName,
     replies: [],
   };
   await persistNote(entry, `Jynx feedback (${entry.route || "?"}) — ${entry.targetLabel || "?"}`);
@@ -79,7 +94,10 @@ router.post("/admin/jynx-feedback", requireAdmin, asyncRoute(async (req, res) =>
   res.status(201).json({ ok: true });
 }));
 
-router.get("/admin/jynx-feedback", requireAdmin, (_req, res) => {
+// גם GET נפתח לאותם שני המסלולים (לא רק requireAdmin) — כדי שמשתמש-פיתוח
+// עם canJynxComment:true יוכל לראות בעצמו את מה שהוא כתב ב-CommentsPanel.jsx
+// (סינון "Just me" קורה שם, בצד הלקוח, בדיוק כמו עם הערות QA רגילות).
+router.get("/admin/jynx-feedback", requireAdminOrJynxCommenter, (_req, res) => {
   res.json(readAll());
 });
 
