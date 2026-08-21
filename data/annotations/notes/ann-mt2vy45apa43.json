@@ -16,5 +16,14 @@
   "actionRequestedBy": "מנהל",
   "actionPrUrl": null,
   "actionLog": null,
-  "resolutionNote": "Fixed — relabeled the field from 'Primary contact' to 'Brigade equipment officer' to match what it's actually used for."
+  "resolutionNote": "Fixed — relabeled the field from 'Primary contact' to 'Brigade equipment officer' to match what it's actually used for.",
+  "replies": [
+    {
+      "id": "rep-mt31uaru8sfo",
+      "authorId": "admin",
+      "authorName": "Admin",
+      "text": "awsome thanks",
+      "createdAt": "2026-08-21T14:33:09.642Z"
+    }
+  ]
 }
