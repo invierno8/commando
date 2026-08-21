@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle } from "lucide-react";
-import { fetchDevAnnotations, replyToAnnotation, fetchJynxFeedback, replyToJynxFeedback } from "../devApi.js";
+import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Zap, Loader2, GitPullRequest, XCircle } from "lucide-react";
+import { fetchDevAnnotations, replyToAnnotation, fetchJynxFeedback, replyToJynxFeedback, requestAnnotationAction } from "../devApi.js";
 import { useDraggableFab } from "../useDraggableFab.js";
+
+const ACTION_STATUS_LABEL = { queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed" };
+const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: GitPullRequest, done: CheckCircle2, failed: XCircle };
 
 /* ================================================================== */
 /* LEGO BLOCK — "who commented on what, here" for EVERY dev user (not    */
@@ -112,6 +115,11 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     reload();
   }
 
+  async function triggerAction(a) {
+    await requestAnnotationAction(a.id);
+    reload();
+  }
+
   if (!active) return null;
 
   const shown = items
@@ -187,6 +195,21 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                       <span className="comments-sidebar-item-meta">{a.authorName} · {new Date(a.createdAt).toLocaleString("en-US")}</span>
                       {a.resolved && a.resolutionNote && (
                         <div className="comments-resolution-note"><CheckCircle2 size={11} /> {a.resolutionNote}</div>
+                      )}
+                      {isAdmin && a.actionStatus && a.actionStatus !== "none" && (() => {
+                        const StatusIcon = ACTION_STATUS_ICON[a.actionStatus];
+                        return (
+                          <span className="comments-action-pill" onClick={(e) => e.stopPropagation()}>
+                            {StatusIcon && <StatusIcon size={11} className={a.actionStatus === "queued" || a.actionStatus === "in_progress" ? "comments-action-spin" : ""} />}
+                            {ACTION_STATUS_LABEL[a.actionStatus]}
+                            {a.actionPrUrl && <a href={a.actionPrUrl} target="_blank" rel="noreferrer">View PR</a>}
+                          </span>
+                        );
+                      })()}
+                      {isAdmin && a.kind === "app" && (!a.actionStatus || a.actionStatus === "none") && (
+                        <button type="button" className="comments-action-btn" onClick={(e) => { e.stopPropagation(); triggerAction(a); }} title="Run the automated agent on this comment">
+                          <Zap size={11} /> Action
+                        </button>
                       )}
                     </div>
                     <button
@@ -302,6 +325,18 @@ const CSS_TEXT = `
   display:flex; align-items:flex-start; gap:4px; font-size:11px; color:var(--green);
   background:color-mix(in srgb, var(--green) 10%, transparent); border-radius:6px; padding:4px 7px; margin:4px 0;
 }
+.comments-action-pill{
+  display:inline-flex; align-items:center; gap:4px; background:color-mix(in srgb, #2F8FCE 15%, transparent);
+  color:#2F8FCE; font-size:10px; font-weight:700; border-radius:12px; padding:2px 8px; margin:4px 0; cursor:default;
+}
+.comments-action-pill a{ color:inherit; text-decoration:underline; margin-inline-start:3px; }
+.comments-action-spin{ animation:commentsActionSpin 1s linear infinite; }
+@keyframes commentsActionSpin{ to{ transform:rotate(360deg); } }
+.comments-action-btn{
+  display:inline-flex; align-items:center; gap:4px; background:#2F8FCE; color:#fff; border:none;
+  border-radius:12px; padding:3px 9px; font-size:10.5px; font-weight:700; cursor:pointer; margin:4px 0;
+}
+.comments-action-btn:hover{ filter:brightness(1.08); }
 .comments-thread-toggle{
   display:inline-flex; align-items:center; gap:4px; background:none; border:none; color:var(--text-dim);
   font-size:10.5px; cursor:pointer; padding:2px 12px 8px;
