@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, X } from "lucide-react";
+import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, X, Loader2 } from "lucide-react";
 import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
 import MockDataToggle from "./MockDataToggle.jsx";
@@ -21,6 +21,7 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loggingIn, setLoggingIn] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [overlayOn, setOverlayOn] = useState(true);
   const [commentsOn, setCommentsOn] = useState(false);
@@ -55,6 +56,7 @@ export default function DevAuthGate({ route, devFabProps }) {
 
   async function login() {
     setError("");
+    setLoggingIn(true);
     try {
       const res = await devLogin(password);
       setDevName(res.name);
@@ -65,6 +67,8 @@ export default function DevAuthGate({ route, devFabProps }) {
       setDevUserId(me?.id || null);
     } catch (e) {
       setError(e.message);
+    } finally {
+      setLoggingIn(false);
     }
   }
   async function logout() {
@@ -90,11 +94,11 @@ export default function DevAuthGate({ route, devFabProps }) {
             <span className="dev-only-tag">JYNX — Sign in to dev mode</span>
             <label className="env-strip-identity">
               <span>Password</span>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} autoFocus />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} disabled={loggingIn} autoFocus />
             </label>
             {error && <div className="dev-login-error">{error}</div>}
-            <button type="button" className="dev-login-submit" onClick={login} disabled={!password.trim()}>
-              Sign in
+            <button type="button" className="dev-login-submit" onClick={login} disabled={!password.trim() || loggingIn}>
+              {loggingIn ? <Loader2 size={13} className="dev-login-spinner" /> : "Sign in"}
             </button>
           </div>
         )}
@@ -163,6 +167,8 @@ const CSS = `
   font-size:12.5px; cursor:pointer; font-family:var(--font-sans);
 }
 .dev-login-submit:disabled{ opacity:.5; cursor:not-allowed; }
+.dev-login-spinner{ display:block; margin:0 auto; animation:devLoginSpin .7s linear infinite; }
+@keyframes devLoginSpin{ to{ transform:rotate(360deg); } }
 
 .dev-fab-toolbar{
   position:fixed; z-index:79; display:flex; align-items:center; gap:6px;
