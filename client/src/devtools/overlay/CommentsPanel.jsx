@@ -96,6 +96,23 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredListId, items, tick]);
 
+  // אלמנטים משניים (secondaryTargets) של התגובה שבהובר — אותה שיטת איתור כמו
+  // rectFor הראשי, פשוט לכל label ברשימה בנפרד; label שלא נמצא בדף מדולג
+  // בשקט (בדיוק כמו rectFor הרגיל), אין הודעת שגיאה.
+  const hoveredSecondaryRects = useMemo(() => {
+    if (!hoveredListId) return [];
+    void tick;
+    const hovered = items.find((x) => x.id === hoveredListId);
+    const labels = hovered?.secondaryTargets || [];
+    return labels
+      .map((label) => {
+        const el = document.querySelector(`[data-devblock="${CSS.escape(label)}"]`);
+        return el ? { label, rect: el.getBoundingClientRect() } : null;
+      })
+      .filter(Boolean);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hoveredListId, items, tick]);
+
   function jumpTo(a) {
     const found = rectFor(a);
     if (!found) return;
@@ -140,6 +157,13 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
           style={{ top: hoveredRect.top, left: hoveredRect.left, width: hoveredRect.width, height: hoveredRect.height }}
         />
       )}
+      {hoveredSecondaryRects.map(({ label, rect }) => (
+        <div
+          key={label}
+          className="comments-panel-highlight-secondary"
+          style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height }}
+        />
+      ))}
       {flashRect && (
         <div
           className="comments-panel-highlight comments-panel-flash"
@@ -262,6 +286,12 @@ const CSS_TEXT = `
 }
 .comments-panel-flash{
   border-color:var(--jynx); animation:commentsFlash 1.6s ease;
+}
+.comments-panel-highlight-secondary{
+  position:fixed; pointer-events:none; z-index:99995; border-radius:8px; border:2px solid #2F8FCE;
+  box-shadow:0 0 0 3px color-mix(in srgb, #2F8FCE 28%, transparent),
+             0 0 18px color-mix(in srgb, #2F8FCE 50%, transparent);
+  transition:top .1s ease, left .1s ease, width .1s ease, height .1s ease;
 }
 @keyframes commentsFlash{
   0%, 100% { box-shadow:0 0 0 3px color-mix(in srgb, var(--jynx) 28%, transparent), 0 0 18px color-mix(in srgb, var(--jynx) 50%, transparent); }
