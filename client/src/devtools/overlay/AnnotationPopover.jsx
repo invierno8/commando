@@ -37,19 +37,18 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, picki
       onKeyDown={(e) => e.key === "Escape" && onCancel()}
     >
       <div className={"dev-annotate-popover-label" + (isJynxMeta ? " dev-annotate-popover-label-jynx" : "")}>{label}</div>
-      {isJynxMeta ? (
+      {isJynxMeta && (
         <div className="dev-annotate-popover-jynx-hint">🔮 Feedback about Jynx itself — separate queue, unrelated to the app</div>
-      ) : (
-        isAdmin && (
-          <button
-            type="button"
-            className={"dev-annotate-action-toggle" + (actionOn ? " on" : "")}
-            onClick={() => setActionOn((v) => !v)}
-            title={actionOn ? "This comment will send as an action — click to cancel" : "This comment will send as a plain comment only — click to make it an action"}
-          >
-            <Zap size={12} /> {actionOn ? "Will send as action" : "Comment only (not action)"}
-          </button>
-        )
+      )}
+      {(isJynxMeta || isAdmin) && (
+        <button
+          type="button"
+          className={"dev-annotate-action-toggle" + (actionOn ? " on" : "")}
+          onClick={() => setActionOn((v) => !v)}
+          title={actionOn ? "This comment will send as an action — click to cancel" : "This comment will send as a plain comment only — click to make it an action"}
+        >
+          <Zap size={12} /> {actionOn ? "Will send as action" : "Comment only (not action)"}
+        </button>
       )}
       <textarea
         autoFocus
