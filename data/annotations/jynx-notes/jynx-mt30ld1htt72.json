@@ -10,5 +10,13 @@
   "actionStatus": "queued",
   "actionRequestedAt": "2026-08-21T13:58:13.061Z",
   "actionPrUrl": null,
-  "actionLog": null
+  "actionLog": null,
+  "replies": [
+    {
+      "id": "rep-mt31n8y41fu0",
+      "authorName": "Admin",
+      "text": "Partial progress: every dev user now has their own comments view (the sidebar, with an Open/Done split and a Just me filter), can jump to a comment's location, and can reply to any comment thread. Editing your own comment text, and the separate 'jynx commenter' permission tier for regular dev users, are still open.",
+      "createdAt": "2026-08-21T14:27:40.684Z"
+    }
+  ]
 }
