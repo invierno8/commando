@@ -1,13 +1,23 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { GripVertical, Zap } from "lucide-react";
+import { useDraggableFab } from "../useDraggableFab.js";
 
 /* קופסת התגובה שנפתחת ב-Ctrl/Cmd+קליק — לא נושאת <style> משלה בכוונה,      */
 /* תמיד ממוסגרת בתוך ה-portal של DevOverlay.jsx וסומכת על ה-<style> היחיד   */
 /* שהוא כבר מזריק (בדיוק כמו תת-רכיבי מודל בתוך מסך אחר בקודבייס הזה).      */
-/* גרירה: מצב מקומי בלבד ({top,left}, מאותחל מ-x/y) — לא useDraggableFab,   */
-/* כי הפופאובר הזה חולף (נוצר מחדש בכל פתיחה, נעלם בשליחה/ביטול) ולא צריך   */
-/* להישמר בין רענונים כמו רכיבי ה-chrome הקבועים.                          */
-export default function AnnotationPopover({ x, y, label, secondaryTargets, pickingSecondary, isAdmin, isJynxMeta, onCancel, onSubmit, onAddSecondary, onRemoveSecondary }) {
+/*                                                                            */
+/* יעדים משניים: כל עוד הקופסה פתוחה, DevOverlay.jsx הופך כל קליק תקין על   */
+/* העמוד ליעד משני (ראו onClickCapture שם) ומוסיף את התווית ל-secondaryTargets */
+/* — האפקט למטה קולט כל תוספת כזו ומזריק טוקן טקסט קריא ("[→ תווית]") ישירות */
+/* לתוך ה-<textarea> במיקום הסמן, כך שהוא חלק אמיתי מהמשפט: ניתן לערוך/למחוק */
+/* אותו כמו כל טקסט אחר. השרת מקבל secondaryTargets מנותח מחדש מתוך הטקסט    */
+/* עצמו בזמן השליחה (ראו parseSecondaryTargetsFromComment ב-DevOverlay.jsx), */
+/* לא ממערך נפרד — כך שהטקסט הוא תמיד מקור האמת היחיד.                       */
+/*                                                                            */
+/* גרירה: useDraggableFab (אותו hook בדיוק כמו CommentsPanel.jsx) — לא מצב   */
+/* מקומי. המיקום הראשוני מחושב פעם אחת מנקודת הקליק שפתחה את הקופסה; גרירה   */
+/* משם ואילך משתלטת ונשמרת ב-localStorage בדיוק כמו כל שאר כלי ה-Jynx.       */
+export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdmin, isJynxMeta, onCancel, onSubmit }) {
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -15,11 +25,43 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, picki
   // הופך לפעולה" הקיימת), אבל עכשיו גם ניתן לכיבוי לפני שליחה, למי שרוצה
   // הפעם רק להשאיר הערה בלי להפעיל את הצינור האוטומטי.
   const [actionOn, setActionOn] = useState(true);
-  const [pos, setPos] = useState(() => ({
-    top: Math.min(y, window.innerHeight - 200),
-    left: Math.min(x, window.innerWidth - 300),
-  }));
-  const dragRef = useRef({ dragging: false, startX: 0, startY: 0, startPos: pos });
+
+  const textareaRef = useRef(null);
+  const prevSecondaryLenRef = useRef(secondaryTargets.length);
+
+  // כל תוספת ל-secondaryTargets (יעד משני חדש שנבחר בקליק על העמוד) מזריקה
+  // טוקן טקסט "[→ תווית]" לתוך ה-textarea, במיקום הסמן האחרון הידוע (או בסוף
+  // הטקסט אם אין), ואז ממקמת את הסמן מיד אחרי הטוקן שהוזרק כדי שאפשר להמשיך
+  // להקליד בלי הפרעה.
+  useEffect(() => {
+    if (secondaryTargets.length > prevSecondaryLenRef.current) {
+      const newOnes = secondaryTargets.slice(prevSecondaryLenRef.current);
+      setComment((prev) => {
+        const ta = textareaRef.current;
+        const pos = ta && typeof ta.selectionStart === "number" ? ta.selectionStart : prev.length;
+        const insertText = newOnes.map((t) => `[→ ${t}]`).join(" ") + " ";
+        const next = prev.slice(0, pos) + insertText + prev.slice(pos);
+        requestAnimationFrame(() => {
+          if (!ta) return;
+          const newPos = pos + insertText.length;
+          ta.focus();
+          ta.setSelectionRange(newPos, newPos);
+        });
+        return next;
+      });
+    }
+    prevSecondaryLenRef.current = secondaryTargets.length;
+  }, [secondaryTargets]);
+
+  // מיקום ראשוני מחושב פעם אחת מנקודת הקליק שפתחה את הקופסה (top/left קלאסי,
+  // מתורגם ל-left/bottom הפיזי ש-useDraggableFab עובד איתו).
+  const initialPos = useMemo(() => {
+    const top = Math.min(y, window.innerHeight - 200);
+    const left = Math.min(x, window.innerWidth - 300);
+    return { left, bottom: Math.max(4, window.innerHeight - top - 230) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- קפוא במכוון בעת ה-mount, גרירה לוקחת שליטה אחרי
+  }, []);
+  const { pos, dragHandlers } = useDraggableFab("jynx-annotate-popover-pos", initialPos, "left");
 
   async function submit() {
     if (!comment.trim() || sending) return;
@@ -34,35 +76,15 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, picki
     }
   }
 
-  function onGripPointerDown(e) {
-    dragRef.current = { dragging: true, startX: e.clientX, startY: e.clientY, startPos: pos };
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-  }
-  function onGripPointerMove(e) {
-    const d = dragRef.current;
-    if (!d.dragging) return;
-    setPos({ top: d.startPos.top + (e.clientY - d.startY), left: d.startPos.left + (e.clientX - d.startX) });
-  }
-  function onGripPointerUp(e) {
-    dragRef.current.dragging = false;
-    e.currentTarget.releasePointerCapture?.(e.pointerId);
-  }
-
   return (
     <div
       className={"dev-overlay-ignore dev-annotate-popover jynx-ui" + (isJynxMeta ? " dev-annotate-popover-jynx" : "")}
-      style={{ top: pos.top, left: pos.left }}
+      style={{ left: pos.left, bottom: pos.bottom }}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.key === "Escape" && onCancel()}
     >
       <div className="dev-annotate-popover-head">
-        <span
-          className="dev-annotate-popover-grip"
-          onPointerDown={onGripPointerDown}
-          onPointerMove={onGripPointerMove}
-          onPointerUp={onGripPointerUp}
-          title="Drag to move"
-        >
+        <span className="dev-annotate-popover-grip" {...dragHandlers} title="Drag to move">
           <GripVertical size={13} />
         </span>
         <div className={"dev-annotate-popover-label" + (isJynxMeta ? " dev-annotate-popover-label-jynx" : "")}>{label}</div>
@@ -82,30 +104,16 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, picki
         )
       )}
       <textarea
+        ref={textareaRef}
         autoFocus
         rows={3}
-        placeholder={isJynxMeta ? "What should improve in the dev tool itself?" : "What needs to change/be checked here? (e.g. move this here ←)"}
+        placeholder={isJynxMeta ? "What should improve in the dev tool itself?" : "What needs to change/be checked here? (e.g. move this to →)"}
         value={comment}
         onChange={(e) => setComment(e.target.value)}
       />
-      <div className="dev-annotate-secondary-block">
-        {secondaryTargets.length > 0 && (
-          <div className="dev-annotate-secondary-chips">
-            {secondaryTargets.map((t) => (
-              <span key={t} className="dev-annotate-secondary-chip">
-                → {t}
-                <button type="button" onClick={() => onRemoveSecondary(t)} title="Remove">×</button>
-              </span>
-            ))}
-          </div>
-        )}
-        {pickingSecondary ? (
-          <div className="dev-annotate-picking-hint">Pick another element on screen... (Esc to cancel)</div>
-        ) : (
-          <button type="button" className="dev-annotate-add-secondary-btn" onClick={onAddSecondary}>
-            + Link another element (target/location)
-          </button>
-        )}
+      <div className="dev-annotate-picking-hint">
+        Click any element on screen to link it here — it'll appear as a tag in your comment
+        {secondaryTargets.length > 0 && ` (${secondaryTargets.length} linked)`}
       </div>
       {error && <div className="dev-login-error">{error}</div>}
       <div className="dev-annotate-popover-actions">
