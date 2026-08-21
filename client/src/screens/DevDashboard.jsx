@@ -554,7 +554,7 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
   const hiddenDefs = layout.hidden.map((k) => ({ key: k, ...WIDGET_DEFS[k] }));
 
   return (
-    <div dir="rtl" className="dash" data-devblock="דשבורד — מסך ראשי">
+    <div dir="rtl" className="dash" data-devblock="Dashboard — main screen">
       <style>{CSS}</style>
 
       <div className="dash-toprow">
@@ -592,6 +592,7 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
               onDragOver={(e) => { e.preventDefault(); if (dragKey && dragKey !== key) setDragOverKey(key); }}
               onDragLeave={() => setDragOverKey((k) => (k === key ? null : k))}
               onDrop={() => { if (dragKey && dragKey !== key) reorder(dragKey, key); setDragKey(null); setDragOverKey(null); }}
+              data-devblock={`Dashboard — widget: ${def.title}`}
             >
               <div className="panel-card-head widget-head">
                 <div className="panel-card-title">

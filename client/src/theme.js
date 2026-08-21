@@ -46,6 +46,7 @@ export const THEME_CSS = `
   --radius-card:12px;
   --font-sans:'Assistant','Segoe UI',sans-serif;
   --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font-jynx:'Space Grotesk','Segoe UI',sans-serif;
   color-scheme:light;
 }
 
@@ -301,36 +302,40 @@ html, body{ margin:0; background:var(--bg); }
   color:var(--text); font-family:var(--font-sans); font-size:11px; cursor:pointer;
 }
 
+/* Jynx הוא כלי נפרד מהאפליקציה עצמה (HANGAR, עברית/RTL) — לכן כל ה-UI שלו   */
+/* עצמו (לא התוכן/הדאטה של האפליקציה שהוא מציג/עורך) באנגלית, LTR, וגופן     */
+/* נבדל (Space Grotesk) — כדי שיורגש בבירור ככלי-פיתוח שיושב "מעל" המערכת,   */
+/* לא כחלק ממנה. .jynx-ui הוא ה-hook המשותף לכל מכולת-שורש של Jynx.          */
+.jynx-ui{ direction:ltr; text-align:left; font-family:var(--font-jynx); }
 .dev-only{
-  border:1px dashed var(--dev); border-radius:9px; padding:8px 10px; position:relative;
-  background:color-mix(in srgb, var(--dev) 6%, transparent);
+  border:1px dashed var(--jynx); border-radius:9px; padding:8px 10px; position:relative;
+  background:color-mix(in srgb, var(--jynx) 6%, transparent);
 }
 .dev-only-tag{
-  position:absolute; top:-9px; right:10px; background:var(--bg); color:var(--dev);
+  position:absolute; top:-9px; left:10px; background:var(--bg); color:var(--jynx);
   font-family:var(--font-mono); font-size:9.5px; font-weight:700; letter-spacing:.06em;
   padding:0 6px; text-transform:uppercase;
 }
 /* בורר תפקיד/חטיבה של סביבת הפיתוח — מנוי צף בפינה הימנית-תחתונה במקום     */
 /* רצועה קבועה שתפסה מקום בראש כל מסך. נשאר מעל כל תוכן (z-index גבוה) כי   */
-/* הוא כלי דמו זמין תמיד, לא חלק מהתוכן התפעולי של המסך.                    */
+/* הוא כלי דמו זמין תמיד, לא חלק מהתוכן התפעולי של המסך. כל כפתורי ה-Jynx    */
+/* גרירים (ראו useDraggableFab.js), ולכן cursor:grab על הבסיס המשותף.        */
 .dev-fab-wrap{ position:fixed; bottom:20px; right:20px; z-index:80; }
 .dev-fab{
-  display:flex; align-items:center; gap:6px; background:var(--panel); border:1px solid var(--dev);
-  color:var(--dev); border-radius:20px; padding:8px 14px; cursor:pointer; box-shadow:var(--shadow-md);
-  font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:.05em; transition:background .15s ease;
+  display:flex; align-items:center; gap:6px; background:var(--panel); border:1px solid var(--jynx);
+  color:var(--jynx); border-radius:20px; padding:8px 14px; cursor:grab; touch-action:none; box-shadow:var(--shadow-md);
+  font-family:var(--font-jynx); font-size:12px; font-weight:700; letter-spacing:.02em; transition:background .15s ease;
 }
-.dev-fab:hover{ background:color-mix(in srgb, var(--dev) 10%, var(--panel)); }
-.dev-fab-tag{ border:1px solid var(--dev); border-radius:3px; padding:1px 7px; }
+.dev-fab:hover{ background:color-mix(in srgb, var(--jynx) 10%, var(--panel)); }
+.dev-fab:active{ cursor:grabbing; }
+.dev-fab svg{ color:var(--jynx); }
+.dev-fab-tag{ border:1px solid var(--jynx); border-radius:3px; padding:1px 7px; }
 .dev-fab-arrow{ transition:transform .18s ease; }
 .jynx-logo{
   font-family:'Space Grotesk', var(--font-sans); font-weight:700; font-size:14px; letter-spacing:.03em;
   background:linear-gradient(100deg, var(--jynx), color-mix(in srgb, var(--jynx) 45%, #ffffff 55%));
   -webkit-background-clip:text; background-clip:text; color:transparent;
 }
-.dev-fab-locked{ border-color:var(--jynx); color:var(--jynx); cursor:grab; touch-action:none; }
-.dev-fab-locked:hover{ background:color-mix(in srgb, var(--jynx) 10%, var(--panel)); }
-.dev-fab-locked:active{ cursor:grabbing; }
-.dev-fab-locked svg{ color:var(--jynx); }
 .dev-fab-arrow.open{ transform:rotate(-90deg); }
 .dev-fab-panel{
   position:absolute; bottom:calc(100% + 10px); right:0; width:340px; max-width:88vw;

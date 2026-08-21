@@ -98,15 +98,15 @@ export default function CommentsPanel({ active, route, currentDevUserId }) {
         />
       )}
 
-      <div className="comments-sidebar">
+      <div className="comments-sidebar jynx-ui">
         <div className="comments-sidebar-head">
-          <span className="comments-sidebar-title"><MessageSquare size={13} /> הערות על המסך</span>
+          <span className="comments-sidebar-title"><MessageSquare size={13} /> Comments on this screen</span>
           <div className="pill-tabs">
-            <button type="button" className={"pill-tab" + (filter === "all" ? " active" : "")} onClick={() => setFilter("all")}>הכל</button>
-            <button type="button" className={"pill-tab" + (filter === "mine" ? " active" : "")} onClick={() => setFilter("mine")}>רק אני</button>
+            <button type="button" className={"pill-tab" + (filter === "all" ? " active" : "")} onClick={() => setFilter("all")}>All</button>
+            <button type="button" className={"pill-tab" + (filter === "mine" ? " active" : "")} onClick={() => setFilter("mine")}>Just me</button>
           </div>
         </div>
-        {shown.length === 0 && <div className="comments-sidebar-empty">אין הערות פתוחות במסך הזה.</div>}
+        {shown.length === 0 && <div className="comments-sidebar-empty">No open comments on this screen.</div>}
         <div className="comments-sidebar-list">
           {shown.map((a) => (
             <div
@@ -164,9 +164,9 @@ const CSS_TEXT = `
 .comments-dot-tooltip-item b{ color:var(--jynx); }
 
 .comments-panel-highlight{
-  position:fixed; pointer-events:none; z-index:99996; border-radius:8px; border:2px solid var(--jynx);
-  box-shadow:0 0 0 3px color-mix(in srgb, var(--jynx) 28%, transparent),
-             0 0 18px color-mix(in srgb, var(--jynx) 50%, transparent);
+  position:fixed; pointer-events:none; z-index:99996; border-radius:8px; border:2px solid var(--dev);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--dev) 28%, transparent),
+             0 0 18px color-mix(in srgb, var(--dev) 50%, transparent);
   transition:top .1s ease, left .1s ease, width .1s ease, height .1s ease;
 }
 

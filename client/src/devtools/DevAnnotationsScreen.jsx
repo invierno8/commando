@@ -3,7 +3,7 @@ import { Check, Download, Zap, Loader2, GitPullRequest, CheckCircle2, XCircle } 
 import { fetchAnnotations, resolveAnnotation, exportAnnotationsMarkdown, requestAnnotationAction } from "./devApi.js";
 
 const ACTION_STATUS_LABEL = {
-  none: null, queued: "בתור", in_progress: "בטיפול", pr_opened: "PR נפתח", done: "טופל", failed: "נכשל",
+  none: null, queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed",
 };
 const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: GitPullRequest, done: CheckCircle2, failed: XCircle };
 const ACTION_STATUS_TONE = { queued: "blue", in_progress: "blue", pr_opened: "green", done: "green", failed: "red" };
@@ -34,19 +34,19 @@ export default function DevAnnotationsScreen() {
     setExported(await exportAnnotationsMarkdown());
   }
 
-  if (!items) return <div className="dev-admin-empty">טוען...</div>;
+  if (!items) return <div className="dev-admin-empty">Loading...</div>;
   const shown = filter === "open" ? items.filter((a) => !a.resolved) : items;
 
   return (
     <div className="dev-admin-tab">
       <div className="dev-admin-annotations-head">
         <div className="pill-tabs">
-          <button type="button" className={"pill-tab" + (filter === "open" ? " active" : "")} onClick={() => setFilter("open")}>פתוחות</button>
-          <button type="button" className={"pill-tab" + (filter === "all" ? " active" : "")} onClick={() => setFilter("all")}>הכל ({items.length})</button>
+          <button type="button" className={"pill-tab" + (filter === "open" ? " active" : "")} onClick={() => setFilter("open")}>Open</button>
+          <button type="button" className={"pill-tab" + (filter === "all" ? " active" : "")} onClick={() => setFilter("all")}>All ({items.length})</button>
         </div>
-        <button type="button" className="dev-admin-export-btn" onClick={exportMd}><Download size={13} /> ייצוא Markdown</button>
+        <button type="button" className="dev-admin-export-btn" onClick={exportMd}><Download size={13} /> Export Markdown</button>
       </div>
-      {shown.length === 0 && <div className="dev-admin-empty">אין הערות {filter === "open" ? "פתוחות" : ""} כרגע.</div>}
+      {shown.length === 0 && <div className="dev-admin-empty">No {filter === "open" ? "open " : ""}comments right now.</div>}
       {shown.length > 0 && (
         <div className="dev-admin-annotation-list">
           {shown.map((a) => {
@@ -63,14 +63,14 @@ export default function DevAnnotationsScreen() {
                     </span>
                   )}
                   <p className="dev-admin-annotation-comment">{a.comment}</p>
-                  <span className="dev-admin-annotation-meta">{a.authorName} · {new Date(a.createdAt).toLocaleString("he-IL")}</span>
+                  <span className="dev-admin-annotation-meta">{a.authorName} · {new Date(a.createdAt).toLocaleString("en-US")}</span>
                   {hasAction && (
                     <span className={`pill pill-${ACTION_STATUS_TONE[a.actionStatus] || "neutral"} dev-admin-action-pill`}>
                       {StatusIcon && <StatusIcon size={11} className={a.actionStatus === "queued" || a.actionStatus === "in_progress" ? "dev-admin-spin" : ""} />}
                       {ACTION_STATUS_LABEL[a.actionStatus]}
                       {a.actionPrUrl && (
                         <a href={a.actionPrUrl} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
-                          צפייה ב-PR
+                          View PR
                         </a>
                       )}
                     </span>
@@ -79,15 +79,15 @@ export default function DevAnnotationsScreen() {
                 </div>
                 <div className="dev-admin-annotation-actions">
                   {!hasAction && (
-                    <button type="button" className="dev-admin-action-btn" onClick={() => triggerAction(a)} title="הפעל סוכן אוטומטי על ההערה הזו">
-                      <Zap size={13} /> פעולה
+                    <button type="button" className="dev-admin-action-btn" onClick={() => triggerAction(a)} title="Run the automated agent on this comment">
+                      <Zap size={13} /> Action
                     </button>
                   )}
                   <button
                     type="button"
                     className={"dev-admin-resolve-btn" + (a.resolved ? " active" : "")}
                     onClick={() => toggleResolved(a)}
-                    title={a.resolved ? "סימון כלא-טופל" : "סימון כטופל"}
+                    title={a.resolved ? "Mark as unresolved" : "Mark as resolved"}
                   >
                     <Check size={14} />
                   </button>
@@ -100,7 +100,7 @@ export default function DevAnnotationsScreen() {
       {exported !== null && (
         <div className="dev-admin-export-box">
           <textarea readOnly rows={10} value={exported} onFocus={(e) => e.target.select()} />
-          <button type="button" onClick={() => setExported(null)}>סגירה</button>
+          <button type="button" onClick={() => setExported(null)}>Close</button>
         </div>
       )}
     </div>

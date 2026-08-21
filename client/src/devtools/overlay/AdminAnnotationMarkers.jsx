@@ -70,12 +70,12 @@ export default function AdminAnnotationMarkers({ isAdmin, route, refreshKey }) {
         const StatusIcon = STATUS_ICON[a.actionStatus];
         return (
           <div key={a.id} className="admin-marker" style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height, borderColor: color }}>
-            <div className="admin-marker-badge" style={{ background: color }} title={`${a.authorName}: ${a.comment}`}>
+            <div className="admin-marker-badge jynx-ui" style={{ background: color }} title={`${a.authorName}: ${a.comment}`}>
               {StatusIcon ? <StatusIcon size={12} className={a.actionStatus === "queued" || a.actionStatus === "in_progress" ? "admin-marker-spin" : ""} /> : null}
               <span className="admin-marker-comment">{a.comment}</span>
               {(!a.actionStatus || a.actionStatus === "none") && (
-                <button type="button" className="admin-marker-action-btn" onClick={() => triggerAction(a.id)} title="הפעל סוכן אוטומטי על ההערה הזו">
-                  <Zap size={11} /> פעולה
+                <button type="button" className="admin-marker-action-btn" onClick={() => triggerAction(a.id)} title="Run the automated agent on this comment">
+                  <Zap size={11} /> Action
                 </button>
               )}
             </div>

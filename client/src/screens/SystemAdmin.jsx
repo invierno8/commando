@@ -459,7 +459,7 @@ export default function SystemAdmin({ brigades, setBrigades, categories, setCate
   }
 
   return (
-    <div dir="rtl" className="sysadmin-view" data-devblock="ניהול מערכת — מסך ראשי">
+    <div dir="rtl" className="sysadmin-view" data-devblock="System Admin — main screen">
       <style>{CSS}</style>
 
       <p className="view-sub">

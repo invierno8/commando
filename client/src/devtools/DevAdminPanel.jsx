@@ -44,28 +44,28 @@ export default function DevAdminPanel({ onClose, onVerified }) {
   return createPortal(
     <div className="overlay jynx-chrome" onClick={onClose}>
       <style>{CSS}</style>
-      <div className="dev-admin-modal dev-only" onClick={(e) => e.stopPropagation()}>
+      <div className="dev-admin-modal dev-only jynx-ui" onClick={(e) => e.stopPropagation()}>
         <button className="drawer-close" onClick={onClose}><X size={16} /></button>
         {checking ? (
-          <div className="dev-admin-empty">בודק הרשאה...</div>
+          <div className="dev-admin-empty">Checking permission...</div>
         ) : !authenticated ? (
           <div className="dev-admin-gate">
             <ShieldCheck size={24} />
-            <h3>גישת מנהל</h3>
-            <p>נדרש הסוד (ADMIN_SECRET) כדי לנהל משתמשי פיתוח ולסקור הערות QA.</p>
+            <h3>Admin access</h3>
+            <p>The ADMIN_SECRET is required to manage dev users and review QA comments.</p>
             <input
-              type="password" autoFocus value={secret} placeholder="סוד מנהל"
+              type="password" autoFocus value={secret} placeholder="Admin secret"
               onChange={(e) => setSecret(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && verify()}
             />
             {error && <div className="dev-admin-error">{error}</div>}
-            <button type="button" className="dev-admin-verify-btn" onClick={verify} disabled={!secret.trim()}>כניסה</button>
+            <button type="button" className="dev-admin-verify-btn" onClick={verify} disabled={!secret.trim()}>Sign in</button>
           </div>
         ) : (
           <>
             <div className="pill-tabs" style={{ marginBottom: 14 }}>
-              <button type="button" className={"pill-tab" + (tab === "users" ? " active" : "")} onClick={() => setTab("users")}>משתמשי פיתוח</button>
-              <button type="button" className={"pill-tab" + (tab === "annotations" ? " active" : "")} onClick={() => setTab("annotations")}>הערות QA</button>
+              <button type="button" className={"pill-tab" + (tab === "users" ? " active" : "")} onClick={() => setTab("users")}>Dev Users</button>
+              <button type="button" className={"pill-tab" + (tab === "annotations" ? " active" : "")} onClick={() => setTab("annotations")}>QA Comments</button>
               <button type="button" className={"pill-tab" + (tab === "jynx" ? " active jynx-tab-active" : "")} onClick={() => setTab("jynx")}>🔮 Jynx</button>
             </div>
             {tab === "users" && <DevAdminUsersScreen />}
@@ -92,17 +92,17 @@ const CSS = `
 }
 .drawer-close:hover{ color:var(--red); border-color:var(--red); }
 .dev-admin-empty{ color:var(--text-dim); font-size:13px; text-align:center; padding:24px 0; }
-.dev-admin-gate{ display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; padding:12px 0; color:var(--dev); }
-.dev-admin-gate h3{ margin:0; color:var(--text); font-family:var(--font-sans); font-size:16px; }
+.dev-admin-gate{ display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; padding:12px 0; color:var(--jynx); }
+.dev-admin-gate h3{ margin:0; color:var(--text); font-family:var(--font-jynx); font-size:16px; }
 .dev-admin-gate p{ color:var(--text-dim); font-size:12.5px; margin:0 0 6px; max-width:340px; }
 .dev-admin-gate input{
-  width:220px; background:var(--bg); border:1px solid var(--dev); border-radius:8px; padding:8px 10px;
+  width:220px; background:var(--bg); border:1px solid var(--jynx); border-radius:8px; padding:8px 10px;
   color:var(--text); font-family:var(--font-mono); font-size:13px; text-align:center;
 }
-.dev-admin-gate input:focus{ outline:none; box-shadow:0 0 0 2px color-mix(in srgb, var(--dev) 25%, transparent); }
+.dev-admin-gate input:focus{ outline:none; box-shadow:0 0 0 2px color-mix(in srgb, var(--jynx) 25%, transparent); }
 .dev-admin-verify-btn{
-  background:var(--dev); color:#fff; border:none; border-radius:8px; padding:8px 18px; font-weight:700;
-  font-size:13px; cursor:pointer; font-family:var(--font-sans);
+  background:var(--jynx); color:#fff; border:none; border-radius:8px; padding:8px 18px; font-weight:700;
+  font-size:13px; cursor:pointer; font-family:var(--font-jynx);
 }
 .dev-admin-verify-btn:disabled{ opacity:.5; cursor:not-allowed; }
 .dev-admin-error{ color:var(--red); font-size:12px; }
@@ -127,7 +127,7 @@ const CSS = `
   font-size:12px; font-family:var(--font-mono); color:var(--text);
 }
 .dev-admin-password-reset button{
-  background:var(--dev); color:#fff; border:none; border-radius:7px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer;
+  background:var(--jynx); color:#fff; border:none; border-radius:7px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer;
 }
 .dev-admin-password-reset button:disabled{ opacity:.5; cursor:not-allowed; }
 .dev-admin-user-actions{ display:flex; gap:6px; }
@@ -158,7 +158,7 @@ const CSS = `
 }
 .dev-admin-annotation-row.resolved{ opacity:.55; }
 .dev-admin-annotation-main{ display:flex; flex-direction:column; gap:3px; min-width:0; }
-.dev-admin-annotation-route{ font-family:var(--font-mono); font-size:10.5px; color:var(--dev); text-transform:uppercase; }
+.dev-admin-annotation-route{ font-family:var(--font-mono); font-size:10.5px; color:var(--jynx); text-transform:uppercase; }
 .dev-admin-annotation-target{ font-size:11.5px; color:var(--text-dim); }
 .dev-admin-annotation-comment{ margin:2px 0; font-size:13px; color:var(--text); }
 .dev-admin-annotation-meta{ font-size:11px; color:var(--text-dim); }

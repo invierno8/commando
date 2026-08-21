@@ -356,6 +356,7 @@ function PersonRow({ person, onChange, onRemove, showUnit, unitLogos, delay = 0,
       style={{ animationDelay: `${delay}ms` }}
       onClick={onOpen}
       title={onOpen ? "לחיצה לפתיחת כרטיס משתמש" : undefined}
+      data-devblock={`Permissions — person: ${person.name} (${person.personalNumber})`}
     >
       <span className="perm-person-name">
         <span className="person-rank">{person.rank}</span> {person.name}
@@ -520,7 +521,7 @@ function TeamCard({ team, onUpdate, onRequestDelete }) {
   }
 
   return (
-    <div className="team-card">
+    <div className="team-card" data-devblock={`Permissions — team: ${team.name} (${team.id})`}>
       <div className="team-card-head">
         {team.logo ? <img className="team-card-logo" src={team.logo} alt="" /> : <span className="team-card-logo-fallback"><Users2 size={16} /></span>}
         <div className="team-card-title">
@@ -794,7 +795,12 @@ function BrigadePermissionsView({
             <>
               <div className="officer-list">
                 {officersPage.paged.map((o, idx) => (
-                  <div className={"officer-row" + (blockedNumbers?.has(o.personalNumber) ? " perm-row-blocked" : "")} key={o.id} style={{ animationDelay: `${idx * 40}ms` }}>
+                  <div
+                    className={"officer-row" + (blockedNumbers?.has(o.personalNumber) ? " perm-row-blocked" : "")}
+                    key={o.id}
+                    style={{ animationDelay: `${idx * 40}ms` }}
+                    data-devblock={`Permissions — equipment officer: ${o.name || o.unit} (${o.id})`}
+                  >
                     <div className="officer-unit">
                       <UnitEmblem name={o.unit} size={26} image={unitLogos?.[o.unit]} />
                       {o.unit}
@@ -873,7 +879,7 @@ function OrgNode({
   const clickable = !!onClick;
   const Card = clickable || draggable ? "button" : "div";
   return (
-    <div className={"org-node" + (highlight ? " org-node-you" : "")}>
+    <div className={"org-node" + (highlight ? " org-node-you" : "")} data-devblock={`Org tree — ${title}`}>
       <Card
         type={clickable || draggable ? "button" : undefined}
         className={
@@ -1721,7 +1727,7 @@ export default function PermissionsDashboard({ role, brigadeId, brigadeName, uni
   }
 
   return (
-    <div dir="rtl" className="permissions-view panel-card" data-devblock="ניהול הרשאות — מסך ראשי">
+    <div dir="rtl" className="permissions-view panel-card" data-devblock="Permissions — main screen">
       <style>{CSS}</style>
 
       <div className="pill-tabs" style={{ marginBottom: 22 }}>

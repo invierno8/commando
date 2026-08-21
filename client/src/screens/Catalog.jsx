@@ -368,13 +368,13 @@ export default function Catalog({ brigadeId, role, persona, officerUnit, userId,
     : null;
 
   return (
-    <div dir="rtl" className="catalog-view" data-devblock="קטלוג — מסך ראשי">
+    <div dir="rtl" className="catalog-view" data-devblock="Catalog — main screen">
       <style>{CSS}</style>
 
-      <div className="view-head-row">
+      <div className="view-head-row" data-devblock="Catalog — header and description">
         <p className="view-sub">{subtitle}</p>
         {canProposeItem && catalog && (
-          <button className="add-item-btn" onClick={openNewItem}>
+          <button className="add-item-btn" onClick={openNewItem} data-devblock="Catalog — add item button">
             <Plus size={14} /> הוספת פריט לקטלוג
           </button>
         )}
@@ -423,7 +423,12 @@ export default function Catalog({ brigadeId, role, persona, officerUnit, userId,
           const decidable = canDecideItem(it);
           const gateDecidable = isTeamLead && it.teamLeadGate === "pending" && it.gateTeamId === ledTeam.id;
           return (
-            <div className={"prod-card-wrap" + (it.status !== CATALOG_STATUS.ACTIVE ? " " + it.status : "")} key={it.id} style={{ animationDelay: `${idx * 40}ms` }}>
+            <div
+              className={"prod-card-wrap" + (it.status !== CATALOG_STATUS.ACTIVE ? " " + it.status : "")}
+              key={it.id}
+              style={{ animationDelay: `${idx * 40}ms` }}
+              data-devblock={`Catalog — item: ${it.name || "unnamed"} (${it.id})`}
+            >
               <button className="prod-card" onClick={() => setItem(it)}>
                 {editable && <span className="prod-card-edit-badge"><Pencil size={11} /></span>}
                 {it.status === CATALOG_STATUS.PENDING && <span className="prod-card-status-badge pending"><Clock size={11} /></span>}

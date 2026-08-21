@@ -130,15 +130,15 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
 const CSS = `
 .dev-overlay-highlight{
   position:fixed; pointer-events:none; z-index:99999; border-radius:8px;
-  border:2px solid var(--dev);
-  box-shadow:0 0 0 3px color-mix(in srgb, var(--dev) 28%, transparent),
-             0 0 18px color-mix(in srgb, var(--dev) 50%, transparent);
+  border:2px solid var(--jynx);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--jynx) 28%, transparent),
+             0 0 18px color-mix(in srgb, var(--jynx) 50%, transparent);
   transition:top .06s ease, left .06s ease, width .06s ease, height .06s ease;
 }
 .dev-overlay-highlight-jynx{
-  border-color:var(--jynx);
-  box-shadow:0 0 0 3px color-mix(in srgb, var(--jynx) 28%, transparent),
-             0 0 18px color-mix(in srgb, var(--jynx) 50%, transparent);
+  border-color:var(--dev);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--dev) 28%, transparent),
+             0 0 18px color-mix(in srgb, var(--dev) 50%, transparent);
 }
 .dev-annotate-popover{
   position:fixed; z-index:100000; width:290px; background:var(--panel); border:1px solid var(--dev);
@@ -159,14 +159,14 @@ const CSS = `
   cursor:pointer; font-family:var(--font-sans);
 }
 .dev-annotate-action-toggle.on{ border-color:#2F8FCE; color:#2F8FCE; background:color-mix(in srgb, #2F8FCE 12%, transparent); }
-.dev-annotate-popover-jynx{ border-color:var(--jynx); }
-.dev-annotate-popover-label-jynx{ color:var(--jynx); }
+.dev-annotate-popover-jynx{ border-color:var(--dev); }
+.dev-annotate-popover-label-jynx{ color:var(--dev); }
 .dev-annotate-popover-jynx-hint{
-  font-size:11px; color:var(--jynx); background:color-mix(in srgb, var(--jynx) 14%, transparent);
+  font-size:11px; color:var(--dev); background:color-mix(in srgb, var(--dev) 14%, transparent);
   border-radius:6px; padding:4px 8px;
 }
-.dev-annotate-popover-jynx textarea:focus{ border-color:var(--jynx); }
-.dev-annotate-popover-jynx .dev-annotate-btn-primary{ background:var(--jynx); }
+.dev-annotate-popover-jynx textarea:focus{ border-color:var(--dev); }
+.dev-annotate-popover-jynx .dev-annotate-btn-primary{ background:var(--dev); }
 .dev-annotate-popover textarea{
   width:100%; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:7px 9px;
   font-size:12.5px; font-family:var(--font-sans); color:var(--text); resize:vertical;

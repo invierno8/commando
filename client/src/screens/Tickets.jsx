@@ -442,10 +442,10 @@ export default function Tickets({ role, persona, brigadeId, officerUnit, userId,
   }
 
   return (
-    <div dir="rtl" className="tickets-view" data-devblock="דרישות — מסך ראשי">
+    <div dir="rtl" className="tickets-view" data-devblock="Tickets — main screen">
       <style>{CSS}</style>
 
-      <div className="view-head-row">
+      <div className="view-head-row" data-devblock="Tickets — header and description">
         <p className="view-sub">
           {role === STRUCTURAL_ROLES.MEMBER && persona
             ? `מציג רק את דרישות ${persona.unit} — היחידה שלך`
@@ -453,7 +453,7 @@ export default function Tickets({ role, persona, brigadeId, officerUnit, userId,
           {" · "}עדכון אחרון: {lastUpdated.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
         </p>
         {(role === STRUCTURAL_ROLES.MEMBER || isUnitOfficer) && (
-          <button className="new-ticket-btn" onClick={() => setShowTicketModal(true)}>
+          <button className="new-ticket-btn" onClick={() => setShowTicketModal(true)} data-devblock="Tickets — open new ticket button">
             + פתיחת דרישה חדשה
           </button>
         )}
@@ -560,6 +560,7 @@ function TicketRow({ t, showUnit = true, footer, hidePriority, hideStatus, delay
       className={"ticket-row ticket-row-clickable" + (t.raisedByUnitOfficer ? " officer-raised" : "")}
       style={{ animationDelay: `${delay}ms` }}
       onClick={() => onOpen && onOpen(t)}
+      data-devblock={`Tickets — ticket: ${t.title || "untitled"} (${t.id})`}
     >
       <div className="ticket-row-line1">
         {!hideStatus && <StatusPill status={t.status} />}
@@ -761,7 +762,7 @@ function TicketDetailModal({
 
   return createPortal(
     <div className="overlay" onClick={onClose}>
-      <div className="modal detail-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal detail-modal" onClick={(e) => e.stopPropagation()} data-devblock={`Tickets — ticket detail: ${t.title || "untitled"} (${t.id})`}>
         <button className="drawer-close" onClick={onClose}><X size={16} /></button>
 
         <div className="detail-eyebrow">תיק דרישה — פרטים מלאים</div>

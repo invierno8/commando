@@ -20,7 +20,7 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, picki
     try {
       await onSubmit(comment.trim(), actionOn);
     } catch (e) {
-      setError(e.message || "שליחה נכשלה, נסה/י שוב");
+      setError(e.message || "Failed to send, please try again");
     } finally {
       setSending(false);
     }
@@ -31,30 +31,30 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, picki
 
   return (
     <div
-      className={"dev-overlay-ignore dev-annotate-popover" + (isJynxMeta ? " dev-annotate-popover-jynx" : "")}
+      className={"dev-overlay-ignore dev-annotate-popover jynx-ui" + (isJynxMeta ? " dev-annotate-popover-jynx" : "")}
       style={{ top, left }}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.key === "Escape" && onCancel()}
     >
       <div className={"dev-annotate-popover-label" + (isJynxMeta ? " dev-annotate-popover-label-jynx" : "")}>{label}</div>
       {isJynxMeta ? (
-        <div className="dev-annotate-popover-jynx-hint">🔮 משוב על Jynx עצמו — תור נפרד, לא קשור לאפליקציה</div>
+        <div className="dev-annotate-popover-jynx-hint">🔮 Feedback about Jynx itself — separate queue, unrelated to the app</div>
       ) : (
         isAdmin && (
           <button
             type="button"
             className={"dev-annotate-action-toggle" + (actionOn ? " on" : "")}
             onClick={() => setActionOn((v) => !v)}
-            title={actionOn ? "ההערה תישלח כפעולה — לחיצה כדי לבטל" : "ההערה תישלח כהערה רגילה בלבד — לחיצה להפוך לפעולה"}
+            title={actionOn ? "This comment will send as an action — click to cancel" : "This comment will send as a plain comment only — click to make it an action"}
           >
-            <Zap size={12} /> {actionOn ? "יישלח כפעולה" : "רק הערה (לא פעולה)"}
+            <Zap size={12} /> {actionOn ? "Will send as action" : "Comment only (not action)"}
           </button>
         )
       )}
       <textarea
         autoFocus
         rows={3}
-        placeholder={isJynxMeta ? "מה צריך לשפר במערכת הפיתוח עצמה?" : "מה צריך לשנות/לבדוק כאן? (למשל: להעביר לכאן ←)"}
+        placeholder={isJynxMeta ? "What should improve in the dev tool itself?" : "What needs to change/be checked here? (e.g. move this here ←)"}
         value={comment}
         onChange={(e) => setComment(e.target.value)}
       />
@@ -64,26 +64,26 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, picki
             {secondaryTargets.map((t) => (
               <span key={t} className="dev-annotate-secondary-chip">
                 → {t}
-                <button type="button" onClick={() => onRemoveSecondary(t)} title="הסרה">×</button>
+                <button type="button" onClick={() => onRemoveSecondary(t)} title="Remove">×</button>
               </span>
             ))}
           </div>
         )}
         {pickingSecondary ? (
-          <div className="dev-annotate-picking-hint">בחר/י אלמנט נוסף על המסך... (Esc לביטול)</div>
+          <div className="dev-annotate-picking-hint">Pick another element on screen... (Esc to cancel)</div>
         ) : (
           <button type="button" className="dev-annotate-add-secondary-btn" onClick={onAddSecondary}>
-            + קישור לאלמנט נוסף (יעד/מיקום)
+            + Link another element (target/location)
           </button>
         )}
       </div>
       {error && <div className="dev-login-error">{error}</div>}
       <div className="dev-annotate-popover-actions">
         <button type="button" className="dev-annotate-btn" onClick={onCancel} disabled={sending}>
-          ביטול
+          Cancel
         </button>
         <button type="button" className="dev-annotate-btn dev-annotate-btn-primary" onClick={submit} disabled={!comment.trim() || sending}>
-          {sending ? "שולח..." : "שליחה"}
+          {sending ? "Sending..." : "Send"}
         </button>
       </div>
     </div>

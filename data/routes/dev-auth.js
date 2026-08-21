@@ -30,9 +30,9 @@ router.post("/dev/login", loginLimiter, asyncRoute(async (req, res) => {
   // סשן dev וגם סשן admin, כדי שלא תצטרך קודם משתמש-פיתוח נפרד ורק אז לפתוח
   // את פאנל הניהול; זה אתה, לא QA, אז אין טעם בשני שלבים.
   if (process.env.ADMIN_SECRET && password === process.env.ADMIN_SECRET) {
-    const devToken = createSession({ id: "admin", name: "מנהל" }, SESSION_TTL_MS);
+    const devToken = createSession({ id: "admin", name: "Admin" }, SESSION_TTL_MS);
     const adminToken = createSession({ admin: true }, SESSION_TTL_MS);
-    return res.json({ name: "מנהל", isAdmin: true, token: devToken, adminToken });
+    return res.json({ name: "Admin", isAdmin: true, token: devToken, adminToken });
   }
 
   return res.status(401).json({ error: "סיסמה שגויה" });

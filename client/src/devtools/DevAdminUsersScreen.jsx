@@ -49,44 +49,44 @@ export default function DevAdminUsersScreen() {
     reload();
   }
 
-  if (!users) return <div className="dev-admin-empty">טוען...</div>;
+  if (!users) return <div className="dev-admin-empty">Loading...</div>;
 
   return (
     <div className="dev-admin-tab">
       <p className="dev-admin-hint">
-        משתמשי פיתוח (product managers / מפקדים / מהנדסים) שיכולים להפעיל מצב פיתוח בקישור הציבורי ולהשאיר הערות QA.
-        הקובץ עצמו (data/config/dev-users.json) הוא מקור האמת בגרסת ה-Git; המסך הזה עורך אותו ישירות על השרת.
-        הסיסמאות מוצפנות (bcrypt) — אין דרך להציג סיסמה קיימת, רק לאפס לסיסמה חדשה.
+        Dev users (product managers / commanders / engineers) who can activate dev mode on the public link and leave QA comments.
+        The file itself (data/config/dev-users.json) is the source of truth in Git; this screen edits it directly on the server.
+        Passwords are encrypted (bcrypt) — there's no way to show an existing password, only reset to a new one.
       </p>
-      {users.length === 0 && <div className="dev-admin-empty">אין עדיין משתמשי פיתוח.</div>}
+      {users.length === 0 && <div className="dev-admin-empty">No dev users yet.</div>}
       {users.length > 0 && (
         <div className="dev-admin-user-list">
           {users.map((u) => (
             <div className="dev-admin-user-row" key={u.id}>
               <div className="dev-admin-user-info">
-                <span className={"dev-admin-online-dot" + (u.online ? " online" : "")} title={u.online ? "מחובר/ת כרגע" : "לא מחובר/ת כרגע"} />
+                <span className={"dev-admin-online-dot" + (u.online ? " online" : "")} title={u.online ? "Online now" : "Offline"} />
                 <b>{u.name}</b>
                 {u.role && <span className="dev-admin-user-role">{u.role}</span>}
-                {!u.active && <span className="dev-admin-user-inactive">מושבת</span>}
-                {u.createdAt && <span className="dev-admin-user-created">נוצר/ה {new Date(u.createdAt).toLocaleDateString("he-IL")}</span>}
+                {!u.active && <span className="dev-admin-user-inactive">Disabled</span>}
+                {u.createdAt && <span className="dev-admin-user-created">Created {new Date(u.createdAt).toLocaleDateString("en-US")}</span>}
               </div>
               <div className="dev-admin-user-actions">
-                <button type="button" onClick={() => { setChangingId(changingId === u.id ? null : u.id); setNewPassword(""); }} title="איפוס סיסמה">
+                <button type="button" onClick={() => { setChangingId(changingId === u.id ? null : u.id); setNewPassword(""); }} title="Reset password">
                   <KeyRound size={14} />
                 </button>
-                <button type="button" onClick={() => toggleActive(u)} title={u.active ? "השבתה" : "הפעלה"}>
+                <button type="button" onClick={() => toggleActive(u)} title={u.active ? "Disable" : "Enable"}>
                   {u.active ? <ShieldOff size={14} /> : <ShieldCheck size={14} />}
                 </button>
-                <button type="button" onClick={() => removeUser(u.id)} title="מחיקה"><Trash2 size={14} /></button>
+                <button type="button" onClick={() => removeUser(u.id)} title="Delete"><Trash2 size={14} /></button>
               </div>
               {changingId === u.id && (
                 <div className="dev-admin-password-reset">
                   <input
-                    type="text" placeholder="סיסמה חדשה" value={newPassword} autoFocus
+                    type="text" placeholder="New password" value={newPassword} autoFocus
                     onChange={(e) => setNewPassword(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && savePassword(u.id)}
                   />
-                  <button type="button" onClick={() => savePassword(u.id)} disabled={!newPassword.trim()}>שמירה</button>
+                  <button type="button" onClick={() => savePassword(u.id)} disabled={!newPassword.trim()}>Save</button>
                 </div>
               )}
             </div>
@@ -94,10 +94,10 @@ export default function DevAdminUsersScreen() {
         </div>
       )}
       <div className="dev-admin-add-form">
-        <input placeholder="שם" value={name} onChange={(e) => setName(e.target.value)} />
-        <input placeholder="תפקיד (לדוגמה: מפקד גדוד)" value={role} onChange={(e) => setRole(e.target.value)} />
-        <input placeholder="סיסמה" type="text" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <button type="button" onClick={addUser} disabled={!name.trim() || !password.trim()}><Plus size={13} /> הוספה</button>
+        <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+        <input placeholder="Role (e.g. Battalion Commander)" value={role} onChange={(e) => setRole(e.target.value)} />
+        <input placeholder="Password" type="text" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <button type="button" onClick={addUser} disabled={!name.trim() || !password.trim()}><Plus size={13} /> Add</button>
       </div>
       {error && <div className="dev-admin-error">{error}</div>}
     </div>

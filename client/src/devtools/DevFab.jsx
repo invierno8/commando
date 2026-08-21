@@ -2,6 +2,7 @@ import React from "react";
 import { ChevronLeft, Network, Users } from "lucide-react";
 import { STRUCTURAL_ROLES, ROLE_LABELS, ROLE_ORDER } from "../roles.js";
 import { BRIGADE_STATUS } from "../api-client/brigadesData.js";
+import { useDraggableFab } from "./useDraggableFab.js";
 
 /* ================================================================== */
 /* בורר תפקיד/חטיבה/זהות של סביבת הפיתוח — הועבר החוצה מ-App.jsx כמעט     */
@@ -18,11 +19,21 @@ export default function DevFab({
   officerUnit, setOfficerUnit,
   isTeamLead,
 }) {
+  const roleFab = useDraggableFab("jynx-role-fab-pos");
+  function onTriggerClick() {
+    if (roleFab.consumeWasDragged()) return;
+    setOpen((v) => !v);
+  }
   return (
-    <div className="dev-fab-wrap jynx-chrome" tabIndex={-1} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false); }}>
+    <div
+      className="dev-fab-wrap jynx-chrome jynx-ui"
+      style={{ right: roleFab.pos.right, bottom: roleFab.pos.bottom }}
+      tabIndex={-1}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false); }}
+    >
       {open && (
         <div className="dev-fab-panel dev-only">
-          <span className="dev-only-tag">JYNX — סימולציית תפקיד וחטיבה</span>
+          <span className="dev-only-tag">JYNX — Role & brigade simulator</span>
           <div className="pill-tabs">
             {ROLE_ORDER.map((r) => (
               <button
@@ -42,25 +53,25 @@ export default function DevFab({
                 className={"pill-tab" + (brigadeId === b.id ? " active" : "")}
                 style={{ padding: "5px 11px", fontSize: 12 }}
                 onClick={() => chooseBrigade(b.id)}
-                title={b.status === BRIGADE_STATUS.PENDING ? "חטיבה ממתינה להקמה — ללא נתונים עדיין" : undefined}
+                title={b.status === BRIGADE_STATUS.PENDING ? "Brigade pending setup — no data yet" : undefined}
               >
-                {b.name}{b.status === BRIGADE_STATUS.PENDING ? " (ממתינה)" : ""}
+                {b.name}{b.status === BRIGADE_STATUS.PENDING ? " (pending)" : ""}
               </button>
             ))}
           </div>
           {role === STRUCTURAL_ROLES.MEMBER && (
             <div className="env-strip-member-block">
               <span className="env-strip-persona">
-                מחובר כ: {persona.rank} {persona.name} · {persona.unit}
+                Signed in as: {persona.rank} {persona.name} · {persona.unit}
               </span>
               <div className="pill-tabs member-identity-tabs">
-                <button type="button" className={"pill-tab" + (memberIdentityMode === "random" ? " active" : "")} onClick={() => becomeRandomMember()}>חייל רגיל</button>
-                <button type="button" className={"pill-tab" + (memberIdentityMode === "lead" ? " active" : "")} onClick={() => setMemberIdentityMode("lead")}>ראש צוות</button>
-                <button type="button" className={"pill-tab" + (memberIdentityMode === "teamMember" ? " active" : "")} onClick={() => setMemberIdentityMode("teamMember")}>חבר צוות</button>
+                <button type="button" className={"pill-tab" + (memberIdentityMode === "random" ? " active" : "")} onClick={() => becomeRandomMember()}>Regular member</button>
+                <button type="button" className={"pill-tab" + (memberIdentityMode === "lead" ? " active" : "")} onClick={() => setMemberIdentityMode("lead")}>Team lead</button>
+                <button type="button" className={"pill-tab" + (memberIdentityMode === "teamMember" ? " active" : "")} onClick={() => setMemberIdentityMode("teamMember")}>Team member</button>
               </div>
               {memberIdentityMode === "random" && brigadeUnits.length > 1 && (
                 <label className="env-strip-identity officer-unit-pick">
-                  <span>יחידה לחייל רגיל</span>
+                  <span>Unit for regular member</span>
                   <select value={persona.unit} onChange={(e) => becomeRandomMember(e.target.value)}>
                     {brigadeUnits.map((u) => <option key={u} value={u}>{u}</option>)}
                   </select>
@@ -68,12 +79,12 @@ export default function DevFab({
               )}
               {memberIdentityMode === "lead" && (
                 devTeams.length === 0 ? (
-                  <span className="env-strip-hint">אין עדיין צוותים בחטיבה זו — ניתן ליצור דרך ניהול הרשאות ← עץ ארגוני.</span>
+                  <span className="env-strip-hint">No teams yet in this brigade — create one via Permissions → Org tree.</span>
                 ) : (
                   <label className="env-strip-identity officer-unit-pick">
-                    <span>בחירת צוות להתחזות כראש שלו</span>
+                    <span>Pick a team to impersonate as its lead</span>
                     <select value={ledTeam?.id || ""} onChange={(e) => { const t = devTeams.find((tt) => tt.id === e.target.value); if (t) becomeTeamLead(t); }}>
-                      <option value="">בחר/י צוות...</option>
+                      <option value="">Select a team...</option>
                       {devTeams.map((t) => <option key={t.id} value={t.id}>{t.name} — {t.unit}</option>)}
                     </select>
                   </label>
@@ -81,12 +92,12 @@ export default function DevFab({
               )}
               {memberIdentityMode === "teamMember" && (
                 teamMemberOptions.length === 0 ? (
-                  <span className="env-strip-hint">אין עדיין חברי תת-צוות בחטיבה זו.</span>
+                  <span className="env-strip-hint">No sub-team members yet in this brigade.</span>
                 ) : (
                   <label className="env-strip-identity officer-unit-pick">
-                    <span>בחירת חבר צוות להתחזות אליו</span>
+                    <span>Pick a team member to impersonate</span>
                     <select value={userId} onChange={(e) => { const entry = teamMemberOptions.find((o) => o.identifier === e.target.value); if (entry) becomeTeamMember(entry); }}>
-                      <option value="">בחר/י חבר צוות...</option>
+                      <option value="">Select a team member...</option>
                       {teamMemberOptions.map((o, i) => <option key={o.identifier + i} value={o.identifier}>{o.identifier} — {o.teamName}/{o.subteamName} ({o.unit})</option>)}
                     </select>
                   </label>
@@ -96,7 +107,7 @@ export default function DevFab({
           )}
           {role === STRUCTURAL_ROLES.UNIT_OFFICER && brigadeUnits.length > 1 && (
             <label className="env-strip-identity officer-unit-pick">
-              <span>יחידה — לאיזו יחידה קצין האמל״ח שייך (חברי יחידה מדומים מקבלים יחידה אקראית, לכן זה לא תמיד מסתנכרן לבד)</span>
+              <span>Unit — which unit this equipment officer belongs to (simulated unit members get a random unit, so this doesn't always sync automatically)</span>
               <select value={officerUnit || brigadeUnits[0]} onChange={(e) => setOfficerUnit(e.target.value)}>
                 {brigadeUnits.map((u) => <option key={u} value={u}>{u}</option>)}
               </select>
@@ -105,22 +116,22 @@ export default function DevFab({
           <label className="env-strip-identity">
             <span>
               {role === STRUCTURAL_ROLES.MEMBER
-                ? "מספר אישי אמיתי (אופציונלי) — דורס את הפרסונה האקראית, כדי לבדוק זיהוי כראש צוות או חסימה"
-                : "זיהוי משתמש (מ.א.) — פריסת הדשבורד האישית שלך עוברת איתך בין מכשירים"}
+                ? "Real personal number (optional) — overrides the random persona, to test recognition as team lead or block"
+                : "User ID — your personal dashboard layout follows you across devices"}
             </span>
             <input
               value={userId}
               onChange={(e) => setUserId(e.target.value.replace(/\D/g, ""))}
-              placeholder="לדוגמה: 7134209"
+              placeholder="e.g. 7134209"
               inputMode="numeric"
             />
           </label>
           {isTeamLead && (
-            <span className="env-strip-persona"><Network size={12} style={{ verticalAlign: "-2px" }} /> מזוהה כראש צוות: {ledTeam.name}</span>
+            <span className="env-strip-persona"><Network size={12} style={{ verticalAlign: "-2px" }} /> Identified as team lead: {ledTeam.name}</span>
           )}
         </div>
       )}
-      <button type="button" className="dev-fab" onClick={() => setOpen((v) => !v)} title="בורר תפקיד וחטיבה">
+      <button type="button" className="dev-fab" onClick={onTriggerClick} {...roleFab.dragHandlers} title="Role & brigade picker — draggable">
         <Users size={14} />
         <ChevronLeft size={14} className={"dev-fab-arrow" + (open ? " open" : "")} />
       </button>
