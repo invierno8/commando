@@ -43,27 +43,31 @@ const TOKENS = {
 const { UNIT_OFFICER, BRIGADE_OFFICER, SYSTEM_ADMIN } = STRUCTURAL_ROLES;
 const OFFICER_PLUS = [UNIT_OFFICER, BRIGADE_OFFICER, SYSTEM_ADMIN];
 const BRIGADE_PLUS = [BRIGADE_OFFICER, SYSTEM_ADMIN];
+// ווידג'טים שמציגים פריטי קטלוג/דרישות ספציפיים או פעילות ברמת קצין/יחידה —
+// מנהל מערכת רואה רק תמונת מצב כללית ומצטברת של החטיבה, לא את הפרטים
+// הספציפיים שקצין אמל״ח או יחידה רואים.
+const OFFICER_NO_ADMIN = [UNIT_OFFICER, BRIGADE_OFFICER];
 
 const WIDGET_DEFS = {
   kpis: { title: "מדדים כלליים — כלל החטיבה", icon: Gauge, size: "full", roles: BRIGADE_PLUS },
   unitSummary: { title: "תמונת מצב — היחידה שלך", icon: ShieldCheck, size: "full", roles: [UNIT_OFFICER] },
-  equipment: { title: "מצב ציוד", icon: Boxes, size: "full", roles: OFFICER_PLUS },
-  openRequests: { title: "בקשות פתוחות", icon: ClipboardList, size: "half", roles: OFFICER_PLUS },
+  equipment: { title: "מצב ציוד", icon: Boxes, size: "full", roles: OFFICER_NO_ADMIN },
+  openRequests: { title: "בקשות פתוחות", icon: ClipboardList, size: "half", roles: OFFICER_NO_ADMIN },
   readiness: { title: "מוכנות מערכת", icon: Activity, size: "half", roles: BRIGADE_PLUS },
   trend: { title: "מגמת דרישות — 14 יום אחרונים", icon: TrendingUp, size: "half", roles: OFFICER_PLUS },
   priority: { title: "תיעדוף דרישות מאושרות", icon: ListTree, size: "half", roles: BRIGADE_PLUS },
   responseTime: { title: "זמן מענה ממוצע", icon: Timer, size: "half", roles: OFFICER_PLUS },
   categoryAnalytics: { title: "התפלגות קטגוריות", icon: PieChartIcon, size: "half", roles: OFFICER_PLUS },
   ticketTypes: { title: "התפלגות סוגי דרישות", icon: LayoutGrid, size: "half", roles: OFFICER_PLUS },
-  repairLeaderboard: { title: "פריטים עם תקלות חוזרות", icon: Wrench, size: "half", roles: OFFICER_PLUS },
+  repairLeaderboard: { title: "פריטים עם תקלות חוזרות", icon: Wrench, size: "half", roles: OFFICER_NO_ADMIN },
   procurementCost: { title: "עלות רכש ממתינה", icon: Wallet, size: "half", roles: BRIGADE_PLUS },
-  activityLog: { title: "יומן פעילות אחרון", icon: History, size: "full", roles: OFFICER_PLUS },
+  activityLog: { title: "יומן פעילות אחרון", icon: History, size: "full", roles: OFFICER_NO_ADMIN },
 };
 
 const DEFAULT_PRESETS = {
   [UNIT_OFFICER]: ["unitSummary", "openRequests", "responseTime", "categoryAnalytics", "ticketTypes", "repairLeaderboard", "trend", "equipment", "activityLog"],
   [BRIGADE_OFFICER]: ["kpis", "trend", "priority", "responseTime", "categoryAnalytics", "ticketTypes", "procurementCost", "repairLeaderboard", "openRequests", "readiness", "equipment", "activityLog"],
-  [SYSTEM_ADMIN]: ["kpis", "trend", "priority", "responseTime", "categoryAnalytics", "ticketTypes", "procurementCost", "repairLeaderboard", "openRequests", "readiness", "equipment", "activityLog"],
+  [SYSTEM_ADMIN]: ["kpis", "trend", "priority", "responseTime", "categoryAnalytics", "ticketTypes", "procurementCost", "readiness"],
 };
 
 // הפריסה נשמרת פר-משתמש (userPrefsStore.js, לפי מספר אישי), לא פר-מכשיר
@@ -559,11 +563,11 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
 
       <div className="dash-toprow">
         <div className="dash-toprow-title">
-          <h1>{isUnitOfficer ? `דשבורד יחידת ${scope}` : "דשבורד קצין אמל״ח"}</h1>
-          <p>{isUnitOfficer ? "תמונת המצב של היחידה שלך — ניתן לגרור, להסתיר ולהוסיף ווידג׳טים." : "תצוגה מותאמת אישית — ניתן לגרור, להסתיר ולהוסיף ווידג׳טים."}</p>
+          <h1>{isUnitOfficer ? `דשבורד יחידת ${scope}` : isSystemAdmin ? "דשבורד מנהל מערכת" : "דשבורד קצין אמל״ח"}</h1>
+          <p>{isUnitOfficer ? "תמונת המצב של היחידה שלך — ניתן לגרור, להסתיר ולהוסיף ווידג׳טים." : isSystemAdmin ? "תמונת מצב כללית ומצטברת של החטיבה — ללא פרטי דרישות/ציוד ספציפיים." : "תצוגה מותאמת אישית — ניתן לגרור, להסתיר ולהוסיף ווידג׳טים."}</p>
         </div>
         <div className="dash-toprow-actions">
-          {!isUnitOfficer && <ScopePicker scope={scope} setScope={setScope} units={units} unitLogos={unitLogos} />}
+          {!isUnitOfficer && !isSystemAdmin && <ScopePicker scope={scope} setScope={setScope} units={units} unitLogos={unitLogos} />}
           <HiddenWidgetsMenu hiddenDefs={hiddenDefs} onShow={showWidget} />
           <ResetLayoutControl onReset={resetLayout} />
         </div>

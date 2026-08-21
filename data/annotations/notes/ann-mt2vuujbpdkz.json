@@ -11,9 +11,9 @@
   "resolved": false,
   "resolvedAt": null,
   "resolvedBy": null,
-  "actionStatus": "queued",
+  "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T11:45:37.559Z",
   "actionRequestedBy": "מנהל",
-  "actionPrUrl": null,
-  "actionLog": null
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/5",
+  "actionLog": "PR adds the blue secondary-target highlight (both while picking and on comment-row hover) and makes the annotation popup draggable. Inline in-sentence tagging of the secondary target was judged out of scope (the existing chip list already shows it) — see the PR description."
 }

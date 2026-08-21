@@ -29,13 +29,22 @@ import { fileURLToPath } from "node:url";
 import { requireDevUser } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/adminAuth.js";
 import { asyncRoute, requireFields } from "../middleware/validate.js";
-import { commitFileToGithub, githubPersistEnabled, listDirFromGithub, readFileFromGithub } from "../lib/githubPersist.js";
+import { commitFileToGithub, deleteFileFromGithub, githubPersistEnabled, listDirFromGithub, readFileFromGithub } from "../lib/githubPersist.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const NOTES_DIR = path.join(__dirname, "..", "annotations", "notes");
 const ACTIONS_DIR = path.join(__dirname, "..", "annotations", "actions");
 const GITHUB_NOTES_DIR = "data/annotations/notes";
 const GITHUB_ACTIONS_DIR = "data/annotations/actions";
+// גב-הגנה בצד השרת לגודל קובץ מצורף — הבדיקה העיקרית היא בצד הלקוח
+// (AnnotationPopover.jsx, 2MB), אבל data-URL כזה מתחייב ל-git דרך
+// githubPersist.js אז לא סומכים רק על הלקוח. ~2.75MB base64 ≈ 2MB בינארי.
+const MAX_ATTACHMENT_CHARS = 2.8 * 1024 * 1024;
+
+// פלטת אימוג'ים קבועה וקטנה — לא ספריית emoji-picker (אין ספריות UI חיצוניות
+// נוספות בקודבייס הזה, ראו FORCLAUDE.md). מוגדרת גם כאן (לא רק בקליינט) כדי
+// שהשרת ידחה ריאקציה עם אימוג'י שרירותי, לא רק יסמוך על הצד השני.
+const REACTION_EMOJI = ["👍", "😄", "🤔", "❤️"];
 
 function readAll() {
   try {
@@ -57,6 +66,15 @@ async function persistNote(note, message) {
   writeLocalNote(note.id, note);
   if (githubPersistEnabled()) {
     await commitFileToGithub(`${GITHUB_NOTES_DIR}/${note.id}.json`, JSON.stringify(note, null, 2) + "\n", message);
+  }
+}
+
+// מחיקה מלאה — בניגוד ל-archived (שרק מסתירה, ראו PATCH למטה), הקובץ עצמו
+// נעלם, מקומית וב-GitHub כאחד.
+async function deleteNote(id, message) {
+  try { fs.unlinkSync(path.join(NOTES_DIR, `${id}.json`)); } catch { /* כבר לא קיים מקומית — ננסה עדיין למחוק ב-GitHub */ }
+  if (githubPersistEnabled()) {
+    await deleteFileFromGithub(`${GITHUB_NOTES_DIR}/${id}.json`, message);
   }
 }
 
@@ -86,17 +104,35 @@ router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
   const secondaryTargets = Array.isArray(req.body.secondaryTargets)
     ? req.body.secondaryTargets.filter((t) => typeof t === "string" && t.trim()).slice(0, 10)
     : [];
+  // תמונת השראה / קובץ אחד, אופציונלי — data-URL כפי שנשלח מהלקוח
+  // (AnnotationPopover.jsx, אותה קונבנציה כמו LogoUpload.jsx), נשמר כמות
+  // שהוא על רשומת ההערה. שם הקובץ המקורי נשמר בנפרד רק לצורך תצוגה
+  // (thumbnail/link), לא חלק מה-data-URL עצמו.
+  const rawAttachment = typeof req.body.attachment === "string" ? req.body.attachment : null;
+  if (rawAttachment && rawAttachment.length > MAX_ATTACHMENT_CHARS) {
+    return res.status(400).json({ error: "Attachment too large (max ~2MB)" });
+  }
+  const attachment = rawAttachment && rawAttachment.startsWith("data:") ? rawAttachment : null;
+  const attachmentName = attachment && typeof req.body.attachmentName === "string"
+    ? req.body.attachmentName.slice(0, 200)
+    : null;
   const entry = {
     id: "ann-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     authorId: req.devUser.id, authorName: req.devUser.name, createdAt: new Date().toISOString(),
     route: req.body.route, targetLabel: req.body.targetLabel || null, targetSelector: req.body.targetSelector || null,
     secondaryTargets,
-    comment: req.body.comment, resolved: false, resolvedAt: null, resolvedBy: null, resolutionNote: null,
+    comment: req.body.comment, attachment, attachmentName, resolved: false, resolvedAt: null, resolvedBy: null, resolutionNote: null,
+    archived: false, archivedAt: null,
     actionStatus: actionRequested ? "queued" : "none",
     actionRequestedAt: actionRequested ? new Date().toISOString() : null,
     actionRequestedBy: actionRequested ? req.devUser.name : null,
     actionPrUrl: null, actionLog: null,
     replies: [],
+    // מפתח = אימוג'י, ערך = מערך מזהי dev-user שריאקטו איתו (ראו
+    // POST /dev/annotations/:id/react למטה) — אין ספירה נפרדת, אורך המערך
+    // הוא הספירה, וזה גם מה שקובע אם המשתמש הנוכחי כבר ריאקט (מחפשים
+    // req.devUser.id בתוך המערך).
+    reactions: Object.fromEntries(REACTION_EMOJI.map((e) => [e, []])),
   };
   await persistNote(entry, `QA note (${entry.route}) — ${entry.authorName}`);
   if (actionRequested) await queueAction(entry, req.devUser.name);
@@ -109,7 +145,7 @@ router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
 // אותה זזה ל"טופל" עם התשובה, לא רק שתיעלם), לא פאנל הניהול/פעולות.
 router.get("/dev/annotations", requireDevUser, (req, res) => {
   const route = req.query.route;
-  const items = readAll().filter((a) => !route || a.route === route);
+  const items = readAll().filter((a) => !route || a.route === route).filter((a) => !a.archived);
   res.json(items);
 });
 
@@ -129,6 +165,41 @@ router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req,
   res.status(201).json(updated);
 }));
 
+// עריכת טקסט ההערה על ידי מי שכתב אותה בעצמו — שונה מ-PATCH
+// /admin/annotations/:id למעלה/מטה (שדורש מנהל ויכול לערוך כל הערה): זו
+// הדרך של CommentsPanel.jsx לתת לכל משתמש-פיתוח לערוך רק את מה שהוא עצמו
+// כתב, מתוך "כל ההערות שהשארתי פיזית על המסך הזה" — בלי לעבור דרך פאנל
+// הניהול, ובלי הרשאת מנהל בכלל.
+router.patch("/dev/annotations/:id", requireDevUser, asyncRoute(async (req, res) => {
+  requireFields(req.body, ["comment"]);
+  const found = readAll().find((a) => a.id === req.params.id);
+  if (!found) return res.status(404).json({ error: "לא נמצא" });
+  if (found.authorId !== req.devUser.id) {
+    return res.status(403).json({ error: "אפשר לערוך רק הערות שכתבת בעצמך" });
+  }
+  const updated = { ...found, comment: req.body.comment };
+  await persistNote(updated, `comment edited by author — ${updated.id}`);
+  res.json(updated);
+}));
+
+// ריאקציית אימוג'י — כל משתמש-פיתוח מחובר, גם על הערה שהוא לא כתב (בדיוק
+// כמו התגובות). קליק על אימוג'י שכבר ריאקטתי איתו מסיר אותו (toggle רגיל),
+// לא מוסיף שוב — כמו כל UI ריאקציות מוכר.
+router.post("/dev/annotations/:id/react", requireDevUser, asyncRoute(async (req, res) => {
+  requireFields(req.body, ["emoji"]);
+  if (!REACTION_EMOJI.includes(req.body.emoji)) return res.status(400).json({ error: "אימוג'י לא נתמך" });
+  const found = readAll().find((a) => a.id === req.params.id);
+  if (!found) return res.status(404).json({ error: "לא נמצא" });
+  const reactions = { ...Object.fromEntries(REACTION_EMOJI.map((e) => [e, []])), ...(found.reactions || {}) };
+  const current = reactions[req.body.emoji] || [];
+  reactions[req.body.emoji] = current.includes(req.devUser.id)
+    ? current.filter((id) => id !== req.devUser.id)
+    : [...current, req.devUser.id];
+  const updated = { ...found, reactions };
+  await persistNote(updated, `reaction on ${updated.id} — ${req.devUser.name}`);
+  res.json(updated);
+}));
+
 router.get("/admin/annotations", requireAdmin, (_req, res) => {
   res.json(readAll());
 });
@@ -136,19 +207,41 @@ router.get("/admin/annotations", requireAdmin, (_req, res) => {
 router.patch("/admin/annotations/:id", requireAdmin, asyncRoute(async (req, res) => {
   const found = readAll().find((a) => a.id === req.params.id);
   if (!found) return res.json(null);
-  const resolved = !!req.body.resolved;
+  // resolved / archived / comment מגיעים בקריאות נפרדות (Mark done / Archive /
+  // Save-edit הם שלושה כפתורים שונים) — נוגעים רק בשדה שבאמת נשלח, כדי
+  // שקריאה שמעדכנת אחד מהם לא תדרוס בטעות את מצב האחרים.
+  const hasResolvedField = req.body.resolved !== undefined;
+  const hasArchivedField = req.body.archived !== undefined;
+  const hasCommentField = typeof req.body.comment === "string" && req.body.comment.trim().length > 0;
+  const resolved = hasResolvedField ? !!req.body.resolved : found.resolved;
+  const archived = hasArchivedField ? !!req.body.archived : !!found.archived;
   const updated = {
     ...found,
     resolved,
-    resolvedAt: resolved ? new Date().toISOString() : null,
-    resolvedBy: resolved ? (req.body.resolvedBy || "admin") : null,
-    resolutionNote: resolved ? (req.body.resolutionNote || found.resolutionNote || null) : found.resolutionNote,
+    resolvedAt: hasResolvedField ? (resolved ? new Date().toISOString() : null) : found.resolvedAt,
+    resolvedBy: hasResolvedField ? (resolved ? (req.body.resolvedBy || "admin") : null) : found.resolvedBy,
+    resolutionNote: hasResolvedField
+      ? (resolved ? (req.body.resolutionNote || found.resolutionNote || null) : found.resolutionNote)
+      : found.resolutionNote,
+    archived,
+    archivedAt: hasArchivedField ? (archived ? new Date().toISOString() : null) : (found.archivedAt || null),
+    comment: hasCommentField ? req.body.comment.trim() : found.comment,
     // סימון "טופל" גם על תור הפעולות — "מעבר לטופל" שהמנהל ביקש, לא רק
     // resolved נפרד מ-actionStatus שלא באמת מסתנכרן.
     actionStatus: resolved && found.actionStatus && found.actionStatus !== "none" ? "done" : found.actionStatus,
   };
-  await persistNote(updated, `QA note ${updated.resolved ? "resolved" : "reopened"} — ${updated.id}`);
+  const verb = hasCommentField ? "edited" : hasArchivedField ? (archived ? "archived" : "unarchived") : (resolved ? "resolved" : "reopened");
+  await persistNote(updated, `QA note ${verb} — ${updated.id}`);
   res.json(updated);
+}));
+
+// מחיקה מלאה ובלתי הפיכה — בניגוד ל-archived, שרק מסתירה מהתצוגות
+// הרגילות אבל שומרת את הרשומה עצמה.
+router.delete("/admin/annotations/:id", requireAdmin, asyncRoute(async (req, res) => {
+  const found = readAll().find((a) => a.id === req.params.id);
+  if (!found) return res.status(404).json({ error: "לא נמצא" });
+  await deleteNote(found.id, `QA note deleted — ${found.id}`);
+  res.json({ ok: true });
 }));
 
 // מנהל בלבד — מסמן הערה קיימת (שכתב מישהו אחר) כפריט עבודה.
@@ -168,7 +261,7 @@ router.post("/admin/annotations/:id/action", requireAdmin, asyncRoute(async (req
 // Markdown, סעיפים לא-פתורים בלבד, מקובצים לפי מסך — נועד להיות עותק-הדבק
 // ישיר לתור עבודה.
 router.get("/admin/annotations/export", requireAdmin, (_req, res) => {
-  const open = readAll().filter((a) => !a.resolved);
+  const open = readAll().filter((a) => !a.resolved && !a.archived);
   const byRoute = {};
   open.forEach((a) => { (byRoute[a.route] ||= []).push(a); });
 

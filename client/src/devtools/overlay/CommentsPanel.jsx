@@ -1,8 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle } from "lucide-react";
-import { fetchDevAnnotations, replyToAnnotation, fetchJynxFeedback, replyToJynxFeedback } from "../devApi.js";
+import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Pencil, Paperclip, Zap, Loader2, GitPullRequest, XCircle, Sparkles } from "lucide-react";
+import {
+  fetchDevAnnotations, replyToAnnotation, editMyAnnotation, reactToAnnotation, requestAnnotationAction,
+  fetchJynxFeedback, replyToJynxFeedback, reactToJynxFeedback, submitJynxFeedback,
+} from "../devApi.js";
 import { useDraggableFab } from "../useDraggableFab.js";
+
+const ACTION_STATUS_LABEL = { queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed" };
+const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: GitPullRequest, done: CheckCircle2, failed: XCircle };
+
+// פלטת ריאקציות קטנה וקבועה בכוונה — לא ספריית emoji-picker (אין ספריות UI
+// חיצוניות נוספות בקודבייס הזה, ראו FORCLAUDE.md). זהה למה שהשרת מאמת מולו
+// (ראו data/routes/annotations.js ו-data/routes/jynx-feedback.js).
+const REACTION_EMOJI = ["👍", "😄", "🤔", "❤️"];
 
 /* ================================================================== */
 /* LEGO BLOCK — "who commented on what, here" for EVERY dev user (not    */
@@ -18,6 +29,14 @@ import { useDraggableFab } from "../useDraggableFab.js";
 /*  3. Reply threads per comment — any dev user can add a follow-up,      */
 /*     so a resolved comment's author can react to the fix (or anyone     */
 /*     can ask a clarifying question before it's resolved).               */
+/*  4. Inline self-edit — a pencil icon shown only on your own comments    */
+/*     (authorId === currentDevUserId), swapping the text for a textarea   */
+/*     + Save/Cancel, calling editMyAnnotation() then reload(). Server-    */
+/*     side enforced too (PATCH /dev/annotations/:id 403s for anyone       */
+/*     else's comment) — this is just where the UI for it lives. Distinct  */
+/*     from the admin's own edit-any-comment control in                    */
+/*     DevAnnotationsScreen.jsx (PATCH /admin/annotations/:id) — that one  */
+/*     needs admin rights, this one needs nothing but being the author.    */
 /* ================================================================== */
 
 export default function CommentsPanel({ active, route, currentDevUserId, isAdmin }) {
@@ -29,8 +48,16 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   const [flashId, setFlashId] = useState(null);
   const [openThreadId, setOpenThreadId] = useState(null);
   const [replyText, setReplyText] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState("");
   const [collapsed, setCollapsed] = useState(false);
   const [tick, setTick] = useState(0);
+  // "+ Feedback about Jynx" — הרכבה מינימלית inline, לא שימוש חוזר
+  // ב-AnnotationPopover.jsx (שממוקם לפי קואורדינטות x/y של קליק, שלא
+  // רלוונטיות כאן). מנהל בלבד, בדיוק כמו שער השליחה הקיים בשרת.
+  const [jynxComposerOpen, setJynxComposerOpen] = useState(false);
+  const [jynxComposerText, setJynxComposerText] = useState("");
+  const [jynxComposerSending, setJynxComposerSending] = useState(false);
   // עוגן שמאלי בכוונה — הצד ההפוך מאשכול הכפתורים הימני (הבועה/הסרגל/בורר
   // התפקיד), כדי שהמיקום ההתחלתי לא יתנגש איתם עוד לפני שגוררים משהו.
   const panelFab = useDraggableFab("jynx-comments-panel-pos", { left: 16, bottom: 76 }, "left");
@@ -96,6 +123,21 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredListId, items, tick]);
 
+  // יעדים משניים (a.secondaryTargets) של השורה שמעל העכבר — אותה שיטת
+  // איתור בדיוק כמו rectFor() ליעד הראשי, רק שיש כאן כמה תוצאות אפשריות
+  // במקום אחת, ומוצגות בכחול כדי לא להתבלבל עם ההדגשה הכתומה של היעד הראשי.
+  const hoveredSecondaryRects = useMemo(() => {
+    if (!hoveredListId) return [];
+    void tick;
+    const a = items.find((x) => x.id === hoveredListId);
+    if (!a?.secondaryTargets?.length) return [];
+    return a.secondaryTargets
+      .map((label) => document.querySelector(`[data-devblock="${CSS.escape(label)}"]`))
+      .filter(Boolean)
+      .map((el) => el.getBoundingClientRect());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hoveredListId, items, tick]);
+
   function jumpTo(a) {
     const found = rectFor(a);
     if (!found) return;
@@ -110,6 +152,43 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     else await replyToAnnotation(a.id, replyText.trim());
     setReplyText("");
     reload();
+  }
+
+  async function saveEdit(a) {
+    if (!editText.trim()) return;
+    await editMyAnnotation(a.id, editText.trim());
+    setEditingId(null);
+    setEditText("");
+    reload();
+  }
+
+  async function triggerAction(a) {
+    await requestAnnotationAction(a.id);
+    reload();
+  }
+
+  // toggle רגיל — קליק על אימוג'י שכבר ריאקטתי איתו מסיר אותו, לא מוסיף שוב.
+  async function sendReaction(a, emoji) {
+    if (a.kind === "jynx") await reactToJynxFeedback(a.id, emoji);
+    else await reactToAnnotation(a.id, emoji);
+    reload();
+  }
+
+  async function submitJynxComposer() {
+    if (!jynxComposerText.trim() || jynxComposerSending) return;
+    setJynxComposerSending(true);
+    try {
+      // אין צורך ב-targetLabel/סיכת מיקום — משוב כללי על Jynx עצמו, לא
+      // מוצמד לאלמנט ספציפי (הבקאנד כבר מקבל targetLabel:null, ראו
+      // data/routes/jynx-feedback.js). route כן נשלח, כדי שהפריט יופיע
+      // ישר ברשימה הנוכחית (שמסוננת לפי מסך, ראו reload() למעלה).
+      await submitJynxFeedback({ route, comment: jynxComposerText.trim() });
+      setJynxComposerText("");
+      setJynxComposerOpen(false);
+      reload();
+    } finally {
+      setJynxComposerSending(false);
+    }
   }
 
   if (!active) return null;
@@ -140,6 +219,13 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
           style={{ top: hoveredRect.top, left: hoveredRect.left, width: hoveredRect.width, height: hoveredRect.height }}
         />
       )}
+      {hoveredSecondaryRects.map((r, i) => (
+        <div
+          key={i}
+          className="comments-panel-highlight comments-panel-highlight-secondary"
+          style={{ top: r.top, left: r.left, width: r.width, height: r.height }}
+        />
+      ))}
       {flashRect && (
         <div
           className="comments-panel-highlight comments-panel-flash"
@@ -148,13 +234,47 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
       )}
 
       <div className="comments-sidebar jynx-ui" style={{ left: panelFab.pos.left, bottom: panelFab.pos.bottom }}>
-        <div className="comments-sidebar-head">
-          <span className="comments-sidebar-grip" {...panelFab.dragHandlers} title="Drag to move"><GripVertical size={13} /></span>
+        <div className="comments-sidebar-head" {...panelFab.dragHandlers}>
+          <span className="comments-sidebar-grip" title="Drag anywhere on the header to move"><GripVertical size={13} /></span>
           <span className="comments-sidebar-title"><MessageSquare size={13} /> Comments</span>
           <button type="button" className="comments-sidebar-collapse" onClick={() => setCollapsed((v) => !v)} title={collapsed ? "Expand" : "Collapse"}>
             {collapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           </button>
         </div>
+        {!collapsed && isAdmin && (
+          <div className="comments-jynx-composer-wrap">
+            {!jynxComposerOpen ? (
+              <button type="button" className="comments-jynx-composer-toggle" onClick={() => setJynxComposerOpen(true)}>
+                <Sparkles size={12} /> Feedback about Jynx
+              </button>
+            ) : (
+              <div className="comments-jynx-composer">
+                <textarea
+                  autoFocus
+                  rows={2}
+                  placeholder="What should improve in the dev tool itself?"
+                  value={jynxComposerText}
+                  onChange={(e) => setJynxComposerText(e.target.value)}
+                />
+                <div className="comments-jynx-composer-actions">
+                  <button
+                    type="button"
+                    onClick={() => { setJynxComposerOpen(false); setJynxComposerText(""); }}
+                    disabled={jynxComposerSending}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button" className="primary" onClick={submitJynxComposer}
+                    disabled={!jynxComposerText.trim() || jynxComposerSending}
+                  >
+                    {jynxComposerSending ? "Sending..." : "Send"}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         {!collapsed && (
           <>
             <div className="comments-sidebar-filters">
@@ -168,26 +288,98 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
             <div className="comments-sidebar-list">
               {shown.map((a) => {
                 const replies = a.replies || [];
+                // עריכה עצמית זמינה רק על הערות "אפליקציה" רגילות (kind
+                // "app"/undefined) שאתה בעצמך כתבת — לא על משוב Jynx (תור
+                // נפרד, אין לו endpoint עריכה מקביל, וממילא רק מנהל כותב שם).
+                const canEdit = a.kind !== "jynx" && a.authorId === currentDevUserId;
+                const isEditing = editingId === a.id;
                 return (
                   <div key={a.id} className="comments-sidebar-item-wrap">
                     <div
                       className="comments-sidebar-item"
                       onMouseEnter={() => setHoveredListId(a.id)}
                       onMouseLeave={() => setHoveredListId((h) => (h === a.id ? null : h))}
-                      onClick={() => jumpTo(a)}
+                      onClick={() => !isEditing && jumpTo(a)}
                     >
-                      {a.targetLabel && (
+                      {(a.targetLabel || a.kind === "jynx") && (
                         <span className="comments-sidebar-item-target">
                           {a.kind === "jynx" && <span className="comments-jynx-badge">🔮 Jynx</span>}
                           {a.targetLabel}
                           {a.resolved && <span className="comments-done-badge"><CheckCircle2 size={10} /> Done</span>}
                         </span>
                       )}
-                      <p className="comments-sidebar-item-comment">{a.comment}</p>
+                      {isEditing ? (
+                        <div className="comments-edit-box" onClick={(e) => e.stopPropagation()}>
+                          <textarea autoFocus rows={3} value={editText} onChange={(e) => setEditText(e.target.value)} />
+                          <div className="comments-edit-actions">
+                            <button type="button" onClick={() => { setEditingId(null); setEditText(""); }}>Cancel</button>
+                            <button type="button" className="primary" onClick={() => saveEdit(a)} disabled={!editText.trim()}>Save</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="comments-sidebar-item-comment">
+                          {a.comment}
+                          {canEdit && (
+                            <button
+                              type="button" className="comments-edit-btn" title="Edit your comment"
+                              onClick={(e) => { e.stopPropagation(); setEditingId(a.id); setEditText(a.comment); }}
+                            >
+                              <Pencil size={11} />
+                            </button>
+                          )}
+                        </p>
+                      )}
+                      {a.attachment && (
+                        a.attachment.startsWith("data:image/") ? (
+                          <a href={a.attachment} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="comments-attachment-link">
+                            <img src={a.attachment} alt={a.attachmentName || "attachment"} className="comments-attachment-thumb" />
+                          </a>
+                        ) : (
+                          <a
+                            href={a.attachment} download={a.attachmentName || "attachment"}
+                            onClick={(e) => e.stopPropagation()} className="comments-attachment-link comments-attachment-file"
+                          >
+                            <Paperclip size={10} /> {a.attachmentName || "attachment"}
+                          </a>
+                        )
+                      )}
                       <span className="comments-sidebar-item-meta">{a.authorName} · {new Date(a.createdAt).toLocaleString("en-US")}</span>
                       {a.resolved && a.resolutionNote && (
                         <div className="comments-resolution-note"><CheckCircle2 size={11} /> {a.resolutionNote}</div>
                       )}
+                      {isAdmin && a.actionStatus && a.actionStatus !== "none" && (() => {
+                        const StatusIcon = ACTION_STATUS_ICON[a.actionStatus];
+                        return (
+                          <span className="comments-action-pill" onClick={(e) => e.stopPropagation()}>
+                            {StatusIcon && <StatusIcon size={11} className={a.actionStatus === "queued" || a.actionStatus === "in_progress" ? "comments-action-spin" : ""} />}
+                            {ACTION_STATUS_LABEL[a.actionStatus]}
+                            {a.actionPrUrl && <a href={a.actionPrUrl} target="_blank" rel="noreferrer">View PR</a>}
+                          </span>
+                        );
+                      })()}
+                      {isAdmin && a.kind === "app" && (!a.actionStatus || a.actionStatus === "none") && (
+                        <button type="button" className="comments-action-btn" onClick={(e) => { e.stopPropagation(); triggerAction(a); }} title="Run the automated agent on this comment">
+                          <Zap size={11} /> Action
+                        </button>
+                      )}
+                    </div>
+                    <div className="comments-reaction-row" onClick={(e) => e.stopPropagation()}>
+                      {REACTION_EMOJI.map((emoji) => {
+                        const reactors = a.reactions?.[emoji] || [];
+                        const mine = reactors.includes(currentDevUserId);
+                        return (
+                          <button
+                            key={emoji}
+                            type="button"
+                            className={"comments-reaction-btn" + (mine ? " active" : "")}
+                            onClick={() => sendReaction(a, emoji)}
+                            title={mine ? "Remove your reaction" : "React"}
+                          >
+                            {emoji}
+                            {reactors.length > 0 && <span className="comments-reaction-count">{reactors.length}</span>}
+                          </button>
+                        );
+                      })}
                     </div>
                     <button
                       type="button" className="comments-thread-toggle"
@@ -263,6 +455,11 @@ const CSS_TEXT = `
 .comments-panel-flash{
   border-color:var(--jynx); animation:commentsFlash 1.6s ease;
 }
+.comments-panel-highlight-secondary{
+  border-color:#2F8FCE;
+  box-shadow:0 0 0 3px color-mix(in srgb, #2F8FCE 28%, transparent),
+             0 0 18px color-mix(in srgb, #2F8FCE 50%, transparent);
+}
 @keyframes commentsFlash{
   0%, 100% { box-shadow:0 0 0 3px color-mix(in srgb, var(--jynx) 28%, transparent), 0 0 18px color-mix(in srgb, var(--jynx) 50%, transparent); }
   50% { box-shadow:0 0 0 8px color-mix(in srgb, var(--jynx) 45%, transparent), 0 0 28px color-mix(in srgb, var(--jynx) 70%, transparent); }
@@ -273,9 +470,9 @@ const CSS_TEXT = `
   background:var(--panel); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow-md);
   display:flex; flex-direction:column; overflow:hidden;
 }
-.comments-sidebar-head{ padding:8px 10px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:6px; }
-.comments-sidebar-grip{ display:flex; align-items:center; color:var(--text-dim); cursor:grab; touch-action:none; }
-.comments-sidebar-grip:active{ cursor:grabbing; }
+.comments-sidebar-head{ padding:8px 10px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:6px; cursor:grab; touch-action:none; }
+.comments-sidebar-head:active{ cursor:grabbing; }
+.comments-sidebar-grip{ display:flex; align-items:center; color:var(--text-dim); }
 .comments-sidebar-title{ display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--jynx); flex:1; }
 .comments-sidebar-collapse{ background:none; border:none; color:var(--text-dim); cursor:pointer; display:flex; }
 .comments-sidebar-collapse:hover{ color:var(--jynx); }
@@ -292,6 +489,30 @@ const CSS_TEXT = `
 .comments-sidebar-item:hover{ background:color-mix(in srgb, var(--jynx) 8%, transparent); }
 .comments-sidebar-item-target{ font-family:var(--font-mono); font-size:10px; color:var(--jynx); text-transform:uppercase; display:flex; align-items:center; gap:6px; }
 .comments-sidebar-item-comment{ margin:2px 0; font-size:12.5px; color:var(--text); }
+.comments-edit-btn{
+  display:inline-flex; align-items:center; justify-content:center; background:none; border:none;
+  color:var(--text-dim); cursor:pointer; padding:0 0 0 6px; vertical-align:middle;
+}
+.comments-edit-btn:hover{ color:var(--jynx); }
+.comments-edit-box{ display:flex; flex-direction:column; gap:5px; margin:3px 0; }
+.comments-edit-box textarea{
+  width:100%; background:var(--bg); border:1px solid var(--jynx); border-radius:7px; padding:6px 8px;
+  font-size:12.5px; font-family:var(--font-sans); color:var(--text); resize:vertical;
+}
+.comments-edit-actions{ display:flex; justify-content:flex-end; gap:6px; }
+.comments-edit-actions button{
+  border:none; border-radius:7px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;
+  background:var(--panel-raised); color:var(--text-dim);
+}
+.comments-edit-actions button.primary{ background:var(--jynx); color:#fff; }
+.comments-edit-actions button.primary:disabled{ opacity:.5; cursor:not-allowed; }
+.comments-attachment-link{ display:inline-flex; margin:2px 0; }
+.comments-attachment-thumb{ width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid var(--line); }
+.comments-attachment-file{
+  align-items:center; gap:4px; background:var(--panel); border:1px solid var(--line);
+  border-radius:12px; padding:3px 8px; font-size:10.5px; color:var(--text-dim); text-decoration:none;
+}
+.comments-attachment-file:hover{ color:var(--jynx); border-color:var(--jynx); }
 .comments-sidebar-item-meta{ font-size:10.5px; color:var(--text-dim); }
 .comments-done-badge{ display:inline-flex; align-items:center; gap:2px; color:var(--green); font-size:9.5px; text-transform:none; }
 .comments-jynx-badge{
@@ -302,6 +523,18 @@ const CSS_TEXT = `
   display:flex; align-items:flex-start; gap:4px; font-size:11px; color:var(--green);
   background:color-mix(in srgb, var(--green) 10%, transparent); border-radius:6px; padding:4px 7px; margin:4px 0;
 }
+.comments-action-pill{
+  display:inline-flex; align-items:center; gap:4px; background:color-mix(in srgb, #2F8FCE 15%, transparent);
+  color:#2F8FCE; font-size:10px; font-weight:700; border-radius:12px; padding:2px 8px; margin:4px 0; cursor:default;
+}
+.comments-action-pill a{ color:inherit; text-decoration:underline; margin-inline-start:3px; }
+.comments-action-spin{ animation:commentsActionSpin 1s linear infinite; }
+@keyframes commentsActionSpin{ to{ transform:rotate(360deg); } }
+.comments-action-btn{
+  display:inline-flex; align-items:center; gap:4px; background:#2F8FCE; color:#fff; border:none;
+  border-radius:12px; padding:3px 9px; font-size:10.5px; font-weight:700; cursor:pointer; margin:4px 0;
+}
+.comments-action-btn:hover{ filter:brightness(1.08); }
 .comments-thread-toggle{
   display:inline-flex; align-items:center; gap:4px; background:none; border:none; color:var(--text-dim);
   font-size:10.5px; cursor:pointer; padding:2px 12px 8px;
@@ -318,4 +551,38 @@ const CSS_TEXT = `
   background:var(--jynx); color:#fff; border:none; border-radius:7px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;
 }
 .comments-thread-input button:disabled{ opacity:.5; cursor:not-allowed; }
+
+.comments-reaction-row{ display:flex; flex-wrap:wrap; gap:5px; padding:2px 12px 8px; }
+.comments-reaction-btn{
+  display:inline-flex; align-items:center; gap:3px; background:none; border:1px solid var(--line);
+  color:var(--text-dim); border-radius:12px; padding:2px 7px; font-size:12px; line-height:1.4; cursor:pointer;
+}
+.comments-reaction-btn:hover{ border-color:var(--jynx); }
+.comments-reaction-btn.active{ background:color-mix(in srgb, var(--jynx) 16%, transparent); border-color:var(--jynx); }
+.comments-reaction-count{ font-family:var(--font-mono); font-size:10px; color:var(--text-dim); }
+.comments-reaction-btn.active .comments-reaction-count{ color:var(--jynx); }
+
+.comments-jynx-composer-wrap{ padding:8px 10px 0; }
+.comments-jynx-composer-toggle{
+  display:inline-flex; align-items:center; gap:5px; width:100%; justify-content:center; background:none;
+  border:1px dashed var(--dev); color:var(--dev); border-radius:8px; padding:6px 10px; font-size:11.5px;
+  font-weight:700; cursor:pointer;
+}
+.comments-jynx-composer-toggle:hover{ background:color-mix(in srgb, var(--dev) 10%, transparent); }
+.comments-jynx-composer{
+  display:flex; flex-direction:column; gap:6px; border:1px solid var(--dev); border-radius:8px; padding:8px;
+  background:color-mix(in srgb, var(--dev) 6%, transparent);
+}
+.comments-jynx-composer textarea{
+  width:100%; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:6px 8px;
+  font-size:12px; font-family:var(--font-sans); color:var(--text); resize:vertical;
+}
+.comments-jynx-composer textarea:focus{ outline:none; border-color:var(--dev); }
+.comments-jynx-composer-actions{ display:flex; justify-content:flex-end; gap:6px; }
+.comments-jynx-composer-actions button{
+  border:none; border-radius:7px; padding:5px 11px; font-family:var(--font-sans); font-weight:700; font-size:11.5px;
+  cursor:pointer; background:var(--panel-raised); color:var(--text-dim);
+}
+.comments-jynx-composer-actions button.primary{ background:var(--dev); color:#fff; }
+.comments-jynx-composer-actions button:disabled{ opacity:.5; cursor:not-allowed; }
 `;
