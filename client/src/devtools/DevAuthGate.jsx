@@ -37,6 +37,7 @@ export default function DevAuthGate({ route, devFabProps }) {
     try {
       const res = await devLogin(password);
       setDevName(res.name);
+      if (res.isAdmin) setIsAdmin(true);
       setLoginOpen(false);
       setPassword("");
     } catch (e) {
