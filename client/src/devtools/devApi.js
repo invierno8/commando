@@ -32,10 +32,13 @@ export async function setDataMode(mode) {
 export async function submitAnnotation(data) {
   return http.post(`/dev/annotations`, data);
 }
-// כל משתמש-פיתוח מחובר (לא רק מנהל) — רשימת ההערות הפתוחות על מסך נתון,
+// כל משתמש-פיתוח מחובר (לא רק מנהל) — כל ההערות (כולל שטופלו) על מסך נתון,
 // עבור CommentsPanel.jsx.
 export async function fetchDevAnnotations(route) {
   return http.get(`/dev/annotations?route=${encodeURIComponent(route)}`);
+}
+export async function replyToAnnotation(id, text) {
+  return http.post(`/dev/annotations/${id}/reply`, { text });
 }
 
 // משוב על Jynx עצמו — תור נפרד לגמרי, מנהל בלבד (ראו data/routes/jynx-feedback.js).
@@ -45,8 +48,11 @@ export async function submitJynxFeedback(data) {
 export async function fetchJynxFeedback() {
   return http.get(`/admin/jynx-feedback`);
 }
-export async function resolveJynxFeedback(id, resolved) {
-  return http.patch(`/admin/jynx-feedback/${id}`, { resolved });
+export async function resolveJynxFeedback(id, resolved, resolutionNote) {
+  return http.patch(`/admin/jynx-feedback/${id}`, { resolved, resolutionNote });
+}
+export async function replyToJynxFeedback(id, text) {
+  return http.post(`/admin/jynx-feedback/${id}/reply`, { text });
 }
 export async function exportJynxFeedbackMarkdown() {
   return http.getText(`/admin/jynx-feedback/export`);
@@ -83,8 +89,8 @@ export async function deleteDevUser(id) {
 export async function fetchAnnotations() {
   return http.get(`/admin/annotations`);
 }
-export async function resolveAnnotation(id, resolved, resolvedBy) {
-  return http.patch(`/admin/annotations/${id}`, { resolved, resolvedBy });
+export async function resolveAnnotation(id, resolved, resolvedBy, resolutionNote) {
+  return http.patch(`/admin/annotations/${id}`, { resolved, resolvedBy, resolutionNote });
 }
 export async function requestAnnotationAction(id, requestedBy) {
   return http.post(`/admin/annotations/${id}/action`, { requestedBy });

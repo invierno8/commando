@@ -10,5 +10,13 @@
   "actionStatus": "queued",
   "actionRequestedAt": "2026-08-21T14:11:22.768Z",
   "actionPrUrl": null,
-  "actionLog": null
+  "actionLog": null,
+  "replies": [
+    {
+      "id": "rep-mt31n9uo4t7f",
+      "authorName": "Admin",
+      "text": "Good progress: the comments list is now draggable and collapsible, hovering a list row highlights its element on the page, clicking jumps to it with a flash effect, and replies/threaded discussion are live (this reply is a live demo of it). Still open: highlighting the secondary linked element in a different color during hover, a details view on click, emoji reactions, and being able to leave a Jynx-meta comment from inside the comments list itself.",
+      "createdAt": "2026-08-21T14:27:41.856Z"
+    }
+  ]
 }

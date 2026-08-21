@@ -91,11 +91,12 @@ router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
     authorId: req.devUser.id, authorName: req.devUser.name, createdAt: new Date().toISOString(),
     route: req.body.route, targetLabel: req.body.targetLabel || null, targetSelector: req.body.targetSelector || null,
     secondaryTargets,
-    comment: req.body.comment, resolved: false, resolvedAt: null, resolvedBy: null,
+    comment: req.body.comment, resolved: false, resolvedAt: null, resolvedBy: null, resolutionNote: null,
     actionStatus: actionRequested ? "queued" : "none",
     actionRequestedAt: actionRequested ? new Date().toISOString() : null,
     actionRequestedBy: actionRequested ? req.devUser.name : null,
     actionPrUrl: null, actionLog: null,
+    replies: [],
   };
   await persistNote(entry, `QA note (${entry.route}) — ${entry.authorName}`);
   if (actionRequested) await queueAction(entry, req.devUser.name);
@@ -104,12 +105,29 @@ router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
 
 // כל משתמש-פיתוח מחובר (לא רק מנהל) — תצוגת "כל ההערות על המסך הזה", ראו
 // CommentsPanel.jsx. שונה בכוונה מ-GET /admin/annotations (שדורש מנהל):
-// זו רק רשימת ההערות הפתוחות על המסך הנוכחי, לא פאנל הניהול/פעולות.
+// זו רק רשימת ההערות על המסך הנוכחי (כולל שטופלו — כדי שמי שכתב הערה יראה
+// אותה זזה ל"טופל" עם התשובה, לא רק שתיעלם), לא פאנל הניהול/פעולות.
 router.get("/dev/annotations", requireDevUser, (req, res) => {
   const route = req.query.route;
-  const items = readAll().filter((a) => !a.resolved && (!route || a.route === route));
+  const items = readAll().filter((a) => !route || a.route === route);
   res.json(items);
 });
+
+// תגובת-מעקב על הערה — כל משתמש-פיתוח מחובר, כולל מי שלא כתב את ההערה
+// המקורית (כדי לאפשר דיון אמיתי, לא רק "בעל ההערה מגיב לעצמו").
+router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req, res) => {
+  requireFields(req.body, ["text"]);
+  const found = readAll().find((a) => a.id === req.params.id);
+  if (!found) return res.status(404).json({ error: "לא נמצא" });
+  const reply = {
+    id: "rep-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    authorId: req.devUser.id, authorName: req.devUser.name,
+    text: req.body.text, createdAt: new Date().toISOString(),
+  };
+  const updated = { ...found, replies: [...(found.replies || []), reply] };
+  await persistNote(updated, `reply on ${updated.id} — ${req.devUser.name}`);
+  res.status(201).json(updated);
+}));
 
 router.get("/admin/annotations", requireAdmin, (_req, res) => {
   res.json(readAll());
@@ -118,11 +136,16 @@ router.get("/admin/annotations", requireAdmin, (_req, res) => {
 router.patch("/admin/annotations/:id", requireAdmin, asyncRoute(async (req, res) => {
   const found = readAll().find((a) => a.id === req.params.id);
   if (!found) return res.json(null);
+  const resolved = !!req.body.resolved;
   const updated = {
     ...found,
-    resolved: !!req.body.resolved,
-    resolvedAt: req.body.resolved ? new Date().toISOString() : null,
-    resolvedBy: req.body.resolved ? (req.body.resolvedBy || "admin") : null,
+    resolved,
+    resolvedAt: resolved ? new Date().toISOString() : null,
+    resolvedBy: resolved ? (req.body.resolvedBy || "admin") : null,
+    resolutionNote: resolved ? (req.body.resolutionNote || found.resolutionNote || null) : found.resolutionNote,
+    // סימון "טופל" גם על תור הפעולות — "מעבר לטופל" שהמנהל ביקש, לא רק
+    // resolved נפרד מ-actionStatus שלא באמת מסתנכרן.
+    actionStatus: resolved && found.actionStatus && found.actionStatus !== "none" ? "done" : found.actionStatus,
   };
   await persistNote(updated, `QA note ${updated.resolved ? "resolved" : "reopened"} — ${updated.id}`);
   res.json(updated);

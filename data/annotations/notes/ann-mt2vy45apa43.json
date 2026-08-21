@@ -8,12 +8,13 @@
   "targetSelector": null,
   "secondaryTargets": [],
   "comment": "זה לא איש קשר ראשוני זה משתמש קצין אמלח חטיבתי",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolvedBy": null,
-  "actionStatus": "queued",
+  "resolved": true,
+  "resolvedAt": "2026-08-21T14:27:23.662Z",
+  "resolvedBy": "admin",
+  "actionStatus": "done",
   "actionRequestedAt": "2026-08-21T11:48:09.982Z",
   "actionRequestedBy": "מנהל",
   "actionPrUrl": null,
-  "actionLog": null
+  "actionLog": null,
+  "resolutionNote": "Fixed — relabeled the field from 'Primary contact' to 'Brigade equipment officer' to match what it's actually used for."
 }

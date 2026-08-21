@@ -178,6 +178,42 @@ const CSS = `
 .dev-admin-spin{ animation:devAdminSpin 1s linear infinite; }
 @keyframes devAdminSpin{ to{ transform:rotate(360deg); } }
 .dev-admin-action-log{ font-size:11px; color:var(--red); }
+.dev-admin-resolution-note{
+  display:flex; align-items:flex-start; gap:5px; font-size:11.5px; color:var(--green);
+  background:color-mix(in srgb, var(--green) 10%, transparent); border-radius:6px; padding:5px 8px; margin-top:2px;
+}
+.dev-admin-resolve-note-box{ display:flex; flex-direction:column; gap:6px; margin-top:4px; }
+.dev-admin-resolve-note-box textarea{
+  width:100%; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:7px 9px;
+  font-size:12px; font-family:var(--font-sans); color:var(--text); resize:vertical;
+}
+.dev-admin-resolve-note-actions{ display:flex; justify-content:flex-end; gap:6px; }
+.dev-admin-resolve-note-actions button{
+  border:none; border-radius:7px; padding:5px 11px; font-size:11.5px; font-weight:700; cursor:pointer;
+  background:var(--panel-raised); color:var(--text-dim);
+}
+.dev-admin-resolve-note-actions button.primary{ background:var(--green); color:#fff; }
+.dev-admin-thread-toggle{
+  align-self:flex-start; display:inline-flex; align-items:center; gap:4px; background:none; border:none;
+  color:var(--text-dim); font-size:11px; cursor:pointer; padding:2px 0; margin-top:2px;
+}
+.dev-admin-thread-toggle:hover{ color:var(--jynx); }
+.dev-admin-thread{
+  display:flex; flex-direction:column; gap:6px; background:var(--bg); border:1px solid var(--line);
+  border-radius:8px; padding:8px; margin-top:2px;
+}
+.dev-admin-thread-item{ font-size:11.5px; color:var(--text); display:flex; flex-wrap:wrap; gap:6px; align-items:baseline; }
+.dev-admin-thread-item b{ color:var(--jynx); }
+.dev-admin-thread-time{ font-size:10px; color:var(--text-dim); margin-inline-start:auto; }
+.dev-admin-thread-input{ display:flex; gap:6px; }
+.dev-admin-thread-input input{
+  flex:1; background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:6px 9px;
+  font-size:12px; color:var(--text); font-family:var(--font-sans);
+}
+.dev-admin-thread-input button{
+  background:var(--jynx); color:#fff; border:none; border-radius:7px; padding:6px 12px; font-size:11.5px; font-weight:700; cursor:pointer;
+}
+.dev-admin-thread-input button:disabled{ opacity:.5; cursor:not-allowed; }
 .dev-admin-export-box{ display:flex; flex-direction:column; gap:8px; }
 .dev-admin-export-box textarea{
   width:100%; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:10px;

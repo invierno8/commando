@@ -15,5 +15,14 @@
   "actionRequestedAt": "2026-08-21T11:33:23.021Z",
   "actionRequestedBy": "מנהל",
   "actionPrUrl": null,
-  "actionLog": null
+  "actionLog": null,
+  "replies": [
+    {
+      "id": "rep-mt31nj6zkevb",
+      "authorId": "admin",
+      "authorName": "Admin",
+      "text": "Partial progress: the show/hide-all-comments toggle and click-to-jump-to-location are both live now (the comments sidebar). Delete/archive and editing your own comment text are still open — tracked separately.",
+      "createdAt": "2026-08-21T14:27:53.963Z"
+    }
+  ]
 }

@@ -69,9 +69,10 @@ router.post("/admin/jynx-feedback", requireAdmin, asyncRoute(async (req, res) =>
     id: "jynx-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     createdAt: new Date().toISOString(),
     route: req.body.route || null, targetLabel: req.body.targetLabel || null, secondaryTargets,
-    comment: req.body.comment, resolved: false, resolvedAt: null,
+    comment: req.body.comment, resolved: false, resolvedAt: null, resolutionNote: null,
     actionStatus: "queued", actionRequestedAt: new Date().toISOString(),
     actionPrUrl: null, actionLog: null,
+    replies: [],
   };
   await persistNote(entry, `Jynx feedback (${entry.route || "?"}) — ${entry.targetLabel || "?"}`);
   await queueAction(entry);
@@ -85,13 +86,29 @@ router.get("/admin/jynx-feedback", requireAdmin, (_req, res) => {
 router.patch("/admin/jynx-feedback/:id", requireAdmin, asyncRoute(async (req, res) => {
   const found = readAll().find((a) => a.id === req.params.id);
   if (!found) return res.json(null);
+  const resolved = !!req.body.resolved;
   const updated = {
     ...found,
-    resolved: !!req.body.resolved,
-    resolvedAt: req.body.resolved ? new Date().toISOString() : null,
+    resolved,
+    resolvedAt: resolved ? new Date().toISOString() : null,
+    resolutionNote: resolved ? (req.body.resolutionNote || found.resolutionNote || null) : found.resolutionNote,
+    actionStatus: resolved ? "done" : found.actionStatus,
   };
   await persistNote(updated, `Jynx feedback ${updated.resolved ? "resolved" : "reopened"} — ${updated.id}`);
   res.json(updated);
+}));
+
+router.post("/admin/jynx-feedback/:id/reply", requireAdmin, asyncRoute(async (req, res) => {
+  requireFields(req.body, ["text"]);
+  const found = readAll().find((a) => a.id === req.params.id);
+  if (!found) return res.status(404).json({ error: "לא נמצא" });
+  const reply = {
+    id: "rep-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    authorName: "Admin", text: req.body.text, createdAt: new Date().toISOString(),
+  };
+  const updated = { ...found, replies: [...(found.replies || []), reply] };
+  await persistNote(updated, `reply on ${updated.id}`);
+  res.status(201).json(updated);
 }));
 
 router.get("/admin/jynx-feedback/export", requireAdmin, (_req, res) => {

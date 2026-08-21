@@ -56,14 +56,14 @@ function AddBrigadeForm({ onAdd }) {
         <input placeholder="לדוגמה: חטיבת גבעתי" value={name} onChange={(e) => setName(e.target.value)} />
       </label>
       <label className="add-form-field">
-        <span>דרגת איש קשר ראשוני</span>
+        <span>דרגת קצין אמל״ח החטיבה (זמני)</span>
         <select value={rank} onChange={(e) => setRank(e.target.value)}>
           {RANK_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
       </label>
       <label className="add-form-field">
-        <span>שם איש קשר ראשוני</span>
-        <input placeholder="קצין אמל״ח החטיבה (זמני)" value={contactName} onChange={(e) => setContactName(e.target.value)} />
+        <span>שם קצין אמל״ח החטיבה (זמני)</span>
+        <input placeholder="לדוגמה: אביב כהן" value={contactName} onChange={(e) => setContactName(e.target.value)} />
       </label>
       <label className="add-form-field">
         <span>מספר אישי</span>
