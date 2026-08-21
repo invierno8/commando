@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical } from "lucide-react";
+import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, Loader2, ChevronsDownUp } from "lucide-react";
 import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
 import MockDataToggle from "./MockDataToggle.jsx";
@@ -21,9 +21,13 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loggingIn, setLoggingIn] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [overlayOn, setOverlayOn] = useState(true);
   const [commentsOn, setCommentsOn] = useState(false);
+  // הצגה מלאה (סרגל הכפתורים + בורר תפקיד/חטיבה/זהות) לעומת בועה מצומצמת
+  // אחת, כמו לפני ההתחברות — כדי לא לתפוס מקום קבוע על המסך.
+  const [toolbarExpanded, setToolbarExpanded] = useState(true);
   // ידוע מראש (בלי לפתוח את פאנל הניהול) כדי ש-DevOverlay יוכל לסמן
   // אוטומטית "פעולה" על הערות שהמנהל עצמו כותב, ולהציג סימוני מנהל קבועים
   // על המסך — גם מיד אחרי רענון דף, כל עוד עוגיית המנהל עדיין תקפה.
@@ -48,6 +52,7 @@ export default function DevAuthGate({ route, devFabProps }) {
 
   async function login() {
     setError("");
+    setLoggingIn(true);
     try {
       const res = await devLogin(password);
       setDevName(res.name);
@@ -58,6 +63,8 @@ export default function DevAuthGate({ route, devFabProps }) {
       setDevUserId(me?.id || null);
     } catch (e) {
       setError(e.message);
+    } finally {
+      setLoggingIn(false);
     }
   }
   async function logout() {
@@ -83,11 +90,11 @@ export default function DevAuthGate({ route, devFabProps }) {
             <span className="dev-only-tag">JYNX — Sign in to dev mode</span>
             <label className="env-strip-identity">
               <span>Password</span>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} autoFocus />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} disabled={loggingIn} autoFocus />
             </label>
             {error && <div className="dev-login-error">{error}</div>}
-            <button type="button" className="dev-login-submit" onClick={login} disabled={!password.trim()}>
-              Sign in
+            <button type="button" className="dev-login-submit" onClick={login} disabled={!password.trim() || loggingIn}>
+              {loggingIn ? <Loader2 size={14} className="dev-login-spin" /> : "Sign in"}
             </button>
           </div>
         )}
@@ -110,24 +117,39 @@ export default function DevAuthGate({ route, devFabProps }) {
       <style>{CSS}</style>
       <DevOverlay active={overlayOn} route={route} isAdmin={isAdmin} />
       <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} />
-      <div className="dev-fab-toolbar jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
-        <span className="dev-toolbar-grip" {...toolbarFab.dragHandlers} title="Drag to move toolbar"><GripVertical size={13} /></span>
-        <MockDataToggle />
-        <button type="button" className="dev-toolbar-icon-btn" onClick={() => setOverlayOn((v) => !v)} title={overlayOn ? "Turn off hover overlay" : "Turn on hover overlay"}>
-          {overlayOn ? <Eye size={13} /> : <EyeOff size={13} />}
+      {toolbarExpanded ? (
+        <div className="dev-fab-toolbar jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
+          <span className="dev-toolbar-grip" {...toolbarFab.dragHandlers} title="Drag to move toolbar"><GripVertical size={13} /></span>
+          <MockDataToggle />
+          <button type="button" className="dev-toolbar-icon-btn" onClick={() => setOverlayOn((v) => !v)} title={overlayOn ? "Turn off hover overlay" : "Turn on hover overlay"}>
+            {overlayOn ? <Eye size={13} /> : <EyeOff size={13} />}
+          </button>
+          <button type="button" className={"dev-toolbar-icon-btn" + (commentsOn ? " active" : "")} onClick={() => setCommentsOn((v) => !v)} title={commentsOn ? "Hide screen comments" : "Show all comments on this screen"}>
+            <MessageSquare size={13} />
+          </button>
+          <button type="button" className="dev-toolbar-icon-btn" onClick={() => setAdminOpen(true)} title="Admin (admin only)">
+            <Settings2 size={13} />
+          </button>
+          <span className="dev-toolbar-devname">Hi, {devName}</span>
+          <button type="button" className="dev-toolbar-icon-btn" onClick={logout} title="Log out of Jynx">
+            <LogOut size={13} />
+          </button>
+          <button type="button" className="dev-toolbar-icon-btn" onClick={() => setToolbarExpanded(false)} title="Collapse to bubble">
+            <ChevronsDownUp size={13} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="dev-fab-toolbar-bubble jynx-chrome jynx-ui"
+          style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}
+          onClick={() => setToolbarExpanded(true)}
+          title="Expand Jynx toolbar"
+        >
+          <span className="jynx-logo">JYNX</span>
         </button>
-        <button type="button" className={"dev-toolbar-icon-btn" + (commentsOn ? " active" : "")} onClick={() => setCommentsOn((v) => !v)} title={commentsOn ? "Hide screen comments" : "Show all comments on this screen"}>
-          <MessageSquare size={13} />
-        </button>
-        <button type="button" className="dev-toolbar-icon-btn" onClick={() => setAdminOpen(true)} title="Admin (admin only)">
-          <Settings2 size={13} />
-        </button>
-        <span className="dev-toolbar-devname">Hi, {devName}</span>
-        <button type="button" className="dev-toolbar-icon-btn" onClick={logout} title="Log out of Jynx">
-          <LogOut size={13} />
-        </button>
-      </div>
-      <DevFab {...devFabProps} />
+      )}
+      {toolbarExpanded && <DevFab {...devFabProps} />}
       {adminOpen && <DevAdminPanel onClose={() => setAdminOpen(false)} onVerified={() => setIsAdmin(true)} />}
     </>
   );
@@ -141,6 +163,13 @@ const CSS = `
   font-size:12.5px; cursor:pointer; font-family:var(--font-sans);
 }
 .dev-login-submit:disabled{ opacity:.5; cursor:not-allowed; }
+.dev-login-spin{ animation:dev-login-spin .8s linear infinite; margin:0 auto; }
+@keyframes dev-login-spin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+
+.dev-fab-toolbar-bubble{
+  position:fixed; z-index:79; display:flex; align-items:center; gap:6px; background:var(--panel);
+  border:1px solid var(--jynx); border-radius:20px; padding:8px 14px; cursor:pointer; box-shadow:var(--shadow-md);
+}
 
 .dev-fab-toolbar{
   position:fixed; z-index:79; display:flex; align-items:center; gap:6px;
