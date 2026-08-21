@@ -67,9 +67,22 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   // Jynx" (הילה סגולה, ראו DevOverlay.jsx) לא היה רואה אותה בכלל כאן, כי
   // היא לא באה מ-/dev/annotations. מסומנת kind:"jynx" להבחנה.
   function reload() {
-    const appPromise = fetchDevAnnotations(route).then((d) => d.map((a) => ({ ...a, kind: "app" })));
+    // .catch(() => []) on EACH branch independently — not just one shared
+    // catch on the combined Promise.all — because the dev-session token
+    // (Bearer, used by fetchDevAnnotations) and the admin-session token
+    // (X-Admin-Session, used by fetchJynxFeedback) are two separate,
+    // independently-expiring sessions (see FORCLAUDE.md's "Dev-mode auth"
+    // section). If only one of the two has gone stale, a single unhandled
+    // rejection on the combined Promise.all used to silently abort the
+    // *entire* reload — setItems() never ran again, so this panel would
+    // freeze on whatever it last successfully loaded (while DevAdminPanel,
+    // which fetches independently, kept working) until a hard page reload.
+    // Now a stale/expired session on one branch just yields an empty list
+    // for that branch on this poll, and self-heals on the next 5s poll
+    // once the session issue is resolved, instead of freezing forever.
+    const appPromise = fetchDevAnnotations(route).then((d) => d.map((a) => ({ ...a, kind: "app" }))).catch(() => []);
     const jynxPromise = isAdmin
-      ? fetchJynxFeedback().then((d) => d.filter((a) => a.route === route).map((a) => ({ ...a, kind: "jynx", authorName: a.authorName || "Admin" })))
+      ? fetchJynxFeedback().then((d) => d.filter((a) => a.route === route).map((a) => ({ ...a, kind: "jynx", authorName: a.authorName || "Admin" }))).catch(() => [])
       : Promise.resolve([]);
     Promise.all([appPromise, jynxPromise]).then(([app, jynx]) => setItems([...app, ...jynx]));
   }
