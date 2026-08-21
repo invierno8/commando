@@ -18,11 +18,11 @@ services:
       # (see GITHUB_TOKEN below). Mock mode is unaffected either way,
       # since it's re-read fresh from data/mock/*.json on every boot.
       - key: ALLOWED_ORIGINS
-        value: https://joshuael120.github.io
+        value: https://invierno8.github.io
       - key: COOKIE_CROSS_SITE
         value: "true"
       - key: GITHUB_REPO
-        value: joshuael120/commando
+        value: invierno8/commando
       - key: GITHUB_BRANCH
         value: main
       # Set these two in the Render dashboard after the first deploy —

@@ -68,16 +68,24 @@ note below):
   either way; ask if it matters.
 
 This is genuinely a **public concept demo carrying no real military data**
-— the repo (`joshuael120/commando`) is a **public** GitHub repo, and the
+— the repo (`invierno8/commando`) is a **public** GitHub repo, and the
 user was explicit that this is by design: the public GitHub Pages link is
 what actually gets handed to QA/commanders to log into dev mode and leave
 feedback, so some things that would be inappropriate for a repo holding real
 secrets (like git-tracking a password-hash roster) are a deliberate,
 considered choice here — see "Dev-mode auth" below before "fixing" that.
 
-**Remote:** `https://github.com/joshuael120/commando.git` (origin) — already
+**Remote:** `https://github.com/invierno8/commando.git` (origin) — already
 configured, so `git push`/`git pull`/`git clone` work normally and this is
-how work travels between machines.
+how work travels between machines. **Ownership history**: originally
+`joshuael120/commando` (a coworker's account), transferred to
+`invierno8/commando` on 2026-08-21 specifically so the repo owner could
+create a fine-grained GitHub token for the git-backed persistence below —
+GitHub does *not* redirect the GitHub Pages site URL after a transfer
+(only the repo/git URLs), so the live public link is now
+`https://invierno8.github.io/commando/`, not the old owner's domain — if
+you see the old owner referenced anywhere else (old chat history,
+elsewhere), it's stale.
 
 **Language policy:** work in **English and Hebrew only** (no Spanish — an
 earlier contributor mixed in Spanish; the user asked for that to stop). Talk

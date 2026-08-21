@@ -18,7 +18,7 @@
 /* ================================================================== */
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const GITHUB_REPO = process.env.GITHUB_REPO || "joshuael120/commando";
+const GITHUB_REPO = process.env.GITHUB_REPO || "invierno8/commando";
 const GITHUB_BRANCH = process.env.GITHUB_BRANCH || "main";
 const API_BASE = `https://api.github.com/repos/${GITHUB_REPO}/contents`;
 
