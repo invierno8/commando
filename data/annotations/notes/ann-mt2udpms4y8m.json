@@ -1,0 +1,18 @@
+{
+  "id": "ann-mt2udpms4y8m",
+  "authorId": "admin",
+  "authorName": "מנהל",
+  "createdAt": "2026-08-21T11:04:18.436Z",
+  "route": "catalog",
+  "targetLabel": "sidebar-mark",
+  "targetSelector": null,
+  "comment": "test comment from playwright",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-21T11:04:18.436Z",
+  "actionRequestedBy": "מנהל",
+  "actionPrUrl": null,
+  "actionLog": null
+}
