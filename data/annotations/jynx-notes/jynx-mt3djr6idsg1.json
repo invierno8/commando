@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt3djr6idsg1",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-21T20:00:53.082Z",
+  "route": "catalog",
+  "targetLabel": "dev-admin-edit-btn",
+  "secondaryTargets": [],
+  "comment": "when a comment is done or in pr state change editing to reopen beacuse editiing the comment should change the whole process sometimes, same for re opening it make a system to rego over it with the reopened comment or edited comment when edited comment should just have it revisit the text and no the whole thinking process same for reopened.",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
