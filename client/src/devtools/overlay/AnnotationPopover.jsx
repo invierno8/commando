@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { GripVertical, Zap } from "lucide-react";
+import { GripVertical, Paperclip, Zap } from "lucide-react";
 import { useDraggableFab } from "../useDraggableFab.js";
+
+// גג-גודל לקובץ מצורף — data-URL זה מתחייב ל-git דרך githubPersist.js, אז
+// אסור לתת לו לתפוח בלי גבול. אותו ההיגיון בדיוק כמו LogoUpload.jsx, רק עם
+// בדיקת גודל מפורשת + הודעת שגיאה בטקסט (לא רק disabled — ראו הכלל הקבוע
+// ב-FORCLAUDE.md: כפתור disabled בלבד לא מסביר למשתמש למה).
+const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
 
 /* קופסת התגובה שנפתחת ב-Ctrl/Cmd+קליק — לא נושאת <style> משלה בכוונה,      */
 /* תמיד ממוסגרת בתוך ה-portal של DevOverlay.jsx וסומכת על ה-<style> היחיד   */
@@ -25,6 +31,25 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
   // הופך לפעולה" הקיימת), אבל עכשיו גם ניתן לכיבוי לפני שליחה, למי שרוצה
   // הפעם רק להשאיר הערה בלי להפעיל את הצינור האוטומטי.
   const [actionOn, setActionOn] = useState(true);
+  // תמונת השראה / קובץ אחד לכל היותר, מצורף לתגובה — אותה קונבנציה בדיוק כמו
+  // LogoUpload.jsx (FileReader.readAsDataURL, data-URL ב-state, אין אחסון
+  // אמיתי). קיים רק בתגובות על האפליקציה עצמה, לא במשוב על Jynx (isJynxMeta).
+  const [attachment, setAttachment] = useState(null); // { dataUrl, name, type } | null
+  const fileInputRef = useRef(null);
+
+  function handleFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      setError(`File too large (max ${Math.round(MAX_ATTACHMENT_BYTES / (1024 * 1024))}MB) — pick a smaller image/file`);
+      return;
+    }
+    setError("");
+    const reader = new FileReader();
+    reader.onload = () => setAttachment({ dataUrl: reader.result, name: file.name, type: file.type });
+    reader.readAsDataURL(file);
+  }
 
   const textareaRef = useRef(null);
   const prevSecondaryLenRef = useRef(secondaryTargets.length);
@@ -68,7 +93,7 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
     setSending(true);
     setError("");
     try {
-      await onSubmit(comment.trim(), actionOn);
+      await onSubmit(comment.trim(), actionOn, attachment);
     } catch (e) {
       setError(e.message || "Failed to send, please try again");
     } finally {
@@ -114,6 +139,25 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
         Click any element on screen to link it here — it'll appear as a tag in your comment
         {secondaryTargets.length > 0 && ` (${secondaryTargets.length} linked)`}
       </div>
+      {!isJynxMeta && (
+        <div className="dev-annotate-attachment-block">
+          {attachment ? (
+            <div className="dev-annotate-attachment-preview">
+              {attachment.type?.startsWith("image/") ? (
+                <img src={attachment.dataUrl} alt="" />
+              ) : (
+                <span className="dev-annotate-attachment-file"><Paperclip size={12} /> {attachment.name}</span>
+              )}
+              <button type="button" onClick={() => setAttachment(null)} title="Remove attachment">×</button>
+            </div>
+          ) : (
+            <button type="button" className="dev-annotate-add-secondary-btn" onClick={() => fileInputRef.current?.click()}>
+              <Paperclip size={12} /> Attach image or file
+            </button>
+          )}
+          <input ref={fileInputRef} type="file" style={{ display: "none" }} onChange={handleFile} />
+        </div>
+      )}
       {error && <div className="dev-login-error">{error}</div>}
       <div className="dev-annotate-popover-actions">
         <button type="button" className="dev-annotate-btn" onClick={onCancel} disabled={sending}>

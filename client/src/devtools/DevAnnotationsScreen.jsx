@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Check, Download, Zap, Loader2, GitPullRequest, CheckCircle2, XCircle, MessageCircle, Undo2 } from "lucide-react";
+import { Check, Download, Zap, Loader2, GitPullRequest, CheckCircle2, XCircle, MessageCircle, Undo2, Paperclip } from "lucide-react";
 import { fetchAnnotations, resolveAnnotation, exportAnnotationsMarkdown, requestAnnotationAction, replyToAnnotation } from "./devApi.js";
 
 const ACTION_STATUS_LABEL = {
@@ -81,6 +81,17 @@ export default function DevAnnotationsScreen() {
                     </span>
                   )}
                   <p className="dev-admin-annotation-comment">{a.comment}</p>
+                  {a.attachment && (
+                    a.attachment.startsWith("data:image/") ? (
+                      <a href={a.attachment} target="_blank" rel="noreferrer" className="dev-admin-attachment-link">
+                        <img src={a.attachment} alt={a.attachmentName || "attachment"} className="dev-admin-attachment-thumb" />
+                      </a>
+                    ) : (
+                      <a href={a.attachment} download={a.attachmentName || "attachment"} className="dev-admin-attachment-link dev-admin-attachment-file">
+                        <Paperclip size={11} /> {a.attachmentName || "attachment"}
+                      </a>
+                    )
+                  )}
                   <span className="dev-admin-annotation-meta">{a.authorName} · {new Date(a.createdAt).toLocaleString("en-US")}</span>
                   {hasAction && (
                     <span className={`pill pill-${ACTION_STATUS_TONE[a.actionStatus] || "neutral"} dev-admin-action-pill`}>

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Zap, Loader2, GitPullRequest, XCircle, Sparkles } from "lucide-react";
+import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Paperclip, Zap, Loader2, GitPullRequest, XCircle, Sparkles } from "lucide-react";
 import {
   fetchDevAnnotations, replyToAnnotation, reactToAnnotation, requestAnnotationAction,
   fetchJynxFeedback, replyToJynxFeedback, reactToJynxFeedback, submitJynxFeedback,
@@ -286,6 +286,20 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                         </span>
                       )}
                       <p className="comments-sidebar-item-comment">{a.comment}</p>
+                      {a.attachment && (
+                        a.attachment.startsWith("data:image/") ? (
+                          <a href={a.attachment} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="comments-attachment-link">
+                            <img src={a.attachment} alt={a.attachmentName || "attachment"} className="comments-attachment-thumb" />
+                          </a>
+                        ) : (
+                          <a
+                            href={a.attachment} download={a.attachmentName || "attachment"}
+                            onClick={(e) => e.stopPropagation()} className="comments-attachment-link comments-attachment-file"
+                          >
+                            <Paperclip size={10} /> {a.attachmentName || "attachment"}
+                          </a>
+                        )
+                      )}
                       <span className="comments-sidebar-item-meta">{a.authorName} · {new Date(a.createdAt).toLocaleString("en-US")}</span>
                       {a.resolved && a.resolutionNote && (
                         <div className="comments-resolution-note"><CheckCircle2 size={11} /> {a.resolutionNote}</div>
@@ -432,6 +446,13 @@ const CSS_TEXT = `
 .comments-sidebar-item:hover{ background:color-mix(in srgb, var(--jynx) 8%, transparent); }
 .comments-sidebar-item-target{ font-family:var(--font-mono); font-size:10px; color:var(--jynx); text-transform:uppercase; display:flex; align-items:center; gap:6px; }
 .comments-sidebar-item-comment{ margin:2px 0; font-size:12.5px; color:var(--text); }
+.comments-attachment-link{ display:inline-flex; margin:2px 0; }
+.comments-attachment-thumb{ width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid var(--line); }
+.comments-attachment-file{
+  align-items:center; gap:4px; background:var(--panel); border:1px solid var(--line);
+  border-radius:12px; padding:3px 8px; font-size:10.5px; color:var(--text-dim); text-decoration:none;
+}
+.comments-attachment-file:hover{ color:var(--jynx); border-color:var(--jynx); }
 .comments-sidebar-item-meta{ font-size:10.5px; color:var(--text-dim); }
 .comments-done-badge{ display:inline-flex; align-items:center; gap:2px; color:var(--green); font-size:9.5px; text-transform:none; }
 .comments-jynx-badge{
