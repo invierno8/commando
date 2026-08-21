@@ -68,3 +68,22 @@ export async function commitFileToGithub(path, contentString, message) {
   });
   return res.ok;
 }
+
+// מוחק קובץ קיים מהריפו. בדיוק כמו commitFileToGithub, ה-API של GitHub דורש
+// את ה-sha הנוכחי של הקובץ כדי לוודא שזו מחיקה מודעת, לא פעולה עיוורת. אם
+// הקובץ כבר לא קיים ב-GitHub, אין מה למחוק שם — לא שגיאה.
+export async function deleteFileFromGithub(path, message) {
+  if (!GITHUB_TOKEN) return false;
+  const existing = await readFileFromGithub(path);
+  if (!existing) return true;
+  const res = await fetch(`${API_BASE}/${path}`, {
+    method: "DELETE",
+    headers: headers(),
+    body: JSON.stringify({
+      message,
+      sha: existing.sha,
+      branch: GITHUB_BRANCH,
+    }),
+  });
+  return res.ok;
+}

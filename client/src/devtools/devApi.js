@@ -40,6 +40,12 @@ export async function fetchDevAnnotations(route) {
 export async function replyToAnnotation(id, text) {
   return http.post(`/dev/annotations/${id}/reply`, { text });
 }
+// עריכת טקסט הערה על ידי בעל ההערה בלבד (403 מהשרת אם זה לא אתה) — שונה
+// מ-editAnnotationComment (מנהל, למטה): זו עבור CommentsPanel.jsx's
+// "ערוך את מה שאני עצמי כתבתי" inline, בלי הרשאת מנהל.
+export async function editMyAnnotation(id, comment) {
+  return http.patch(`/dev/annotations/${id}`, { comment });
+}
 export async function reactToAnnotation(id, emoji) {
   return http.post(`/dev/annotations/${id}/react`, { emoji });
 }
@@ -97,6 +103,18 @@ export async function fetchAnnotations() {
 }
 export async function resolveAnnotation(id, resolved, resolvedBy, resolutionNote) {
   return http.patch(`/admin/annotations/${id}`, { resolved, resolvedBy, resolutionNote });
+}
+export async function archiveAnnotation(id, archived) {
+  return http.patch(`/admin/annotations/${id}`, { archived });
+}
+// עריכת טקסט התגובה עצמה, דרך אותו PATCH (ראו data/routes/annotations.js).
+export async function editAnnotationComment(id, comment) {
+  return http.patch(`/admin/annotations/${id}`, { comment });
+}
+// מחיקה מלאה ובלתי הפיכה (בניגוד ל-archiveAnnotation).
+export async function deleteAnnotation(id) {
+  await http.delete(`/admin/annotations/${id}`);
+  return true;
 }
 export async function requestAnnotationAction(id, requestedBy) {
   return http.post(`/admin/annotations/${id}/action`, { requestedBy });
