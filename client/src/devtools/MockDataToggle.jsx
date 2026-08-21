@@ -27,10 +27,10 @@ export default function MockDataToggle() {
       type="button"
       className={"mock-toggle" + (mode === "mock" ? " mock-toggle-mock" : " mock-toggle-live")}
       onClick={toggle}
-      title={mode === "mock" ? "Showing demo data — click to switch to the empty/live system" : "Empty/live system — click to switch to demo data"}
+      title={mode === "mock" ? "Showing demo data — click to switch to the real/live system" : "Real/live system (starts empty, keeps whatever's been created since) — click to switch to demo data"}
     >
       {mode === "mock" ? <Database size={13} /> : <HardDrive size={13} />}
-      {mode === "mock" ? "Demo data" : "Empty system"}
+      {mode === "mock" ? "Demo data" : "Live data"}
     </button>
   );
 }
