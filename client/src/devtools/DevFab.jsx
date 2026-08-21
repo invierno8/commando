@@ -3,6 +3,7 @@ import { ChevronLeft, Network, Users } from "lucide-react";
 import { STRUCTURAL_ROLES, ROLE_LABELS, ROLE_ORDER } from "../roles.js";
 import { BRIGADE_STATUS } from "../api-client/brigadesData.js";
 import { useDraggableFab } from "./useDraggableFab.js";
+import MockDataToggle from "./MockDataToggle.jsx";
 
 /* ================================================================== */
 /* בורר תפקיד/חטיבה/זהות של סביבת הפיתוח — הועבר החוצה מ-App.jsx כמעט     */
@@ -34,6 +35,9 @@ export default function DevFab({
       {open && (
         <div className="dev-fab-panel dev-only">
           <span className="dev-only-tag">JYNX — Role & brigade simulator</span>
+          <div className="dev-fab-mock-toggle-row">
+            <MockDataToggle />
+          </div>
           <div className="pill-tabs">
             {ROLE_ORDER.map((r) => (
               <button
