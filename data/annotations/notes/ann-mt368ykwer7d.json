@@ -1,0 +1,27 @@
+{
+  "id": "ann-mt368ykwer7d",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-21T16:36:32.144Z",
+  "route": "permissions",
+  "targetLabel": "pill-tabs",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "מנהל מערכת לא קשור לדרג הטקטי, אין שום צורך שהוא יראה עץ ארגוני רק נתוני מערכת וניהול חטיבות רוחבי ומשתמשים",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
