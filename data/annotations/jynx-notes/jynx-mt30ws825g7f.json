@@ -7,8 +7,8 @@
   "comment": "צריך אופציה לצמצם את ההגדרות לבועה של jynx כמו בהתחלה ולהרחיב אותה ולקבל את הפרטים האלו ואת כל הכפתורים והבורר אנשים, ושהכל יהיה נגרר וריאקטיבי בנוסף כאשר יוזר שם סיסמא בין הנקודה שבא הוא לחץ התחבר עד לזה שהוא באמת התחבר לוקח זמן, תוסיף שם לואדיניג אנימיישן או משהו",
   "resolved": false,
   "resolvedAt": null,
-  "actionStatus": "queued",
+  "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T14:07:05.954Z",
-  "actionPrUrl": null,
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/3",
   "actionLog": null
 }

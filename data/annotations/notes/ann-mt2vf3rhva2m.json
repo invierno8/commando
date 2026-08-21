@@ -11,11 +11,11 @@
   "resolved": false,
   "resolvedAt": null,
   "resolvedBy": null,
-  "actionStatus": "queued",
+  "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T11:33:23.021Z",
   "actionRequestedBy": "מנהל",
-  "actionPrUrl": null,
-  "actionLog": null,
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/4",
+  "actionLog": "PR adds delete-or-archive (went with archive). Jump-to-location and the show/hide toggle were already live. Editing your own comment text from the sidebar is still open, not covered by this PR.",
   "replies": [
     {
       "id": "rep-mt31nj6zkevb",
