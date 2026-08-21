@@ -1734,16 +1734,20 @@ export default function PermissionsDashboard({ role, brigadeId, brigadeName, uni
         <button className={"pill-tab" + (view === "list" ? " active" : "")} onClick={() => setView("list")}>
           רשימה
         </button>
-        <button className={"pill-tab" + (view === "tree" ? " active" : "")} onClick={() => setView("tree")}>
-          עץ ארגוני
-        </button>
+        {role !== STRUCTURAL_ROLES.SYSTEM_ADMIN && (
+          <button className={"pill-tab" + (view === "tree" ? " active" : "")} onClick={() => setView("tree")}>
+            עץ ארגוני
+          </button>
+        )}
         <button className={"pill-tab" + (view === "blocked" ? " active" : "")} onClick={() => setView("blocked")}>
           <ShieldOff size={12} style={{ verticalAlign: "-2px" }} /> חסומים{blockedList.length > 0 ? ` (${blockedList.length})` : ""}
         </button>
       </div>
 
       <div key={view} className="scope-body">
-        {view === "tree" ? (
+        {/* מנהל מערכת אינו ברמה הטקטית — אין לו עץ ארגוני, גם אם view נשאר
+            "tree" משיוך תפקיד קודם (למשל מעבר תפקיד בפאנל הדמו). */}
+        {view === "tree" && role !== STRUCTURAL_ROLES.SYSTEM_ADMIN ? (
           <>
             <div className="view-head">
               <h1>מבנה ארגוני</h1>
