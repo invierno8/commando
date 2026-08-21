@@ -16,7 +16,6 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [checking, setChecking] = useState(true);
   const [devName, setDevName] = useState(null); // null = לא מחובר
   const [loginOpen, setLoginOpen] = useState(false);
-  const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [adminOpen, setAdminOpen] = useState(false);
@@ -36,10 +35,10 @@ export default function DevAuthGate({ route, devFabProps }) {
   async function login() {
     setError("");
     try {
-      const res = await devLogin(name.trim(), password);
+      const res = await devLogin(password);
       setDevName(res.name);
       setLoginOpen(false);
-      setName(""); setPassword("");
+      setPassword("");
     } catch (e) {
       setError(e.message);
     }
@@ -59,15 +58,11 @@ export default function DevAuthGate({ route, devFabProps }) {
           <div className="dev-fab-panel dev-only dev-login-panel">
             <span className="dev-only-tag">DEV — כניסה למצב פיתוח</span>
             <label className="env-strip-identity">
-              <span>שם</span>
-              <input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-            </label>
-            <label className="env-strip-identity">
               <span>סיסמה</span>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} autoFocus />
             </label>
             {error && <div className="dev-login-error">{error}</div>}
-            <button type="button" className="dev-login-submit" onClick={login} disabled={!name.trim() || !password.trim()}>
+            <button type="button" className="dev-login-submit" onClick={login} disabled={!password.trim()}>
               כניסה
             </button>
           </div>
@@ -93,7 +88,7 @@ export default function DevAuthGate({ route, devFabProps }) {
           <Settings2 size={13} />
         </button>
         <button type="button" className="dev-toolbar-devname" onClick={logout} title="לחיצה להתנתקות">
-          {devName}
+          שלום, {devName}
         </button>
       </div>
       <DevFab {...devFabProps} />

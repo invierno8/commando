@@ -6,8 +6,8 @@
 
 import { http } from "../api-client/http.js";
 
-export async function devLogin(name, password) {
-  return http.post(`/dev/login`, { name, password });
+export async function devLogin(password) {
+  return http.post(`/dev/login`, { password });
 }
 export async function devLogout() {
   await http.post(`/dev/logout`);
