@@ -10,7 +10,7 @@
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T13:58:13.061Z",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/7",
-  "actionLog": null,
+  "actionLog": "This request had two halves, delivered as two separate PRs: #7 lets a dev user edit their own comment's text from the sidebar, and #9 adds the \"Jynx commenter\" permission tier (admin can grant a regular dev user permission to leave Jynx-meta feedback, previously admin-only).",
   "replies": [
     {
       "id": "rep-mt31n8y41fu0",
