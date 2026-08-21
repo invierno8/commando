@@ -1,0 +1,8 @@
+{
+  "id": "jynx-mt30ld1htt72",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-icon-btn",
+  "secondaryTargets": [],
+  "comment": "make the menue list of the comments ect ect a menu to see and edit and go to all the comments of th e dev user and leave this as is for the admin with all the extra options and seeing everyonce comments ect ect... so when a dev user clicks on it he sees his comments and can jump to them and edit them ect.. ehn i do then ai have the bigger permisiion to view the jynx and edit everything, also add an option that i can give a user a jynx commenter and collect what the jynx commentor says for jynx chnges as well just to help develop jynx",
+  "requestedAt": "2026-08-21T13:58:14.576Z"
+}
