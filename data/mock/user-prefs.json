@@ -4,10 +4,10 @@
       "kpis",
       "equipment",
       "activityLog",
-      "trend"
+      "trend",
+      "priority"
     ],
     "hidden": [
-      "priority",
       "responseTime",
       "categoryAnalytics",
       "ticketTypes",
