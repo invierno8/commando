@@ -1,0 +1,19 @@
+{
+  "id": "ann-mt2vy45apa43",
+  "authorId": "admin",
+  "authorName": "מנהל",
+  "createdAt": "2026-08-21T11:48:09.982Z",
+  "route": "sysadmin",
+  "targetLabel": "add-form-field",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "זה לא איש קשר ראשוני זה משתמש קצין אמלח חטיבתי",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-21T11:48:09.982Z",
+  "actionRequestedBy": "מנהל",
+  "actionPrUrl": null,
+  "actionLog": null
+}
