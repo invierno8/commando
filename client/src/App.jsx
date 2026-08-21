@@ -6,7 +6,7 @@ import {
 import Catalog from "./screens/Catalog.jsx";
 import Tickets from "./screens/Tickets.jsx";
 import PermissionsDashboard from "./screens/PermissionsDashboard.jsx";
-import BrigadeSetupWizard, { MissionBar } from "./screens/BrigadeSetupWizard.jsx";
+import BrigadeSetupWizard from "./screens/BrigadeSetupWizard.jsx";
 import DevDashboard from "./screens/DevDashboard.jsx";
 import SystemAdmin from "./screens/SystemAdmin.jsx";
 import ThemeToggle from "./components/ThemeToggle.jsx";
@@ -478,6 +478,12 @@ export default function App() {
             </div>
           </div>
 
+          {currentBrigade?.mission && (
+            <div className="app-topbar-mission">
+              <span className="app-topbar-mission-text">{currentBrigade.mission}</span>
+            </div>
+          )}
+
           <div className="app-topbar-right">
             <div className="notif-menu" tabIndex={-1} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setNotifOpen(false); }}>
               <button className="icon-btn" title="התראות" onClick={() => setNotifOpen((v) => !v)}>
@@ -530,12 +536,6 @@ export default function App() {
             </div>
           </div>
         </div>
-
-        {currentBrigade && (
-          <div className="app-mission-strip">
-            <MissionBar brigade={currentBrigade} />
-          </div>
-        )}
 
         <div className="env-strip">
           <span>

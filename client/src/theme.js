@@ -176,6 +176,10 @@ html, body{ margin:0; background:var(--bg); }
 .app-topbar-title h1{ font-size:19px; font-weight:700; margin:0; }
 .app-topbar-crumb{ font-size:12px; color:var(--text-dim); font-family:var(--font-mono); }
 
+.app-topbar-mission{ flex:1; min-width:0; display:flex; justify-content:center; padding:0 16px; }
+.app-topbar-mission-text{ font-size:13px; color:var(--text-dim); font-style:italic; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+
 .app-topbar-right{ display:flex; align-items:center; gap:14px; }
 .icon-btn{
   width:36px; height:36px; border-radius:9px; border:1px solid var(--line); background:var(--panel);
@@ -395,17 +399,17 @@ html, body{ margin:0; background:var(--bg); }
 @keyframes fadeSlideUp{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
 
 /* ------------------------------------------------------------------ */
-/* Mission bar — shared between the setup wizard's own preview (inside  */
-/* its review/completed steps) and the persistent app-chrome banner in  */
-/* App.jsx, so a brigade's mission statement is always in front of      */
-/* every user, on every screen, not just inside the wizard.             */
+/* Mission bar — the setup wizard's own review/completed-step preview.  */
+/* The persistent app-chrome copy was retired in favor of a compact     */
+/* mission-only line in .app-topbar (see .app-topbar-mission above) —   */
+/* the full card duplicated the brigade name already shown in the       */
+/* topbar crumb.                                                        */
 /* ------------------------------------------------------------------ */
 .mission-bar{ display:flex; align-items:center; gap:14px; background:var(--panel); border:1px solid var(--line);
   border-right:3px solid var(--accent); border-radius:6px; padding:14px 18px; animation:fadeSlideUp .3s ease; }
 .mission-icon{ display:flex; color:var(--accent); flex:none; }
 .mission-name{ font-family:var(--font-sans); font-weight:700; font-size:16px; }
 .mission-quote{ font-size:13px; color:var(--text-dim); margin-top:2px; }
-.app-mission-strip{ padding:14px 26px 0; }
 
 .search-filter-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
 .search-bar{
