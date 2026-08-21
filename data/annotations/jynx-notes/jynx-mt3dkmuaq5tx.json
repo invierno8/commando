@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt3dkmuaq5tx",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-21T20:01:34.114Z",
+  "route": "catalog",
+  "targetLabel": "pill-tabs",
+  "secondaryTargets": [],
+  "comment": "there is no way to select wha unit or brigade youre aligned to as a demo user..",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
