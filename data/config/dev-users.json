@@ -6,5 +6,13 @@
     "passwordHash": "$2a$12$EPG0yD4Uz4oZZB12SOHceeRp4BNmkcPQmlYxOqTWYOS/DiBMgV.8e",
     "active": true,
     "createdAt": "2026-08-21T10:55:47.839Z"
+  },
+  {
+    "id": "dev-mt2xeb7iwm5q",
+    "name": "גלעד",
+    "role": "אתה הראש אתה אשם",
+    "passwordHash": "$2a$12$Vw9vOYLtAVbTT.ix0b3B/uY.nBqpHJBINqW1Kq9YM3Q.FsvzU9Ivi",
+    "active": true,
+    "createdAt": "2026-08-21T12:28:47.542Z"
   }
 ]
