@@ -66,16 +66,26 @@ app.use("/api", jynxFeedbackRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
+// שקע ביטחון — כל תקלה לא-צפויה (רשת, rate limit של GitHub, JSON פגום)
+// שהייתה בעבר קורסת את כל התהליך (unhandled rejection = קריסה שקטה ב-
+// Node מודרני), כלומר גם מוחקת את כל מפת הסשנים בזיכרון ומנתקת את כולם —
+// בדיוק התסמין "מתנתק כל 30 שניות" שדווח. עכשיו רק נרשם ביומן, לא קורס.
+process.on("unhandledRejection", (err) => console.error("Unhandled rejection:", err));
+process.on("uncaughtException", (err) => console.error("Uncaught exception:", err));
+
 // אם GITHUB_TOKEN מוגדר (ראו lib/githubPersist.js), מרשם משתמשי-הפיתוח
 // והערות ה-QA נמשכים בחזרה מ-git לפני שהשרת עונה לבקשות — כי אחסון בענן
 // זול (למשל Render free tier) מאפס את הדיסק המקומי בכל spin-down/redeploy,
 // אבל git עצמו כמובן לא. ללא GITHUB_TOKEN (פיתוח מקומי) זו פעולה ריקה.
+// כל הידרציה עטופה כך שכישלון באחת (רשת/rate limit) לעולם לא מונע עלייה
+// של השרת עצמו — עדיף לעלות עם מצב מעט מיושן מאשר לא לעלות בכלל ולאבד
+// את כל הסשנים הפעילים.
 Promise.all([
-  hydrateDevUsersFromGithub(),
-  hydrateAnnotationsFromGithub(),
-  hydrateJynxFeedbackFromGithub(),
-  hydrateMockDataFromGithub(),
-]).then(() => {
+  hydrateDevUsersFromGithub().catch((err) => console.error("hydrateDevUsersFromGithub failed:", err)),
+  hydrateAnnotationsFromGithub().catch((err) => console.error("hydrateAnnotationsFromGithub failed:", err)),
+  hydrateJynxFeedbackFromGithub().catch((err) => console.error("hydrateJynxFeedbackFromGithub failed:", err)),
+  hydrateMockDataFromGithub().catch((err) => console.error("hydrateMockDataFromGithub failed:", err)),
+]).finally(() => {
   app.listen(PORT, () => {
     console.log(`HANGAR API listening on http://localhost:${PORT}`);
   });

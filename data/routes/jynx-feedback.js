@@ -110,10 +110,14 @@ export async function hydrateJynxFeedbackFromGithub() {
   fs.mkdirSync(NOTES_DIR, { recursive: true });
   fs.mkdirSync(ACTIONS_DIR, { recursive: true });
   for (const [dir, githubDir] of [[NOTES_DIR, GITHUB_NOTES_DIR], [ACTIONS_DIR, GITHUB_ACTIONS_DIR]]) {
-    const files = await listDirFromGithub(githubDir);
+    const files = await listDirFromGithub(githubDir).catch(() => []);
     for (const f of files) {
-      const remote = await readFileFromGithub(`${githubDir}/${f}`);
-      if (remote) fs.writeFileSync(path.join(dir, f), remote.content);
+      try {
+        const remote = await readFileFromGithub(`${githubDir}/${f}`);
+        if (remote) fs.writeFileSync(path.join(dir, f), remote.content);
+      } catch (err) {
+        console.error(`hydrateJynxFeedbackFromGithub: failed on ${githubDir}/${f}:`, err);
+      }
     }
   }
 }

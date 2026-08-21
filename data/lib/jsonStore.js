@@ -103,13 +103,21 @@ export async function hydrateMockDataFromGithub() {
   if (!githubPersistEnabled()) return;
 
   for (const relPath of MOCK_TOP_LEVEL_FILES) {
-    const remote = await readFileFromGithub(`data/mock/${relPath}`);
-    if (remote) writeDiskJson(path.join(MOCK_ROOT, relPath), JSON.parse(remote.content));
+    try {
+      const remote = await readFileFromGithub(`data/mock/${relPath}`);
+      if (remote) writeDiskJson(path.join(MOCK_ROOT, relPath), JSON.parse(remote.content));
+    } catch (err) {
+      console.error(`hydrateMockDataFromGithub: failed on ${relPath}:`, err);
+    }
   }
 
-  const brigadeFiles = await listDirFromGithub("data/mock/brigade-data");
+  const brigadeFiles = await listDirFromGithub("data/mock/brigade-data").catch(() => []);
   for (const f of brigadeFiles) {
-    const remote = await readFileFromGithub(`data/mock/brigade-data/${f}`);
-    if (remote) writeDiskJson(path.join(MOCK_ROOT, "brigade-data", f), JSON.parse(remote.content));
+    try {
+      const remote = await readFileFromGithub(`data/mock/brigade-data/${f}`);
+      if (remote) writeDiskJson(path.join(MOCK_ROOT, "brigade-data", f), JSON.parse(remote.content));
+    } catch (err) {
+      console.error(`hydrateMockDataFromGithub: failed on brigade-data/${f}:`, err);
+    }
   }
 }
