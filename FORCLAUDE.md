@@ -1143,3 +1143,38 @@ conversation's direct interactive work (Claude committing/pushing code it
 writes while talking to the user), separate from and not overriding the
 autonomous-routine PR-only rule above, which the user did not revisit or
 walk back.
+
+### 2026-08-21 — Confirmed: the webhook really does spawn concurrent routine
+### runs on the same work items, not just harmless duplicate no-op checks
+A `jynx-action-worker` firing (processing the same batch of 6 queued items
+described in the previous entry) directly observed a **second concurrent
+firing racing on the same queue**, not just the "wasted no-op check" case
+already documented above: mid-run, a `git push` of a freshly-implemented
+branch for `ann-mt2vf3rhva2m` was rejected (403 on a stale ref), and
+re-fetching showed another session had already pushed a branch with the
+*same id* and opened a PR for it minutes earlier — this happened for three
+of the six items in the same batch (`ann-mt2vf3rhva2m`, `ann-mt2vuujbpdkz`,
+`jynx-mt312adsa7al`), all independently implemented and PR'd by a
+concurrent run before this session got to them. No data was lost — this
+session detected the collision, discarded its own duplicate branch/commit
+without pushing, and moved on to the items the other run hadn't reached yet
+— but it confirms the "no way to scope the webhook to only fire on
+actions/ pushes" gap noted above is not just a cheap-no-op inconvenience;
+it can burn real implementation effort racing another live agent run on
+the exact same ticket. **If you're picking up a queued item, always
+re-fetch `main` and check `list_pull_requests` for an open PR whose `head`
+ref matches `jynx-action-<id>`/`jynx-action-jynx-<id>` immediately before
+pushing your own branch for that same id** — not just once at the start of
+the run, since another run can land its PR while you're still mid-implementation.
+If a collision is found, discard your own branch (don't push) rather than
+opening a second PR for the same request.
+
+Also confirmed while doing this: **items queued *after* a routine run has
+already started (i.e. after its step-zero snapshot of `actions/`/
+`jynx-actions/`) are correctly left alone** — a new item
+(`jynx-mt350su1sqjf`) appeared in the queue partway through this run (someone
+left a new comment while the routine was working); it was deliberately not
+touched, since it wasn't part of this run's original batch and any of this
+run's own bookkeeping pushes will re-trigger the webhook and pick it up in a
+fresh firing anyway. Don't expand scope mid-run to "while I'm here" items
+that show up after you've already started.

@@ -1,0 +1,16 @@
+{
+  "id": "jynx-mt350su1sqjf",
+  "createdAt": "2026-08-21T16:02:11.833Z",
+  "route": "dashboard",
+  "targetLabel": "dev-fab-toolbar",
+  "secondaryTargets": [],
+  "comment": "make this draggble and be able to close to jynx main bubble, also make evry card related to jynx draggble and not just dots to the side byt keep the dots",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-21T16:02:11.833Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": []
+}
