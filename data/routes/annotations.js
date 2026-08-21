@@ -29,7 +29,7 @@ import { fileURLToPath } from "node:url";
 import { requireDevUser } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/adminAuth.js";
 import { asyncRoute, requireFields } from "../middleware/validate.js";
-import { commitFileToGithub, githubPersistEnabled, listDirFromGithub, readFileFromGithub } from "../lib/githubPersist.js";
+import { commitFileToGithub, deleteFileFromGithub, githubPersistEnabled, listDirFromGithub, readFileFromGithub } from "../lib/githubPersist.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const NOTES_DIR = path.join(__dirname, "..", "annotations", "notes");
@@ -57,6 +57,15 @@ async function persistNote(note, message) {
   writeLocalNote(note.id, note);
   if (githubPersistEnabled()) {
     await commitFileToGithub(`${GITHUB_NOTES_DIR}/${note.id}.json`, JSON.stringify(note, null, 2) + "\n", message);
+  }
+}
+
+// מחיקה מלאה — בניגוד ל-archived (שרק מסתירה, ראו PATCH למטה), הקובץ עצמו
+// נעלם, מקומית וב-GitHub כאחד.
+async function deleteNote(id, message) {
+  try { fs.unlinkSync(path.join(NOTES_DIR, `${id}.json`)); } catch { /* כבר לא קיים מקומית — ננסה עדיין למחוק ב-GitHub */ }
+  if (githubPersistEnabled()) {
+    await deleteFileFromGithub(`${GITHUB_NOTES_DIR}/${id}.json`, message);
   }
 }
 
@@ -137,11 +146,12 @@ router.get("/admin/annotations", requireAdmin, (_req, res) => {
 router.patch("/admin/annotations/:id", requireAdmin, asyncRoute(async (req, res) => {
   const found = readAll().find((a) => a.id === req.params.id);
   if (!found) return res.json(null);
-  // resolved ו-archived מגיעים בקריאות נפרדות (Mark done / Archive הם שני
-  // כפתורים שונים) — נוגעים רק בשדה שבאמת נשלח, כדי שקריאה שמעדכנת אחד
-  // מהם לא תדרוס בטעות את מצב השני.
+  // resolved / archived / comment מגיעים בקריאות נפרדות (Mark done / Archive /
+  // Save-edit הם שלושה כפתורים שונים) — נוגעים רק בשדה שבאמת נשלח, כדי
+  // שקריאה שמעדכנת אחד מהם לא תדרוס בטעות את מצב האחרים.
   const hasResolvedField = req.body.resolved !== undefined;
   const hasArchivedField = req.body.archived !== undefined;
+  const hasCommentField = typeof req.body.comment === "string" && req.body.comment.trim().length > 0;
   const resolved = hasResolvedField ? !!req.body.resolved : found.resolved;
   const archived = hasArchivedField ? !!req.body.archived : !!found.archived;
   const updated = {
@@ -154,13 +164,23 @@ router.patch("/admin/annotations/:id", requireAdmin, asyncRoute(async (req, res)
       : found.resolutionNote,
     archived,
     archivedAt: hasArchivedField ? (archived ? new Date().toISOString() : null) : (found.archivedAt || null),
+    comment: hasCommentField ? req.body.comment.trim() : found.comment,
     // סימון "טופל" גם על תור הפעולות — "מעבר לטופל" שהמנהל ביקש, לא רק
     // resolved נפרד מ-actionStatus שלא באמת מסתנכרן.
     actionStatus: resolved && found.actionStatus && found.actionStatus !== "none" ? "done" : found.actionStatus,
   };
-  const verb = hasArchivedField ? (archived ? "archived" : "unarchived") : (resolved ? "resolved" : "reopened");
+  const verb = hasCommentField ? "edited" : hasArchivedField ? (archived ? "archived" : "unarchived") : (resolved ? "resolved" : "reopened");
   await persistNote(updated, `QA note ${verb} — ${updated.id}`);
   res.json(updated);
+}));
+
+// מחיקה מלאה ובלתי הפיכה — בניגוד ל-archived, שרק מסתירה מהתצוגות
+// הרגילות אבל שומרת את הרשומה עצמה.
+router.delete("/admin/annotations/:id", requireAdmin, asyncRoute(async (req, res) => {
+  const found = readAll().find((a) => a.id === req.params.id);
+  if (!found) return res.status(404).json({ error: "לא נמצא" });
+  await deleteNote(found.id, `QA note deleted — ${found.id}`);
+  res.json({ ok: true });
 }));
 
 // מנהל בלבד — מסמן הערה קיימת (שכתב מישהו אחר) כפריט עבודה.

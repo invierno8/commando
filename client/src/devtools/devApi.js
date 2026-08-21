@@ -95,6 +95,15 @@ export async function resolveAnnotation(id, resolved, resolvedBy, resolutionNote
 export async function archiveAnnotation(id, archived) {
   return http.patch(`/admin/annotations/${id}`, { archived });
 }
+// עריכת טקסט התגובה עצמה, דרך אותו PATCH (ראו data/routes/annotations.js).
+export async function editAnnotationComment(id, comment) {
+  return http.patch(`/admin/annotations/${id}`, { comment });
+}
+// מחיקה מלאה ובלתי הפיכה (בניגוד ל-archiveAnnotation).
+export async function deleteAnnotation(id) {
+  await http.delete(`/admin/annotations/${id}`);
+  return true;
+}
 export async function requestAnnotationAction(id, requestedBy) {
   return http.post(`/admin/annotations/${id}/action`, { requestedBy });
 }

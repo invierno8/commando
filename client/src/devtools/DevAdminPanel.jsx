@@ -173,6 +173,34 @@ const CSS = `
   color:var(--text-dim); cursor:pointer; display:flex; align-items:center; justify-content:center;
 }
 .dev-admin-archive-btn:hover{ color:var(--text); border-color:var(--text-dim); }
+.dev-admin-edit-btn, .dev-admin-delete-btn{
+  flex:none; width:28px; height:28px; border-radius:50%; border:1px solid var(--line); background:var(--panel);
+  color:var(--text-dim); cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.dev-admin-edit-btn:hover{ color:var(--jynx); border-color:var(--jynx); }
+.dev-admin-delete-btn:hover{ background:var(--red); border-color:var(--red); color:#fff; }
+.dev-admin-edit-box{ display:flex; flex-direction:column; gap:6px; margin:2px 0; }
+.dev-admin-edit-box textarea{
+  width:100%; background:var(--bg); border:1px solid var(--jynx); border-radius:7px; padding:7px 9px;
+  font-size:13px; font-family:var(--font-sans); color:var(--text); resize:vertical;
+}
+.dev-admin-edit-box-actions{ display:flex; justify-content:flex-end; gap:6px; }
+.dev-admin-edit-box-actions button{
+  display:inline-flex; align-items:center; gap:4px; border:none; border-radius:7px; padding:5px 11px;
+  font-size:11.5px; font-weight:700; cursor:pointer; background:var(--panel-raised); color:var(--text-dim);
+}
+.dev-admin-edit-box-actions button.primary{ background:var(--jynx); color:#fff; }
+.dev-admin-edit-box-actions button:disabled{ opacity:.5; cursor:not-allowed; }
+.dev-admin-delete-confirm{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:4px; font-size:11.5px; color:var(--red);
+  background:color-mix(in srgb, var(--red) 10%, transparent); border:1px solid var(--red); border-radius:7px; padding:6px 9px;
+}
+.dev-admin-delete-confirm-actions{ display:flex; gap:6px; margin-inline-start:auto; }
+.dev-admin-delete-confirm-actions button{
+  border:none; border-radius:7px; padding:4px 10px; font-size:11.5px; font-weight:700; cursor:pointer;
+  background:var(--panel-raised); color:var(--text-dim);
+}
+.dev-admin-delete-confirm-actions button.danger{ background:var(--red); color:#fff; }
 .dev-admin-action-btn{
   display:inline-flex; align-items:center; gap:4px; background:#2F8FCE; color:#fff; border:none;
   border-radius:14px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap;
