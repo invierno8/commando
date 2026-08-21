@@ -1,10 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Lock, Settings2, Eye, EyeOff } from "lucide-react";
 import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
 import MockDataToggle from "./MockDataToggle.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
 import DevOverlay from "./overlay/DevOverlay.jsx";
+
+const FAB_POS_KEY = "jynx-fab-pos";
+const DEFAULT_POS = { right: 20, bottom: 20 };
+
+function readStoredPos() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(FAB_POS_KEY));
+    if (raw && typeof raw.right === "number" && typeof raw.bottom === "number") return raw;
+  } catch { /* ignore */ }
+  return DEFAULT_POS;
+}
 
 /* ================================================================== */
 /* השער היחיד לכל מצב הפיתוח — לא מחליף את .dev-fab הקיים, רק שומר       */
@@ -24,6 +35,42 @@ export default function DevAuthGate({ route, devFabProps }) {
   // אוטומטית "פעולה" על הערות שהמנהל עצמו כותב, ולהציג סימוני מנהל קבועים
   // על המסך — גם מיד אחרי רענון דף, כל עוד עוגיית המנהל עדיין תקפה.
   const [isAdmin, setIsAdmin] = useState(false);
+  // כפתור ה-JYNX הראשי (המצב הנעול) גרירי — כדי שלא יסתיר בטעות תוכן קבוע
+  // במסך כלשהו. המיקום נשמר יחסית ל-right/bottom (לא top/left) כדי שיתאים
+  // גם ל-RTL, ונשמר ב-localStorage כך שנשאר איפה שהושאר בין רענוני דף.
+  const [fabPos, setFabPos] = useState(readStoredPos);
+  const dragRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, startPos: DEFAULT_POS });
+
+  function onFabPointerDown(e) {
+    dragRef.current = { dragging: true, moved: false, startX: e.clientX, startY: e.clientY, startPos: fabPos };
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  }
+  function onFabPointerMove(e) {
+    const d = dragRef.current;
+    if (!d.dragging) return;
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) d.moved = true;
+    if (!d.moved) return;
+    const next = {
+      right: Math.max(4, d.startPos.right - dx),
+      bottom: Math.max(4, d.startPos.bottom - dy),
+    };
+    setFabPos(next);
+  }
+  function onFabPointerUp() {
+    const d = dragRef.current;
+    if (!d.dragging) return;
+    d.dragging = false;
+    if (d.moved) {
+      try { localStorage.setItem(FAB_POS_KEY, JSON.stringify(fabPos)); } catch { /* ignore */ }
+    }
+  }
+  // גרירה אמיתית לא אמורה גם לפתוח/לסגור את פאנל ההתחברות — רק קליק "נקי".
+  function onFabClick() {
+    if (dragRef.current.moved) { dragRef.current.moved = false; return; }
+    setLoginOpen((v) => !v);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -47,17 +94,23 @@ export default function DevAuthGate({ route, devFabProps }) {
   async function logout() {
     await devLogout();
     setDevName(null);
+    setIsAdmin(false);
   }
 
   if (checking) return null;
 
   if (!devName) {
     return (
-      <div className="dev-fab-wrap" tabIndex={-1} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setLoginOpen(false); }}>
+      <div
+        className="dev-fab-wrap jynx-chrome"
+        style={{ right: fabPos.right, bottom: fabPos.bottom }}
+        tabIndex={-1}
+        onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setLoginOpen(false); }}
+      >
         <style>{CSS}</style>
         {loginOpen && (
           <div className="dev-fab-panel dev-only dev-login-panel">
-            <span className="dev-only-tag">DEV — כניסה למצב פיתוח</span>
+            <span className="dev-only-tag">JYNX — כניסה למצב פיתוח</span>
             <label className="env-strip-identity">
               <span>סיסמה</span>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} autoFocus />
@@ -68,9 +121,17 @@ export default function DevAuthGate({ route, devFabProps }) {
             </button>
           </div>
         )}
-        <button type="button" className="dev-fab dev-fab-locked" onClick={() => setLoginOpen((v) => !v)} title="כניסה למצב פיתוח">
+        <button
+          type="button"
+          className="dev-fab dev-fab-locked"
+          onClick={onFabClick}
+          onPointerDown={onFabPointerDown}
+          onPointerMove={onFabPointerMove}
+          onPointerUp={onFabPointerUp}
+          title="כניסה למצב פיתוח — ניתן לגרור"
+        >
           <Lock size={13} />
-          <span className="dev-fab-tag">DEV</span>
+          <span className="jynx-logo">JYNX</span>
         </button>
       </div>
     );
@@ -80,7 +141,7 @@ export default function DevAuthGate({ route, devFabProps }) {
     <>
       <style>{CSS}</style>
       <DevOverlay active={overlayOn} route={route} isAdmin={isAdmin} />
-      <div className="dev-fab-toolbar">
+      <div className="dev-fab-toolbar jynx-chrome">
         <MockDataToggle />
         <button type="button" className="dev-toolbar-icon-btn" onClick={() => setOverlayOn((v) => !v)} title={overlayOn ? "כיבוי תצפית Dev" : "הפעלת תצפית Dev"}>
           {overlayOn ? <Eye size={13} /> : <EyeOff size={13} />}
@@ -106,8 +167,6 @@ const CSS = `
   font-size:12.5px; cursor:pointer; font-family:var(--font-sans);
 }
 .dev-login-submit:disabled{ opacity:.5; cursor:not-allowed; }
-.dev-fab-locked{ opacity:.75; }
-.dev-fab-locked:hover{ opacity:1; }
 
 .dev-fab-toolbar{
   position:fixed; bottom:76px; right:20px; z-index:79; display:flex; align-items:center; gap:6px;

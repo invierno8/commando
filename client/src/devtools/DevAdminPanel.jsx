@@ -4,6 +4,7 @@ import { X, ShieldCheck } from "lucide-react";
 import { adminVerify, fetchAdminMe } from "./devApi.js";
 import DevAdminUsersScreen from "./DevAdminUsersScreen.jsx";
 import DevAnnotationsScreen from "./DevAnnotationsScreen.jsx";
+import JynxFeedbackScreen from "./JynxFeedbackScreen.jsx";
 
 /* ================================================================== */
 /* גישה למנהל בלבד (את/ה, לא משתמשי-פיתוח רגילים) — סוד יחיד (ADMIN_    */
@@ -41,7 +42,7 @@ export default function DevAdminPanel({ onClose, onVerified }) {
   }
 
   return createPortal(
-    <div className="overlay" onClick={onClose}>
+    <div className="overlay jynx-chrome" onClick={onClose}>
       <style>{CSS}</style>
       <div className="dev-admin-modal dev-only" onClick={(e) => e.stopPropagation()}>
         <button className="drawer-close" onClick={onClose}><X size={16} /></button>
@@ -65,8 +66,11 @@ export default function DevAdminPanel({ onClose, onVerified }) {
             <div className="pill-tabs" style={{ marginBottom: 14 }}>
               <button type="button" className={"pill-tab" + (tab === "users" ? " active" : "")} onClick={() => setTab("users")}>משתמשי פיתוח</button>
               <button type="button" className={"pill-tab" + (tab === "annotations" ? " active" : "")} onClick={() => setTab("annotations")}>הערות QA</button>
+              <button type="button" className={"pill-tab" + (tab === "jynx" ? " active jynx-tab-active" : "")} onClick={() => setTab("jynx")}>🔮 Jynx</button>
             </div>
-            {tab === "users" ? <DevAdminUsersScreen /> : <DevAnnotationsScreen />}
+            {tab === "users" && <DevAdminUsersScreen />}
+            {tab === "annotations" && <DevAnnotationsScreen />}
+            {tab === "jynx" && <JynxFeedbackScreen />}
           </>
         )}
       </div>
@@ -167,6 +171,8 @@ const CSS = `
   width:100%; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:10px;
   font-family:var(--font-mono); font-size:11.5px; color:var(--text); direction:ltr; text-align:left;
 }
+.jynx-tab-active{ background:var(--jynx) !important; border-color:var(--jynx) !important; color:#fff !important; }
+.jynx-feedback-row{ border-inline-start:2px solid var(--jynx); }
 .dev-admin-export-box button{
   align-self:flex-end; background:var(--panel-raised); border:1px solid var(--line); border-radius:8px;
   padding:6px 14px; font-size:12px; color:var(--text); cursor:pointer;

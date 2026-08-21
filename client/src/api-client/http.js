@@ -1,12 +1,36 @@
 /* ================================================================== */
 /* LEGO BLOCK — the one shared fetch wrapper every api-client module    */
-/* goes through. In dev, requests to "/api/..." are same-origin thanks  */
-/* to the Vite proxy in vite.config.js, so cookies (dev-session,        */
-/* admin-session) work with zero CORS setup. In a production build,     */
-/* VITE_API_BASE_URL points at wherever data/ is actually hosted (see   */
-/* the "Public hosting" section of the architecture plan) — set it as   */
-/* a build-time env var, nothing in this file needs to change.          */
+/* goes through. In production, client/ and data/ sit on two different  */
+/* domains (GitHub Pages + Render) — modern browsers (Safari by default,*/
+/* Chrome increasingly) block third-party cookies on cross-site fetch() */
+/* no matter the server's SameSite config, so dev/admin sessions travel */
+/* as a Bearer token + localStorage instead of a cookie (see            */
+/* devtools/devApi.js for where the token gets stored on login).        */
+/* VITE_API_BASE_URL points at wherever data/ is actually hosted — set  */
+/* it as a build-time env var, nothing in this file needs to change.    */
 /* ================================================================== */
+
+const DEV_TOKEN_KEY = "hangar_dev_token";
+const ADMIN_TOKEN_KEY = "hangar_admin_token";
+
+function storageGet(key) {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+function storageSet(key, value) {
+  try { value ? localStorage.setItem(key, value) : localStorage.removeItem(key); } catch { /* private browsing / storage disabled */ }
+}
+
+export const setDevToken = (token) => storageSet(DEV_TOKEN_KEY, token);
+export const setAdminToken = (token) => storageSet(ADMIN_TOKEN_KEY, token);
+
+function authHeaders() {
+  const headers = {};
+  const devToken = storageGet(DEV_TOKEN_KEY);
+  const adminToken = storageGet(ADMIN_TOKEN_KEY);
+  if (devToken) headers["Authorization"] = `Bearer ${devToken}`;
+  if (adminToken) headers["X-Admin-Session"] = adminToken;
+  return headers;
+}
 
 /* גיבוי קשיח: אם VITE_API_BASE_URL לא הוזרק בזמן ה-build (למשל בעיית scope    */
 /* במשתני GitHub Actions), אבל אנחנו בפועל רצים מ-GitHub Pages, עדיף לפנות   */
@@ -19,7 +43,7 @@ async function request(path, { method = "GET", body } = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
     method,
     credentials: "include",
-    headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
+    headers: { ...authHeaders(), ...(body !== undefined ? { "Content-Type": "application/json" } : {}) },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   let data = null;
@@ -42,7 +66,7 @@ export const http = {
   delete: (path) => request(path, { method: "DELETE" }),
   // עבור endpoint יחיד שמחזיר טקסט/Markdown, לא JSON (ראו annotations export).
   getText: async (path) => {
-    const res = await fetch(`${API_BASE}${path}`, { credentials: "include" });
+    const res = await fetch(`${API_BASE}${path}`, { credentials: "include", headers: authHeaders() });
     if (!res.ok) throw new Error(`שגיאת שרת (${res.status})`);
     return res.text();
   },

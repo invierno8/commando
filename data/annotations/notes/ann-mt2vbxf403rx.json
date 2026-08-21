@@ -1,0 +1,19 @@
+{
+  "id": "ann-mt2vbxf403rx",
+  "authorId": "admin",
+  "authorName": "מנהל",
+  "createdAt": "2026-08-21T11:30:54.832Z",
+  "route": "dashboard",
+  "targetLabel": "mock-toggle",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "אין צורך שיוכלו לתת הערות ושיוכלו בכלל ללחוץ ולראות את הבורדר בהובר מעל כל מה שקשור למערכת ה jynx' dev over lay שזה רק יתאפשר על האתר עצמו ולא על המערכת פיתוח",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-21T11:30:54.832Z",
+  "actionRequestedBy": "מנהל",
+  "actionPrUrl": null,
+  "actionLog": null
+}

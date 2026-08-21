@@ -1,0 +1,19 @@
+{
+  "id": "ann-mt2vf3rhva2m",
+  "authorId": "admin",
+  "authorName": "מנהל",
+  "createdAt": "2026-08-21T11:33:23.021Z",
+  "route": "dashboard",
+  "targetLabel": "dev-admin-annotation-main",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "אני צריך אופציה ללחוץ ולהגיע למיקום התגובה על המסך באתר, ואופציה למחוק או לשים תגובה בארכיון לבינתיים בנוסף שיהיה כפתור שמאפשר לי לראות או להסתיר את כל התגובות מהמסך עצמו כאשר אני משאיר תגובה, שעל מסך מסויים שאני נמצא בוא אוכל לראות את כל התגובות שהשארתי פיזית על המסך ולערוך אותם משם",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-21T11:33:23.021Z",
+  "actionRequestedBy": "מנהל",
+  "actionPrUrl": null,
+  "actionLog": null
+}

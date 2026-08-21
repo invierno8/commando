@@ -4,13 +4,18 @@
 /* is real app functionality — it's the dev/QA tooling layer.           */
 /* ================================================================== */
 
-import { http } from "../api-client/http.js";
+import { http, setDevToken, setAdminToken } from "../api-client/http.js";
 
 export async function devLogin(password) {
-  return http.post(`/dev/login`, { password });
+  const res = await http.post(`/dev/login`, { password });
+  setDevToken(res.token);
+  if (res.isAdmin) setAdminToken(res.adminToken);
+  return res;
 }
 export async function devLogout() {
   await http.post(`/dev/logout`);
+  setDevToken(null);
+  setAdminToken(null);
   return true;
 }
 export async function fetchDevMe() {
@@ -28,14 +33,31 @@ export async function submitAnnotation(data) {
   return http.post(`/dev/annotations`, data);
 }
 
+// משוב על Jynx עצמו — תור נפרד לגמרי, מנהל בלבד (ראו data/routes/jynx-feedback.js).
+export async function submitJynxFeedback(data) {
+  return http.post(`/admin/jynx-feedback`, data);
+}
+export async function fetchJynxFeedback() {
+  return http.get(`/admin/jynx-feedback`);
+}
+export async function resolveJynxFeedback(id, resolved) {
+  return http.patch(`/admin/jynx-feedback/${id}`, { resolved });
+}
+export async function exportJynxFeedbackMarkdown() {
+  return http.getText(`/admin/jynx-feedback/export`);
+}
+
 export async function adminVerify(secret) {
-  return http.post(`/admin/verify`, { secret });
+  const res = await http.post(`/admin/verify`, { secret });
+  setAdminToken(res.token);
+  return res;
 }
 export async function fetchAdminMe() {
   return http.get(`/admin/me`);
 }
 export async function adminLogout() {
   await http.post(`/admin/logout`);
+  setAdminToken(null);
   return true;
 }
 

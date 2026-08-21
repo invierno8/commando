@@ -1,9 +1,11 @@
 import { resolveSession } from "../lib/sessions.js";
 
-// שער אימות נפרד ומחמיר יותר משל משתמש-פיתוח רגיל — עוגייה נפרדת
-// (hangar_admin_session), כדי שסשן דב־יוזר רגיל לעולם לא יעניק גישת מנהל.
+// שער אימות נפרד ומחמיר יותר משל משתמש-פיתוח רגיל — טוקן נפרד לגמרי
+// (כותרת X-Admin-Session, לא Authorization), כדי שסשן דב-יוזר רגיל לעולם
+// לא יעניק גישת מנהל, גם לא בטעות. ראו middleware/auth.js להסבר למה
+// כותרת/localStorage ולא עוגייה.
 export function requireAdmin(req, res, next) {
-  const token = req.cookies?.hangar_admin_session;
+  const token = req.headers["x-admin-session"] || req.cookies?.hangar_admin_session;
   const isAdmin = !!resolveSession(token);
   if (!isAdmin) return res.status(401).json({ error: "נדרש אימות מנהל" });
   next();

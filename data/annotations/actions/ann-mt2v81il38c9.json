@@ -1,0 +1,13 @@
+{
+  "id": "ann-mt2v81il38c9",
+  "route": "dashboard",
+  "targetLabel": "mission-bar",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "app-topbar"
+  ],
+  "comment": "אין צורך בכל כך הרבה מקופ ודיב חדש בשביל לכתוב את שם החטיבה שוב רק משימת החטיבה זה מה שחשוב פה שכולם יראו, בוא נעביר את משימת החטיבה לפה: (מצורף כאלמנט נוסף) למעלה ובאמצע ורק את משימת החטיבה בצורה שתציג אותה יפה",
+  "authorName": "מנהל",
+  "requestedAt": "2026-08-21T11:27:54.591Z",
+  "requestedBy": "מנהל"
+}

@@ -25,7 +25,7 @@ export function persistTheme(theme) {
 /* ================================================================== */
 
 export const THEME_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap');
 
 :root{
   --bg:#F2F4F5;
@@ -40,6 +40,7 @@ export const THEME_CSS = `
   --yellow:#B3790E;
   --red:#C23B2E;
   --dev:#B3790E;
+  --jynx:#7C5CFC;
   --shadow-sm:0 1px 2px rgba(15,18,21,.08);
   --shadow-md:0 12px 28px rgba(15,18,21,.12);
   --radius-card:12px;
@@ -61,6 +62,7 @@ export const THEME_CSS = `
   --yellow:#E0A73E;
   --red:#E2574C;
   --dev:#D98B32;
+  --jynx:#9B82FF;
   --shadow-sm:0 1px 2px rgba(0,0,0,.4);
   --shadow-md:0 16px 34px rgba(0,0,0,.55);
   color-scheme:dark;
@@ -320,6 +322,15 @@ html, body{ margin:0; background:var(--bg); }
 .dev-fab:hover{ background:color-mix(in srgb, var(--dev) 10%, var(--panel)); }
 .dev-fab-tag{ border:1px solid var(--dev); border-radius:3px; padding:1px 7px; }
 .dev-fab-arrow{ transition:transform .18s ease; }
+.jynx-logo{
+  font-family:'Space Grotesk', var(--font-sans); font-weight:700; font-size:14px; letter-spacing:.03em;
+  background:linear-gradient(100deg, var(--jynx), color-mix(in srgb, var(--jynx) 45%, #ffffff 55%));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.dev-fab-locked{ border-color:var(--jynx); color:var(--jynx); cursor:grab; touch-action:none; }
+.dev-fab-locked:hover{ background:color-mix(in srgb, var(--jynx) 10%, var(--panel)); }
+.dev-fab-locked:active{ cursor:grabbing; }
+.dev-fab-locked svg{ color:var(--jynx); }
 .dev-fab-arrow.open{ transform:rotate(-90deg); }
 .dev-fab-panel{
   position:absolute; bottom:calc(100% + 10px); right:0; width:340px; max-width:88vw;

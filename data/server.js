@@ -27,7 +27,9 @@ import devAuthRouter from "./routes/dev-auth.js";
 import adminAuthRouter from "./routes/admin-auth.js";
 import devUsersRouter from "./routes/dev-users.js";
 import annotationsRouter, { hydrateAnnotationsFromGithub } from "./routes/annotations.js";
+import jynxFeedbackRouter, { hydrateJynxFeedbackFromGithub } from "./routes/jynx-feedback.js";
 import { hydrateDevUsersFromGithub } from "./lib/devUsers.js";
+import { hydrateMockDataFromGithub } from "./lib/jsonStore.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -59,6 +61,7 @@ app.use("/api", devAuthRouter);
 app.use("/api", adminAuthRouter);
 app.use("/api", devUsersRouter);
 app.use("/api", annotationsRouter);
+app.use("/api", jynxFeedbackRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
@@ -67,7 +70,12 @@ app.use(errorHandler);
 // והערות ה-QA נמשכים בחזרה מ-git לפני שהשרת עונה לבקשות — כי אחסון בענן
 // זול (למשל Render free tier) מאפס את הדיסק המקומי בכל spin-down/redeploy,
 // אבל git עצמו כמובן לא. ללא GITHUB_TOKEN (פיתוח מקומי) זו פעולה ריקה.
-Promise.all([hydrateDevUsersFromGithub(), hydrateAnnotationsFromGithub()]).then(() => {
+Promise.all([
+  hydrateDevUsersFromGithub(),
+  hydrateAnnotationsFromGithub(),
+  hydrateJynxFeedbackFromGithub(),
+  hydrateMockDataFromGithub(),
+]).then(() => {
   app.listen(PORT, () => {
     console.log(`HANGAR API listening on http://localhost:${PORT}`);
   });

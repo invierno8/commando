@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useHoverTarget, labelForElement } from "./useHoverTarget.js";
 import AnnotationPopover from "./AnnotationPopover.jsx";
 import AdminAnnotationMarkers from "./AdminAnnotationMarkers.jsx";
-import { submitAnnotation } from "../devApi.js";
+import { submitAnnotation, submitJynxFeedback } from "../devApi.js";
 
 /* ================================================================== */
 /* LEGO BLOCK — mounted once (only while dev mode is authenticated AND  */
@@ -20,10 +20,13 @@ import { submitAnnotation } from "../devApi.js";
 /* ================================================================== */
 
 export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
-  const target = useHoverTarget(active);
-  const [popover, setPopover] = useState(null); // { x, y, label, secondaryTargets: [] } | null
+  // isAdmin גם קובע אם מותר לגלוש בכלל על ה-UI של Jynx עצמו (.jynx-chrome) —
+  // ראו useHoverTarget.js. משתמשי-פיתוח רגילים אף פעם לא רואים הילה שם.
+  const target = useHoverTarget(active, isAdmin);
+  const [popover, setPopover] = useState(null); // { x, y, label, secondaryTargets: [], isJynxMeta } | null
   const [pickingSecondary, setPickingSecondary] = useState(false);
   const [markersRefreshKey, setMarkersRefreshKey] = useState(0);
+  const isJynxHover = !!target?.closest(".jynx-chrome");
 
   useEffect(() => {
     if (!active) return;
@@ -36,6 +39,7 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
       // במקום לתאר את זה במילים.
       if (pickingSecondary) {
         if (!el || el.closest(".dev-overlay-ignore")) return;
+        if (el.closest(".jynx-chrome") && !isAdmin) return;
         e.preventDefault();
         e.stopPropagation();
         const lbl = labelForElement(target || el);
@@ -50,9 +54,14 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
 
       if (!(e.ctrlKey || e.metaKey)) return;
       if (!el || el.closest(".dev-overlay-ignore")) return;
+      // Jynx-chrome (ה-FAB/סרגל/פאנל ניהול עצמם) — משוב עליהם נכנס לתור
+      // נפרד לגמרי (jynx-feedback, ראו submit() למטה), ורק המנהל רואה אותו
+      // בכלל בתור useHoverTarget למעלה, אז כאן זו רק בדיקת-הגנה כפולה.
+      const isJynx = !!el.closest(".jynx-chrome");
+      if (isJynx && !isAdmin) return;
       e.preventDefault();
       e.stopPropagation();
-      setPopover({ x: e.clientX, y: e.clientY, label: labelForElement(target || el), secondaryTargets: [] });
+      setPopover({ x: e.clientX, y: e.clientY, label: labelForElement(target || el), secondaryTargets: [], isJynxMeta: isJynx });
     }
     function onKeyDown(e) {
       if (e.key === "Escape" && pickingSecondary) setPickingSecondary(false);
@@ -63,19 +72,25 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
       window.removeEventListener("click", onClickCapture, true);
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [active, target, pickingSecondary]);
+  }, [active, target, pickingSecondary, isAdmin]);
 
   if (!active) return null;
 
   const rect = target?.getBoundingClientRect();
 
   async function submit(comment) {
-    // כשמי שכותב מאומת גם כמנהל, ההערה שלו הופכת אוטומטית לפריט פעולה —
-    // "כל מה שאני כותב הופך לפעולה", בלי צעד נוסף.
-    await submitAnnotation({
-      route, targetLabel: popover.label, comment, actionRequested: isAdmin,
-      secondaryTargets: popover.secondaryTargets,
-    });
+    if (popover.isJynxMeta) {
+      // משוב על Jynx עצמו — תור נפרד לגמרי מהמשוב על האפליקציה (ראו
+      // data/routes/jynx-feedback.js), תמיד "פעולה" כי רק המנהל כותב לכאן.
+      await submitJynxFeedback({ route, targetLabel: popover.label, comment, secondaryTargets: popover.secondaryTargets });
+    } else {
+      // כשמי שכותב מאומת גם כמנהל, ההערה שלו הופכת אוטומטית לפריט פעולה —
+      // "כל מה שאני כותב הופך לפעולה", בלי צעד נוסף.
+      await submitAnnotation({
+        route, targetLabel: popover.label, comment, actionRequested: isAdmin,
+        secondaryTargets: popover.secondaryTargets,
+      });
+    }
     setPopover(null);
     setMarkersRefreshKey((k) => k + 1);
     onSubmitted?.();
@@ -86,7 +101,7 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
       <style>{CSS}</style>
       {rect && (
         <div
-          className="dev-overlay-highlight"
+          className={"dev-overlay-highlight" + (isJynxHover ? " dev-overlay-highlight-jynx" : "")}
           style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height }}
         />
       )}
@@ -98,6 +113,7 @@ export default function DevOverlay({ active, route, isAdmin, onSubmitted }) {
           secondaryTargets={popover.secondaryTargets}
           pickingSecondary={pickingSecondary}
           isAdmin={isAdmin}
+          isJynxMeta={popover.isJynxMeta}
           onCancel={() => { setPickingSecondary(false); setPopover(null); }}
           onSubmit={submit}
           onAddSecondary={() => setPickingSecondary(true)}
@@ -118,6 +134,11 @@ const CSS = `
              0 0 18px color-mix(in srgb, var(--dev) 50%, transparent);
   transition:top .06s ease, left .06s ease, width .06s ease, height .06s ease;
 }
+.dev-overlay-highlight-jynx{
+  border-color:var(--jynx);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--jynx) 28%, transparent),
+             0 0 18px color-mix(in srgb, var(--jynx) 50%, transparent);
+}
 .dev-annotate-popover{
   position:fixed; z-index:100000; width:290px; background:var(--panel); border:1px solid var(--dev);
   border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:8px; box-shadow:var(--shadow-md);
@@ -131,6 +152,14 @@ const CSS = `
   font-size:11px; color:#2F8FCE; background:color-mix(in srgb, #2F8FCE 12%, transparent);
   border-radius:6px; padding:4px 8px;
 }
+.dev-annotate-popover-jynx{ border-color:var(--jynx); }
+.dev-annotate-popover-label-jynx{ color:var(--jynx); }
+.dev-annotate-popover-jynx-hint{
+  font-size:11px; color:var(--jynx); background:color-mix(in srgb, var(--jynx) 14%, transparent);
+  border-radius:6px; padding:4px 8px;
+}
+.dev-annotate-popover-jynx textarea:focus{ border-color:var(--jynx); }
+.dev-annotate-popover-jynx .dev-annotate-btn-primary{ background:var(--jynx); }
 .dev-annotate-popover textarea{
   width:100%; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:7px 9px;
   font-size:12.5px; font-family:var(--font-sans); color:var(--text); resize:vertical;

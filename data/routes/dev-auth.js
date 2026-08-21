@@ -2,11 +2,11 @@ import { Router } from "express";
 import { readDevUsers } from "../lib/devUsers.js";
 import { verifyPassword } from "../lib/passwords.js";
 import { createSession, destroySession } from "../lib/sessions.js";
-import { sessionCookieOptions } from "../lib/cookies.js";
 import { loginLimiter } from "../middleware/rateLimit.js";
 import { asyncRoute, requireFields } from "../middleware/validate.js";
 
 const router = Router();
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // שבוע — "לא להתנתק באמצע כתיבת הערה"
 
 router.post("/dev/login", loginLimiter, asyncRoute(async (req, res) => {
   requireFields(req.body, ["password"]);
@@ -22,20 +22,17 @@ router.post("/dev/login", loginLimiter, asyncRoute(async (req, res) => {
   }
 
   if (matched) {
-    const token = createSession({ id: matched.id, name: matched.name });
-    res.cookie("hangar_dev_session", token, sessionCookieOptions(12 * 60 * 60 * 1000));
-    return res.json({ name: matched.name });
+    const token = createSession({ id: matched.id, name: matched.name }, SESSION_TTL_MS);
+    return res.json({ name: matched.name, token });
   }
 
   // אותה תיבת התחברות מקבלת גם את ה-ADMIN_SECRET ישירות — נותנת בבת אחת גם
   // סשן dev וגם סשן admin, כדי שלא תצטרך קודם משתמש-פיתוח נפרד ורק אז לפתוח
   // את פאנל הניהול; זה אתה, לא QA, אז אין טעם בשני שלבים.
   if (process.env.ADMIN_SECRET && password === process.env.ADMIN_SECRET) {
-    const devToken = createSession({ id: "admin", name: "מנהל" });
-    res.cookie("hangar_dev_session", devToken, sessionCookieOptions(12 * 60 * 60 * 1000));
-    const adminToken = createSession({ admin: true });
-    res.cookie("hangar_admin_session", adminToken, sessionCookieOptions(12 * 60 * 60 * 1000));
-    return res.json({ name: "מנהל", isAdmin: true });
+    const devToken = createSession({ id: "admin", name: "מנהל" }, SESSION_TTL_MS);
+    const adminToken = createSession({ admin: true }, SESSION_TTL_MS);
+    return res.json({ name: "מנהל", isAdmin: true, token: devToken, adminToken });
   }
 
   return res.status(401).json({ error: "סיסמה שגויה" });
@@ -46,8 +43,9 @@ router.get("/dev/me", (req, res) => {
 });
 
 router.post("/dev/logout", (req, res) => {
-  destroySession(req.cookies?.hangar_dev_session);
-  res.clearCookie("hangar_dev_session");
+  const auth = req.headers.authorization;
+  const bearer = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
+  destroySession(bearer || req.cookies?.hangar_dev_session);
   res.json({ ok: true });
 });
 

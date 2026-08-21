@@ -40,7 +40,12 @@ function findTarget(el) {
   return el; // שום דבר "מעניין" יותר בדרך — עדיף האלמנט הגולמי מכלום
 }
 
-export function useHoverTarget(active) {
+// allowJynxChrome: כשמאומת גם כמנהל, מותר "לגלוש" גם על ה-UI של Jynx עצמו
+// (ה-FAB, סרגל הכלים, פאנל הניהול — מסומנים .jynx-chrome) כדי לתת משוב על
+// המערכת עצמה. למשתמשי-פיתוח רגילים .jynx-chrome תמיד חסום, בדיוק כמו
+// .dev-overlay-ignore (שנשאר חסום לגמרי לכולם — זה ה-UI של ה-overlay עצמו:
+// הבועה, ההילה, הסימונים — אף פעם לא יעד תקין, גם לא למנהל).
+export function useHoverTarget(active, allowJynxChrome) {
   const [target, setTarget] = useState(null);
   const rafRef = useRef(null);
 
@@ -58,6 +63,10 @@ export function useHoverTarget(active) {
           setTarget(null);
           return;
         }
+        if (el.closest(".jynx-chrome") && !allowJynxChrome) {
+          setTarget(null);
+          return;
+        }
         setTarget(findTarget(el));
       });
     }
@@ -66,7 +75,7 @@ export function useHoverTarget(active) {
       window.removeEventListener("mousemove", onMove);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [active]);
+  }, [active, allowJynxChrome]);
 
   return target;
 }

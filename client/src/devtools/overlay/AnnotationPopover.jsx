@@ -3,7 +3,7 @@ import React, { useState } from "react";
 /* קופסת התגובה שנפתחת ב-Ctrl/Cmd+קליק — לא נושאת <style> משלה בכוונה,      */
 /* תמיד ממוסגרת בתוך ה-portal של DevOverlay.jsx וסומכת על ה-<style> היחיד   */
 /* שהוא כבר מזריק (בדיוק כמו תת-רכיבי מודל בתוך מסך אחר בקודבייס הזה).      */
-export default function AnnotationPopover({ x, y, label, secondaryTargets, pickingSecondary, isAdmin, onCancel, onSubmit, onAddSecondary, onRemoveSecondary }) {
+export default function AnnotationPopover({ x, y, label, secondaryTargets, pickingSecondary, isAdmin, isJynxMeta, onCancel, onSubmit, onAddSecondary, onRemoveSecondary }) {
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -26,17 +26,21 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, picki
 
   return (
     <div
-      className="dev-overlay-ignore dev-annotate-popover"
+      className={"dev-overlay-ignore dev-annotate-popover" + (isJynxMeta ? " dev-annotate-popover-jynx" : "")}
       style={{ top, left }}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.key === "Escape" && onCancel()}
     >
-      <div className="dev-annotate-popover-label">{label}</div>
-      {isAdmin && <div className="dev-annotate-popover-admin-hint">⚡ מנהל — ההערה תופעל אוטומטית כפעולה</div>}
+      <div className={"dev-annotate-popover-label" + (isJynxMeta ? " dev-annotate-popover-label-jynx" : "")}>{label}</div>
+      {isJynxMeta ? (
+        <div className="dev-annotate-popover-jynx-hint">🔮 משוב על Jynx עצמו — תור נפרד, לא קשור לאפליקציה</div>
+      ) : (
+        isAdmin && <div className="dev-annotate-popover-admin-hint">⚡ מנהל — ההערה תופעל אוטומטית כפעולה</div>
+      )}
       <textarea
         autoFocus
         rows={3}
-        placeholder="מה צריך לשנות/לבדוק כאן? (למשל: להעביר לכאן ←)"
+        placeholder={isJynxMeta ? "מה צריך לשפר במערכת הפיתוח עצמה?" : "מה צריך לשנות/לבדוק כאן? (למשל: להעביר לכאן ←)"}
         value={comment}
         onChange={(e) => setComment(e.target.value)}
       />

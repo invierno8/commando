@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronLeft, Network } from "lucide-react";
+import { ChevronLeft, Network, Users } from "lucide-react";
 import { STRUCTURAL_ROLES, ROLE_LABELS, ROLE_ORDER } from "../roles.js";
 import { BRIGADE_STATUS } from "../api-client/brigadesData.js";
 
@@ -19,10 +19,10 @@ export default function DevFab({
   isTeamLead,
 }) {
   return (
-    <div className="dev-fab-wrap" tabIndex={-1} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false); }}>
+    <div className="dev-fab-wrap jynx-chrome" tabIndex={-1} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false); }}>
       {open && (
         <div className="dev-fab-panel dev-only">
-          <span className="dev-only-tag">DEV — סימולציית תפקיד וחטיבה</span>
+          <span className="dev-only-tag">JYNX — סימולציית תפקיד וחטיבה</span>
           <div className="pill-tabs">
             {ROLE_ORDER.map((r) => (
               <button
@@ -120,8 +120,8 @@ export default function DevFab({
           )}
         </div>
       )}
-      <button type="button" className="dev-fab" onClick={() => setOpen((v) => !v)} title="בורר תפקיד/חטיבה (DEV)">
-        <span className="dev-fab-tag">DEV</span>
+      <button type="button" className="dev-fab" onClick={() => setOpen((v) => !v)} title="בורר תפקיד וחטיבה">
+        <Users size={14} />
         <ChevronLeft size={14} className={"dev-fab-arrow" + (open ? " open" : "")} />
       </button>
     </div>
