@@ -22,7 +22,7 @@ export function readDevUsers() {
 
 function writeLocal(list) {
   fs.mkdirSync(path.dirname(FILE), { recursive: true });
-  fs.writeFileSync(FILE, JSON.stringify(list, null, 2));
+  fs.writeFileSync(FILE, JSON.stringify(list, null, 2) + "\n");
 }
 
 export async function writeDevUsers(list) {

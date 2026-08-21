@@ -40,7 +40,7 @@ function readAll() {
 
 function writeLocalNote(id, note) {
   fs.mkdirSync(NOTES_DIR, { recursive: true });
-  fs.writeFileSync(path.join(NOTES_DIR, `${id}.json`), JSON.stringify(note, null, 2));
+  fs.writeFileSync(path.join(NOTES_DIR, `${id}.json`), JSON.stringify(note, null, 2) + "\n");
 }
 
 async function persistNote(note, message) {
