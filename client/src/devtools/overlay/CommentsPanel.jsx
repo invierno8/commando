@@ -199,43 +199,58 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   const flashRect = flashId ? rectFor(items.find((x) => x.id === flashId))?.rect : null;
 
   return createPortal(
-    <div className="dev-overlay-ignore">
-      <style>{CSS_TEXT}</style>
+    <>
+      {/* יעדים משניים: הנקודות/ההילות האלה הן ה-UI הזמני-לחלוטין של האוברליי  */}
+      {/* עצמו (ראו DevOverlay.jsx) — לעולם לא יעד תקין לתגובה, גם לא למנהל,   */}
+      {/* אז dev-overlay-ignore נשאר עליהן בלבד. .comments-sidebar עצמו (למטה) */}
+      {/* הוזז החוצה מהעטיפה הזו ל-jynx-chrome, כי הוא תוכן אמיתי של Jynx (לא  */}
+      {/* שונה עקרונית מה-toolbar/ה-FAB) — קודם היה עטוף כאן בטעות, מה שחסם    */}
+      {/* לגמרי hover/Ctrl+קליק-להערה על כל מה שבתוכו, גם למנהל. */}
+      <div className="dev-overlay-ignore">
+        <style>{CSS_TEXT}</style>
 
-      {grouped.map(({ label, list, rect }) => (
-        <CommentDot
-          key={label}
-          label={label}
-          rect={rect}
-          list={list}
-          hovered={hoveredDotLabel === label}
-          onHover={setHoveredDotLabel}
-        />
-      ))}
+        {grouped.map(({ label, list, rect }) => (
+          <CommentDot
+            key={label}
+            label={label}
+            rect={rect}
+            list={list}
+            hovered={hoveredDotLabel === label}
+            onHover={setHoveredDotLabel}
+          />
+        ))}
 
-      {hoveredRect && (
-        <div
-          className="comments-panel-highlight"
-          style={{ top: hoveredRect.top, left: hoveredRect.left, width: hoveredRect.width, height: hoveredRect.height }}
-        />
-      )}
-      {hoveredSecondaryRects.map((r, i) => (
-        <div
-          key={i}
-          className="comments-panel-highlight comments-panel-highlight-secondary"
-          style={{ top: r.top, left: r.left, width: r.width, height: r.height }}
-        />
-      ))}
-      {flashRect && (
-        <div
-          className="comments-panel-highlight comments-panel-flash"
-          style={{ top: flashRect.top, left: flashRect.left, width: flashRect.width, height: flashRect.height }}
-        />
-      )}
+        {hoveredRect && (
+          <div
+            className="comments-panel-highlight"
+            style={{ top: hoveredRect.top, left: hoveredRect.left, width: hoveredRect.width, height: hoveredRect.height }}
+          />
+        )}
+        {hoveredSecondaryRects.map((r, i) => (
+          <div
+            key={i}
+            className="comments-panel-highlight comments-panel-highlight-secondary"
+            style={{ top: r.top, left: r.left, width: r.width, height: r.height }}
+          />
+        ))}
+        {flashRect && (
+          <div
+            className="comments-panel-highlight comments-panel-flash"
+            style={{ top: flashRect.top, left: flashRect.left, width: flashRect.width, height: flashRect.height }}
+          />
+        )}
+      </div>
 
-      <div className="comments-sidebar jynx-ui" style={{ left: panelFab.pos.left, bottom: panelFab.pos.bottom }}>
-        <div className="comments-sidebar-head" {...panelFab.dragHandlers}>
-          <span className="comments-sidebar-grip" title="Drag anywhere on the header to move"><GripVertical size={13} /></span>
+      {/* גרירה: כל הכרטיס גרירי עכשיו (לא רק הכותרת), אותו מנגנון-לכידה-דחוי  */}
+      {/* כמו dev-fab-toolbar (ראו useDraggableFab.js) — קליק נקי על כפתור/    */}
+      {/* שורת-תגובה בפנים ממשיך לעבוד רגיל, רק תזוזה אמיתית (4px+) גוררת.     */}
+      <div
+        className="comments-sidebar jynx-chrome jynx-ui"
+        style={{ left: panelFab.pos.left, bottom: panelFab.pos.bottom }}
+        {...panelFab.dragHandlers}
+      >
+        <div className="comments-sidebar-head">
+          <span className="comments-sidebar-grip" title="Drag anywhere on this panel to move it"><GripVertical size={13} /></span>
           <span className="comments-sidebar-title"><MessageSquare size={13} /> Comments</span>
           <button type="button" className="comments-sidebar-collapse" onClick={() => setCollapsed((v) => !v)} title={collapsed ? "Expand" : "Collapse"}>
             {collapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
@@ -405,7 +420,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
           </>
         )}
       </div>
-    </div>,
+    </>,
     document.body
   );
 }
