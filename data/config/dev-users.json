@@ -4,7 +4,7 @@
     "name": "אילאיל",
     "role": "מנהלת מוצר הטובה בעולם",
     "passwordHash": "$2a$12$EPG0yD4Uz4oZZB12SOHceeRp4BNmkcPQmlYxOqTWYOS/DiBMgV.8e",
-    "active": false,
+    "active": true,
     "createdAt": "2026-08-21T10:55:47.839Z"
   }
 ]
