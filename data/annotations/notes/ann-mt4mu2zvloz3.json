@@ -1,0 +1,33 @@
+{
+  "id": "ann-mt4mu2zvloz3",
+  "authorId": "dev-mt4mivxlir9i",
+  "authorName": "itsik",
+  "createdAt": "2026-08-22T17:08:37.675Z",
+  "route": "catalog",
+  "targetLabel": "Catalog — header and description",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "Catalog — item: מצפן דיגיטלי (NAV-01)"
+  ],
+  "comment": "להזיז שמאלה אל: [→ Catalog — item: מצפן דיגיטלי (NAV-01)]",
+  "attachment": null,
+  "attachmentName": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
