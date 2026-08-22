@@ -319,10 +319,10 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
   const WIDGET_CONTENT = {
     kpis: () => (
       <div className="dash-kpis">
-        <MiniKpi label="סה״כ דרישות" value={data.total} />
-        <MiniKpi label="ממתינות" value={data.totals.pending} tone="yellow" />
-        <MiniKpi label="אושרו" value={data.totals.approved} tone="green" />
-        <MiniKpi label="סורבו" value={data.totals.rejected} tone="red" />
+        <MiniKpi label="סה״כ דרישות" value={data.total} devblock={`${WIDGET_DEFS.kpis.title} — סה״כ דרישות`} />
+        <MiniKpi label="ממתינות" value={data.totals.pending} tone="yellow" devblock={`${WIDGET_DEFS.kpis.title} — ממתינות`} />
+        <MiniKpi label="אושרו" value={data.totals.approved} tone="green" devblock={`${WIDGET_DEFS.kpis.title} — אושרו`} />
+        <MiniKpi label="סורבו" value={data.totals.rejected} tone="red" devblock={`${WIDGET_DEFS.kpis.title} — סורבו`} />
       </div>
     ),
     unitSummary: () => (
@@ -630,9 +630,12 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
   );
 }
 
-function MiniKpi({ label, value, tone }) {
+function MiniKpi({ label, value, tone, devblock }) {
   return (
-    <div className={"mini-kpi" + (tone ? ` mini-kpi-${tone}` : "")}>
+    <div
+      className={"mini-kpi" + (tone ? ` mini-kpi-${tone}` : "")}
+      {...(devblock ? { "data-devblock": devblock } : {})}
+    >
       <div className="mini-kpi-value"><span className="count-up">{value}</span></div>
       <div className="mini-kpi-label">{label}</div>
     </div>
