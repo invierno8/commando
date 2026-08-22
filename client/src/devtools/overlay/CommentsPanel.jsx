@@ -482,18 +482,21 @@ const CSS_TEXT = `
 .comments-dot-tooltip-item b{ color:var(--jynx); }
 
 .comments-panel-highlight{
-  position:fixed; pointer-events:none; z-index:99996; border-radius:8px; border:2px solid var(--dev);
-  box-shadow:0 0 0 3px color-mix(in srgb, var(--dev) 28%, transparent),
-             0 0 18px color-mix(in srgb, var(--dev) 50%, transparent);
+  position:fixed; pointer-events:none; z-index:99996; border-radius:8px; border:2px solid var(--jynx);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--jynx) 28%, transparent),
+             0 0 18px color-mix(in srgb, var(--jynx) 50%, transparent);
   transition:top .1s ease, left .1s ease, width .1s ease, height .1s ease;
 }
 .comments-panel-flash{
   border-color:var(--jynx); animation:commentsFlash 1.6s ease;
 }
+/* יעד משני — צבע נבדל בכוונה (var(--dev), אותו כתום/ענבר שכבר משמש לכל
+   "פעולה/מנהל" אחר בקודבייס הזה) מהיעד הראשי (var(--jynx)), כדי שברור מיד
+   איזה אלמנט זה "העיקרי שעליו נפתחה ההערה" מול "עוד אלמנט שקושר אליה". */
 .comments-panel-highlight-secondary{
-  border-color:#2F8FCE;
-  box-shadow:0 0 0 3px color-mix(in srgb, #2F8FCE 28%, transparent),
-             0 0 18px color-mix(in srgb, #2F8FCE 50%, transparent);
+  border-color:var(--dev);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--dev) 28%, transparent),
+             0 0 18px color-mix(in srgb, var(--dev) 50%, transparent);
 }
 @keyframes commentsFlash{
   0%, 100% { box-shadow:0 0 0 3px color-mix(in srgb, var(--jynx) 28%, transparent), 0 0 18px color-mix(in srgb, var(--jynx) 50%, transparent); }
