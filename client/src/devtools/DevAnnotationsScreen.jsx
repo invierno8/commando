@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Check, Download, Zap, Loader2, GitPullRequest, CheckCircle2, XCircle, MessageCircle, Undo2, Archive, ArchiveRestore, Pencil, Save, Trash2, X, Paperclip } from "lucide-react";
-import { fetchAnnotations, resolveAnnotation, archiveAnnotation, editAnnotationComment, deleteAnnotation, exportAnnotationsMarkdown, requestAnnotationAction, replyToAnnotation } from "./devApi.js";
+import { fetchAnnotations, resolveAnnotation, archiveAnnotation, editAnnotationComment, deleteAnnotation, exportAnnotationsMarkdown, requestAnnotationAction, replyToAnnotation, adminVerify } from "./devApi.js";
 
 const ACTION_STATUS_LABEL = {
   none: null, queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed",
@@ -19,9 +19,19 @@ export default function DevAnnotationsScreen() {
   const [deletingId, setDeletingId] = useState(null); // אישור מחיקה מוטמע — לא window.confirm
   const [editingId, setEditingId] = useState(null); // עריכת טקסט התגובה עצמה
   const [editText, setEditText] = useState("");
+  // המנהל יכול להישאר בפאנל הזה שעות ארוכות (סקירה/מיון הערות) — סשן המנהל
+  // (12 שעות, ראו data/lib/sessions.js) עלול לפוג באמצע פעולה. כל פעולה
+  // עוברת דרך withAuthGuard: אם התגובה היא שגיאת-אימות (מכיל "אימות"),
+  // מציגים באנר עם שדה-סיסמה+כפתור "Log back in" במקום לתת לשגיאה להיעלם
+  // בשקט — ובלי לאבד שום דבר שהוקלד/נפתח, כי שום state מקומי לא מתאפס.
+  const [authError, setAuthError] = useState(null);
+  const [reauthSecret, setReauthSecret] = useState("");
+  const [reauthing, setReauthing] = useState(false);
 
   function reload() {
-    fetchAnnotations().then(setItems);
+    fetchAnnotations().then(setItems).catch((e) => {
+      if (e.message?.includes("אימות")) setAuthError(e.message);
+    });
   }
   useEffect(() => {
     reload();
@@ -29,32 +39,65 @@ export default function DevAnnotationsScreen() {
     return () => clearInterval(t);
   }, []);
 
+  async function withAuthGuard(action) {
+    try {
+      await action();
+    } catch (e) {
+      if (e.message?.includes("אימות")) setAuthError(e.message);
+    }
+  }
+  async function doReauth() {
+    setReauthing(true);
+    try {
+      await adminVerify(reauthSecret);
+      setAuthError(null);
+      setReauthSecret("");
+      reload();
+    } catch (e) {
+      setAuthError(e.message);
+    } finally {
+      setReauthing(false);
+    }
+  }
+
   async function confirmResolve(a) {
-    await resolveAnnotation(a.id, true, "Admin", resolveNote.trim() || null);
-    setResolvingId(null);
-    setResolveNote("");
-    reload();
+    await withAuthGuard(async () => {
+      await resolveAnnotation(a.id, true, "Admin", resolveNote.trim() || null);
+      setResolvingId(null);
+      setResolveNote("");
+      reload();
+    });
   }
   async function reopen(a) {
-    await resolveAnnotation(a.id, false);
-    reload();
+    await withAuthGuard(async () => {
+      await resolveAnnotation(a.id, false);
+      reload();
+    });
   }
   async function toggleArchive(a) {
-    await archiveAnnotation(a.id, !a.archived);
-    reload();
+    await withAuthGuard(async () => {
+      await archiveAnnotation(a.id, !a.archived);
+      reload();
+    });
   }
   async function triggerAction(a) {
-    await requestAnnotationAction(a.id);
-    reload();
+    await withAuthGuard(async () => {
+      await requestAnnotationAction(a.id);
+      reload();
+    });
   }
   async function exportMd() {
-    setExported(await exportAnnotationsMarkdown());
+    await withAuthGuard(async () => {
+      setExported(await exportAnnotationsMarkdown());
+    });
   }
   async function sendReply(a) {
     if (!replyText.trim()) return;
-    await replyToAnnotation(a.id, replyText.trim());
-    setReplyText("");
-    reload();
+    await withAuthGuard(async () => {
+      await replyToAnnotation(a.id, replyText.trim());
+      setReplyText("");
+      reload();
+    });
   }
   function startEdit(a) {
     setEditingId(a.id);
@@ -67,20 +110,24 @@ export default function DevAnnotationsScreen() {
   async function saveEdit(a) {
     const text = editText.trim();
     if (!text) return;
-    await editAnnotationComment(a.id, text);
-    setEditingId(null);
-    setEditText("");
-    reload();
+    await withAuthGuard(async () => {
+      await editAnnotationComment(a.id, text);
+      setEditingId(null);
+      setEditText("");
+      reload();
+    });
   }
   async function confirmDelete(a) {
-    await deleteAnnotation(a.id);
-    setDeletingId(null);
-    reload();
+    await withAuthGuard(async () => {
+      await deleteAnnotation(a.id);
+      setDeletingId(null);
+      reload();
+    });
   }
 
-  if (!items) return <div className="dev-admin-empty">Loading...</div>;
-  const unarchived = items.filter((a) => !a.archived);
-  const shown =
+  if (!items && !authError) return <div className="dev-admin-empty">Loading...</div>;
+  const unarchived = items ? items.filter((a) => !a.archived) : [];
+  const shown = !items ? [] :
     filter === "open" ? unarchived.filter((a) => !a.resolved)
     : filter === "done" ? unarchived.filter((a) => a.resolved)
     : filter === "archived" ? items.filter((a) => a.archived)
@@ -88,6 +135,24 @@ export default function DevAnnotationsScreen() {
 
   return (
     <div className="dev-admin-tab">
+      {authError && (
+        <div className="dev-admin-reauth-banner">
+          <span>{authError}</span>
+          <div className="dev-admin-reauth-form">
+            <input
+              type="password" autoFocus placeholder="Admin secret" value={reauthSecret}
+              onChange={(e) => setReauthSecret(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && doReauth()}
+              disabled={reauthing}
+            />
+            <button type="button" onClick={doReauth} disabled={!reauthSecret.trim() || reauthing}>
+              {reauthing ? "Signing in..." : "Log back in"}
+            </button>
+          </div>
+        </div>
+      )}
+      {items && (
+      <>
       <div className="dev-admin-annotations-head">
         <div className="pill-tabs">
           <button type="button" className={"pill-tab" + (filter === "open" ? " active" : "")} onClick={() => setFilter("open")}>Open ({unarchived.filter((a) => !a.resolved).length})</button>
@@ -221,6 +286,8 @@ export default function DevAnnotationsScreen() {
             );
           })}
         </div>
+      )}
+      </>
       )}
       {exported !== null && (
         <div className="dev-admin-export-box">

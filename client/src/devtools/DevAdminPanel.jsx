@@ -110,6 +110,22 @@ const CSS = `
 .dev-admin-tab{ display:flex; flex-direction:column; gap:12px; }
 .dev-admin-hint{ color:var(--text-dim); font-size:12px; line-height:1.6; margin:0; }
 
+.dev-admin-reauth-banner{
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  background:color-mix(in srgb, var(--red) 10%, transparent); border:1px solid var(--red); border-radius:9px;
+  padding:9px 12px; font-size:12px; color:var(--red);
+}
+.dev-admin-reauth-form{ display:flex; gap:6px; align-items:center; }
+.dev-admin-reauth-form input{
+  background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:6px 9px; width:140px;
+  font-size:12px; font-family:var(--font-mono); color:var(--text);
+}
+.dev-admin-reauth-form button{
+  background:var(--jynx); color:#fff; border:none; border-radius:7px; padding:6px 14px;
+  font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;
+}
+.dev-admin-reauth-form button:disabled{ opacity:.5; cursor:not-allowed; }
+
 .dev-admin-user-list, .dev-admin-annotation-list{ display:flex; flex-direction:column; gap:8px; }
 .dev-admin-user-row{
   display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;

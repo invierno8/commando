@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Check, Download, Loader2, GitPullRequest, CheckCircle2, XCircle, MessageCircle, Undo2, Pencil } from "lucide-react";
-import { fetchJynxFeedback, resolveJynxFeedback, exportJynxFeedbackMarkdown, replyToJynxFeedback, editJynxFeedback } from "./devApi.js";
+import { fetchJynxFeedback, resolveJynxFeedback, exportJynxFeedbackMarkdown, replyToJynxFeedback, editJynxFeedback, adminVerify } from "./devApi.js";
 
 const ACTION_STATUS_LABEL = { queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed" };
 const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: GitPullRequest, done: CheckCircle2, failed: XCircle };
@@ -22,9 +22,17 @@ export default function JynxFeedbackScreen() {
   const [replyText, setReplyText] = useState("");
   const [editingId, setEditingId] = useState(null); // מי כרגע במצב עריכת-טקסט (פנקה→שדה→שמור/בטל)
   const [editText, setEditText] = useState("");
+  // אותו היגיון בדיוק כמו DevAnnotationsScreen.jsx — סשן המנהל (12 שעות)
+  // עלול לפוג באמצע סקירה ארוכה. withAuthGuard מזהה שגיאת-אימות ומציג באנר
+  // עם התחברות-מחדש מקומית, בלי לאבד שום state (טקסט תגובה/עריכה פתוחים).
+  const [authError, setAuthError] = useState(null);
+  const [reauthSecret, setReauthSecret] = useState("");
+  const [reauthing, setReauthing] = useState(false);
 
   function reload() {
-    fetchJynxFeedback().then(setItems);
+    fetchJynxFeedback().then(setItems).catch((e) => {
+      if (e.message?.includes("אימות")) setAuthError(e.message);
+    });
   }
   useEffect(() => {
     reload();
@@ -32,24 +40,53 @@ export default function JynxFeedbackScreen() {
     return () => clearInterval(t);
   }, []);
 
+  async function withAuthGuard(action) {
+    try {
+      await action();
+    } catch (e) {
+      if (e.message?.includes("אימות")) setAuthError(e.message);
+    }
+  }
+  async function doReauth() {
+    setReauthing(true);
+    try {
+      await adminVerify(reauthSecret);
+      setAuthError(null);
+      setReauthSecret("");
+      reload();
+    } catch (e) {
+      setAuthError(e.message);
+    } finally {
+      setReauthing(false);
+    }
+  }
+
   async function confirmResolve(a) {
-    await resolveJynxFeedback(a.id, true, resolveNote.trim() || null);
-    setResolvingId(null);
-    setResolveNote("");
-    reload();
+    await withAuthGuard(async () => {
+      await resolveJynxFeedback(a.id, true, resolveNote.trim() || null);
+      setResolvingId(null);
+      setResolveNote("");
+      reload();
+    });
   }
   async function reopen(a) {
-    await resolveJynxFeedback(a.id, false);
-    reload();
+    await withAuthGuard(async () => {
+      await resolveJynxFeedback(a.id, false);
+      reload();
+    });
   }
   async function exportMd() {
-    setExported(await exportJynxFeedbackMarkdown());
+    await withAuthGuard(async () => {
+      setExported(await exportJynxFeedbackMarkdown());
+    });
   }
   async function sendReply(a) {
     if (!replyText.trim()) return;
-    await replyToJynxFeedback(a.id, replyText.trim());
-    setReplyText("");
-    reload();
+    await withAuthGuard(async () => {
+      await replyToJynxFeedback(a.id, replyText.trim());
+      setReplyText("");
+      reload();
+    });
   }
   function startEdit(a) {
     setEditingId(a.id);
@@ -61,17 +98,37 @@ export default function JynxFeedbackScreen() {
   }
   async function saveEdit(a) {
     if (!editText.trim()) return;
-    await editJynxFeedback(a.id, editText.trim());
-    setEditingId(null);
-    setEditText("");
-    reload();
+    await withAuthGuard(async () => {
+      await editJynxFeedback(a.id, editText.trim());
+      setEditingId(null);
+      setEditText("");
+      reload();
+    });
   }
 
-  if (!items) return <div className="dev-admin-empty">Loading...</div>;
-  const shown = filter === "open" ? items.filter((a) => !a.resolved) : filter === "done" ? items.filter((a) => a.resolved) : items;
+  if (!items && !authError) return <div className="dev-admin-empty">Loading...</div>;
+  const shown = !items ? [] : filter === "open" ? items.filter((a) => !a.resolved) : filter === "done" ? items.filter((a) => a.resolved) : items;
 
   return (
     <div className="dev-admin-tab">
+      {authError && (
+        <div className="dev-admin-reauth-banner">
+          <span>{authError}</span>
+          <div className="dev-admin-reauth-form">
+            <input
+              type="password" autoFocus placeholder="Admin secret" value={reauthSecret}
+              onChange={(e) => setReauthSecret(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && doReauth()}
+              disabled={reauthing}
+            />
+            <button type="button" onClick={doReauth} disabled={!reauthSecret.trim() || reauthing}>
+              {reauthing ? "Signing in..." : "Log back in"}
+            </button>
+          </div>
+        </div>
+      )}
+      {items && (
+      <>
       <p className="dev-admin-hint">🔮 Feedback about Jynx itself (the FAB, toolbar, admin panel) — a completely separate queue from the app's QA queue, for improving the dev tool over time.</p>
       <div className="dev-admin-annotations-head">
         <div className="pill-tabs">
@@ -170,6 +227,8 @@ export default function JynxFeedbackScreen() {
             );
           })}
         </div>
+      )}
+      </>
       )}
       {exported !== null && (
         <div className="dev-admin-export-box">
