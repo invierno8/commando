@@ -6,6 +6,7 @@ import DevAdminPanel from "./DevAdminPanel.jsx";
 import DevOverlay from "./overlay/DevOverlay.jsx";
 import CommentsPanel from "./overlay/CommentsPanel.jsx";
 import MentionsBell from "./MentionsBell.jsx";
+import JynxThought from "./JynxThought.jsx";
 import { useDraggableFab } from "./useDraggableFab.js";
 import { useKeepInViewport } from "./useKeepInViewport.js";
 
@@ -22,7 +23,13 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loggingIn, setLoggingIn] = useState(false);
+  // idle | thinking | success | error — מחליף את loggingIn הבוליאני הישן.
+  // "success" הוא שלב מכוון-בעצמו: לא סוגרים את הפאנל/מציבים devName באותו
+  // רגע שה-login מצליח, כי אז המעבר מ"מקליד סיסמה" ל"מחובר" קורה בבזק אחד
+  // בלי משוב — בדיוק התלונה שהובילה לפיצ'ר הזה. במקום זה משהים כמה מאות
+  // מילישניות עם JynxThought מציג "✨ Welcome" לפני שבאמת מתחברים.
+  const [loginPhase, setLoginPhase] = useState("idle");
+  const [pendingWelcomeName, setPendingWelcomeName] = useState(null);
   const [adminOpen, setAdminOpen] = useState(false);
   const [overlayOn, setOverlayOn] = useState(true);
   const [commentsOn, setCommentsOn] = useState(false);
@@ -95,20 +102,24 @@ export default function DevAuthGate({ route, devFabProps }) {
 
   async function login() {
     setError("");
-    setLoggingIn(true);
+    setLoginPhase("thinking");
     try {
       const res = await devLogin(password);
+      setPendingWelcomeName(res.name);
+      setLoginPhase("success");
+      await new Promise((r) => setTimeout(r, 700));
       setDevName(res.name);
       if (res.isAdmin) setIsAdmin(true);
       setLoginOpen(false);
       setPassword("");
+      setLoginPhase("idle");
+      setPendingWelcomeName(null);
       const me = await fetchDevMe();
       setDevUserId(me?.id || null);
       setCanJynxComment(!!me?.canJynxComment);
     } catch (e) {
       setError(e.message);
-    } finally {
-      setLoggingIn(false);
+      setLoginPhase("error");
     }
   }
   async function logout() {
@@ -122,8 +133,8 @@ export default function DevAuthGate({ route, devFabProps }) {
   // "Jynx בועה נעלמת בלי הסבר בזמן ה-cold start" — תיקון: במקום return null
   // (שמשאיר את המשתמש בלי שום סימן שמשהו קורה במשך עד ~30 שניות, ראו ההערה
   // למעלה על fetchDevMe()'s retry loop), מציגים את אותה בועה נעולה עם ספינר
-  // וטקסט "Waking up…" — אינדיקציה חיה אמיתית, לא קישוט, ולכן מותרת גם לפי
-  // מדיניות האנימציה (ראו theme.js).
+  // ובועת-מחשבה צפה "💤 Waking up…" (ראו JynxThought.jsx) — אינדיקציה חיה
+  // אמיתית, לא קישוט, ולכן מותרת גם לפי מדיניות האנימציה (ראו theme.js).
   if (checking) {
     return (
       <div
@@ -131,9 +142,10 @@ export default function DevAuthGate({ route, devFabProps }) {
         style={{ right: lockedFab.pos.right, bottom: lockedFab.pos.bottom }}
       >
         <style>{CSS}</style>
-        <div className="dev-fab dev-fab-locked dev-fab-waking" title="Jynx is waking up the dev server — this can take up to ~30s on a cold start">
+        <JynxThought status="waking" />
+        <div className="dev-fab dev-fab-locked jynx-thinking-pulse" title="Jynx is waking up the dev server — this can take up to ~30s on a cold start">
           <Loader2 size={13} className="dev-fab-waking-spinner" />
-          <span className="jynx-logo dev-fab-waking-label">Waking up…</span>
+          <span className="jynx-logo">JYNX</span>
         </div>
       </div>
     );
@@ -145,26 +157,37 @@ export default function DevAuthGate({ route, devFabProps }) {
         className="dev-fab-wrap jynx-chrome jynx-ui"
         style={{ right: lockedFab.pos.right, bottom: lockedFab.pos.bottom }}
         tabIndex={-1}
-        onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setLoginOpen(false); }}
+        onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget) && loginPhase !== "thinking" && loginPhase !== "success") setLoginOpen(false); }}
       >
         <style>{CSS}</style>
+        {loginOpen && (
+          <JynxThought
+            status={loginPhase !== "idle" ? loginPhase : null}
+            text={loginPhase === "success" ? `Welcome, ${pendingWelcomeName}!` : loginPhase === "error" ? error : undefined}
+          />
+        )}
         {loginOpen && (
           <div ref={loginPanelRef} className="dev-fab-panel dev-only dev-login-panel">
             <span className="dev-only-tag">JYNX — Sign in to dev mode</span>
             <label className="env-strip-identity">
               <span>Password</span>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} disabled={loggingIn} autoFocus />
+              <input
+                type="password" value={password}
+                onChange={(e) => { setPassword(e.target.value); if (loginPhase === "error") setLoginPhase("idle"); }}
+                onKeyDown={(e) => e.key === "Enter" && login()}
+                disabled={loginPhase === "thinking" || loginPhase === "success"}
+                autoFocus
+              />
             </label>
-            {error && <div className="dev-login-error">{error}</div>}
-            <button type="button" className="dev-login-submit" onClick={login} disabled={!password.trim() || loggingIn}>
-              {loggingIn ? <Loader2 size={13} className="dev-login-spinner" /> : "Sign in"}
+            <button type="button" className="dev-login-submit" onClick={login} disabled={!password.trim() || loginPhase === "thinking" || loginPhase === "success"}>
+              {loginPhase === "thinking" ? <Loader2 size={13} className="dev-login-spinner" /> : "Sign in"}
             </button>
           </div>
         )}
         <button
           type="button"
           ref={lockedFab.sizeRef}
-          className="dev-fab dev-fab-locked"
+          className={"dev-fab dev-fab-locked" + (loginPhase === "thinking" ? " jynx-thinking-pulse" : " jynx-breathe")}
           onClick={onFabClick}
           {...lockedFab.dragHandlers}
           title="Sign in to dev mode — draggable"
@@ -214,7 +237,7 @@ export default function DevAuthGate({ route, devFabProps }) {
         </div>
       ) : (
         <div className="dev-fab-wrap jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
-          <button type="button" ref={toolbarFab.sizeRef} className="dev-fab" onClick={toggleToolbarOpen} {...toolbarFab.dragHandlers} title="Expand the Jynx toolbar — draggable">
+          <button type="button" ref={toolbarFab.sizeRef} className="dev-fab jynx-breathe" onClick={toggleToolbarOpen} {...toolbarFab.dragHandlers} title="Expand the Jynx toolbar — draggable">
             <span className="jynx-logo">JYNX</span>
           </button>
         </div>
@@ -236,10 +259,44 @@ const CSS = `
 .dev-login-spinner{ display:block; margin:0 auto; animation:devLoginSpin .7s linear infinite; }
 @keyframes devLoginSpin{ to{ transform:rotate(360deg); } }
 
-.dev-fab-waking{ cursor:wait; }
 .dev-fab-waking-spinner{ animation:devLoginSpin .9s linear infinite; }
-.dev-fab-waking-label{ animation:devFabWakingPulse 1.6s ease-in-out infinite; }
-@keyframes devFabWakingPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.45; } }
+
+/* "חי" — נשימה עדינה כשאין שום דבר אחר קורה, כדי שהבועה לעולם לא תיראה
+   קפואה/מתה גם כשהיא רק יושבת שם וממתינה. */
+.jynx-breathe{ animation:jynxBreathe 3s ease-in-out infinite; }
+@keyframes jynxBreathe{
+  0%, 100% { transform:scale(1); box-shadow:0 0 0 0 color-mix(in srgb, var(--jynx) 35%, transparent); }
+  50% { transform:scale(1.04); box-shadow:0 0 10px 2px color-mix(in srgb, var(--jynx) 25%, transparent); }
+}
+/* "חושב" — פועם מהר וחזק יותר מהנשימה הרגילה, קצב שונה בבירור כדי שיהיה
+   ברור שמשהו קורה עכשיו (מתעורר/מתחבר), לא רק "חי כרגיל". */
+.jynx-thinking-pulse{ animation:jynxThinkingPulse .9s ease-in-out infinite; }
+@keyframes jynxThinkingPulse{
+  0%, 100% { transform:scale(1); box-shadow:0 0 0 0 color-mix(in srgb, var(--jynx) 60%, transparent); }
+  50% { transform:scale(1.08); box-shadow:0 0 14px 4px color-mix(in srgb, var(--jynx) 45%, transparent); }
+}
+
+/* בועת-מחשבה צפה מעל הבועה/הפאנל — ראו JynxThought.jsx. הזנב (::after)
+   מוצמד לימין כי כל כרום ה-Jynx עוגן-ימין (right/bottom פיזי, לא RTL). */
+.jynx-thought{
+  position:absolute; bottom:100%; right:0; margin-bottom:8px; display:inline-flex; align-items:center; gap:6px;
+  background:var(--panel); border:1px solid var(--jynx); border-radius:14px; padding:6px 12px;
+  font-size:12px; font-weight:700; color:var(--text); white-space:nowrap; box-shadow:var(--shadow-md);
+  animation:jynxThoughtPop .22s cubic-bezier(.34,1.56,.64,1); pointer-events:none; z-index:1;
+}
+.jynx-thought::after{
+  content:""; position:absolute; top:100%; right:16px; width:0; height:0;
+  border:6px solid transparent; border-top-color:var(--jynx);
+}
+@keyframes jynxThoughtPop{ from{ opacity:0; transform:translateY(4px) scale(.85); } to{ opacity:1; transform:translateY(0) scale(1); } }
+.jynx-thought-icon{ font-size:14px; }
+.jynx-thought-thinking .jynx-thought-icon{ display:inline-block; animation:jynxThoughtBounce .6s ease-in-out infinite; }
+@keyframes jynxThoughtBounce{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
+.jynx-thought-success{ border-color:var(--green); }
+.jynx-thought-success::after{ border-top-color:var(--green); }
+.jynx-thought-error{ border-color:var(--red); animation:jynxThoughtPop .22s cubic-bezier(.34,1.56,.64,1), jynxThoughtShake .4s ease .22s; }
+.jynx-thought-error::after{ border-top-color:var(--red); }
+@keyframes jynxThoughtShake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-3px); } 75%{ transform:translateX(3px); } }
 
 .dev-fab-toolbar{
   position:fixed; z-index:79; display:flex; align-items:center; gap:6px;
