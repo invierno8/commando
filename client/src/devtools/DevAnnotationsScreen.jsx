@@ -97,6 +97,12 @@ export default function DevAnnotationsScreen() {
         </div>
         <button type="button" className="dev-admin-export-btn" onClick={exportMd}><Download size={13} /> Export Markdown</button>
       </div>
+      {exported !== null && (
+        <div className="dev-admin-export-box">
+          <textarea readOnly rows={10} value={exported} onFocus={(e) => e.target.select()} />
+          <button type="button" onClick={() => setExported(null)}>Close</button>
+        </div>
+      )}
       {shown.length === 0 && <div className="dev-admin-empty">No {filter === "all" ? "" : filter + " "}comments right now.</div>}
       {shown.length > 0 && (
         <div className="dev-admin-annotation-list">
@@ -220,12 +226,6 @@ export default function DevAnnotationsScreen() {
               </div>
             );
           })}
-        </div>
-      )}
-      {exported !== null && (
-        <div className="dev-admin-export-box">
-          <textarea readOnly rows={10} value={exported} onFocus={(e) => e.target.select()} />
-          <button type="button" onClick={() => setExported(null)}>Close</button>
         </div>
       )}
     </div>
