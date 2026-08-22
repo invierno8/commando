@@ -149,6 +149,9 @@ export default function DevAnnotationsScreen() {
                     </span>
                   )}
                   {a.actionLog && <span className="dev-admin-action-log">{a.actionLog}</span>}
+                  {a.actionStatus === "pr_opened" && !a.resolved && (
+                    <span className="dev-admin-pr-hint">Opening a PR doesn't auto-close this — once it's merged, click ✓ below to mark it Done.</span>
+                  )}
                   {a.resolved && a.resolutionNote && (
                     <div className="dev-admin-resolution-note"><CheckCircle2 size={12} /> {a.resolutionNote}</div>
                   )}

@@ -231,6 +231,7 @@ const CSS = `
 .dev-admin-spin{ animation:devAdminSpin 1s linear infinite; }
 @keyframes devAdminSpin{ to{ transform:rotate(360deg); } }
 .dev-admin-action-log{ font-size:11px; color:var(--red); }
+.dev-admin-pr-hint{ font-size:11px; color:var(--text-dim); }
 .dev-admin-resolution-note{
   display:flex; align-items:flex-start; gap:5px; font-size:11.5px; color:var(--green);
   background:color-mix(in srgb, var(--green) 10%, transparent); border-radius:6px; padding:5px 8px; margin-top:2px;
