@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt51hste32qk",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-22T23:58:58.850Z",
+  "route": "dashboard",
+  "targetLabel": "dev-fab-toolbar",
+  "secondaryTargets": [],
+  "comment": "when in vertical mode the hi admin thing is too long, make it work designes with and make the over all vertical or horizontal button expirience better...",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
