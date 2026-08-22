@@ -23,6 +23,14 @@ function storageSet(key, value) {
 export const setDevToken = (token) => storageSet(DEV_TOKEN_KEY, token);
 export const setAdminToken = (token) => storageSet(ADMIN_TOKEN_KEY, token);
 
+// מאזין יחיד, אופציונלי, ל-401 (לא React Context — פשוט callback ברמת
+// המודול, כמו setDevToken/setAdminToken למעלה) — כך ש-DevAdminPanel.jsx
+// יכול לגלות שסשן-המנהל שלו פג באמצע פעולה (למשל resolve/reply/edit בתוך
+// אחת מלשוניות הפאנל) בלי כל קורא כאן צריך try/catch משלו. ראו
+// DevAdminPanel.jsx לרישום בפועל.
+let authErrorListener = null;
+export const setAuthErrorListener = (fn) => { authErrorListener = fn; };
+
 function authHeaders() {
   const headers = {};
   const devToken = storageGet(DEV_TOKEN_KEY);
@@ -53,6 +61,7 @@ async function request(path, { method = "GET", body } = {}) {
     /* תגובה ריקה (למשל 204) — נשאר null */
   }
   if (!res.ok) {
+    if (res.status === 401) authErrorListener?.(data?.error || "");
     throw new Error(data?.error || `שגיאת שרת (${res.status})`);
   }
   return data;

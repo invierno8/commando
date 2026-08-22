@@ -107,6 +107,12 @@ export default function DevAnnotationsScreen() {
         <button type="button" className="dev-admin-export-btn" onClick={exportMd}><Download size={13} /> Export Markdown</button>
       </div>
       {exportError && <div className="dev-admin-error">{exportError}</div>}
+      {exported !== null && (
+        <div className="dev-admin-export-box">
+          <textarea readOnly rows={10} value={exported} onFocus={(e) => e.target.select()} />
+          <button type="button" onClick={() => setExported(null)}>Close</button>
+        </div>
+      )}
       {shown.length === 0 && <div className="dev-admin-empty">No {filter === "all" ? "" : filter + " "}comments right now.</div>}
       {shown.length > 0 && (
         <div className="dev-admin-annotation-list">
@@ -159,6 +165,9 @@ export default function DevAnnotationsScreen() {
                     </span>
                   )}
                   {a.actionLog && <span className="dev-admin-action-log">{a.actionLog}</span>}
+                  {a.actionStatus === "pr_opened" && !a.resolved && (
+                    <span className="dev-admin-pr-hint">Opening a PR doesn't auto-close this — once it's merged, click ✓ below to mark it Done.</span>
+                  )}
                   {a.resolved && a.resolutionNote && (
                     <div className="dev-admin-resolution-note"><CheckCircle2 size={12} /> {a.resolutionNote}</div>
                   )}
@@ -230,12 +239,6 @@ export default function DevAnnotationsScreen() {
               </div>
             );
           })}
-        </div>
-      )}
-      {exported !== null && (
-        <div className="dev-admin-export-box">
-          <textarea readOnly rows={10} value={exported} onFocus={(e) => e.target.select()} />
-          <button type="button" onClick={() => setExported(null)}>Close</button>
         </div>
       )}
     </div>
