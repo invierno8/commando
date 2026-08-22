@@ -1,0 +1,31 @@
+{
+  "id": "ann-mt4u3prw2opv",
+  "authorId": "dev-mt3dwzswp17i",
+  "authorName": "זיו",
+  "createdAt": "2026-08-22T20:32:04.413Z",
+  "route": "dashboard",
+  "targetLabel": "Dashboard — widget: מדדים כלליים — כלל החטיבה",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "this box is recognized as a single one, i want each sub-box thats inside of it such as (סורבו,אושרו) a recognized box",
+  "attachment": null,
+  "attachmentName": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
