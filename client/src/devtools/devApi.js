@@ -140,3 +140,12 @@ export async function requestAnnotationAction(id, requestedBy) {
 export async function exportAnnotationsMarkdown() {
   return http.getText(`/admin/annotations/export`);
 }
+
+// טוגל "לסמן אוטומטית כטופל כשנפתח PR" — משותף לשני סוגי ההערות (app/jynx),
+// ראו data/lib/annotationSettings.js.
+export async function fetchAnnotationSettings() {
+  return http.get(`/admin/annotation-settings`);
+}
+export async function setAutoResolveOnPrOpened(autoResolveOnPrOpened) {
+  return http.patch(`/admin/annotation-settings`, { autoResolveOnPrOpened });
+}

@@ -29,8 +29,10 @@ import devUsersRouter from "./routes/dev-users.js";
 import annotationsRouter, { hydrateAnnotationsFromGithub } from "./routes/annotations.js";
 import jynxFeedbackRouter, { hydrateJynxFeedbackFromGithub } from "./routes/jynx-feedback.js";
 import mentionsRouter from "./routes/mentions.js";
+import annotationSettingsRouter from "./routes/annotation-settings.js";
 import { hydrateDevUsersFromGithub } from "./lib/devUsers.js";
 import { hydrateMockDataFromGithub } from "./lib/jsonStore.js";
+import { hydrateAnnotationSettingsFromGithub } from "./lib/annotationSettings.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -64,6 +66,7 @@ app.use("/api", devUsersRouter);
 app.use("/api", annotationsRouter);
 app.use("/api", jynxFeedbackRouter);
 app.use("/api", mentionsRouter);
+app.use("/api", annotationSettingsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
@@ -87,6 +90,7 @@ Promise.all([
   hydrateAnnotationsFromGithub().catch((err) => console.error("hydrateAnnotationsFromGithub failed:", err)),
   hydrateJynxFeedbackFromGithub().catch((err) => console.error("hydrateJynxFeedbackFromGithub failed:", err)),
   hydrateMockDataFromGithub().catch((err) => console.error("hydrateMockDataFromGithub failed:", err)),
+  hydrateAnnotationSettingsFromGithub().catch((err) => console.error("hydrateAnnotationSettingsFromGithub failed:", err)),
 ]).finally(() => {
   app.listen(PORT, () => {
     console.log(`HANGAR API listening on http://localhost:${PORT}`);

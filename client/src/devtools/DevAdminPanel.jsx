@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, ShieldCheck, LogIn } from "lucide-react";
-import { adminVerify, fetchAdminMe } from "./devApi.js";
+import { adminVerify, fetchAdminMe, fetchAnnotationSettings, setAutoResolveOnPrOpened } from "./devApi.js";
 import { setAuthErrorListener } from "../api-client/http.js";
 import DevAdminUsersScreen from "./DevAdminUsersScreen.jsx";
 import DevAnnotationsScreen from "./DevAnnotationsScreen.jsx";
@@ -28,6 +28,13 @@ export default function DevAdminPanel({ onClose, onVerified }) {
   const [reAuthSecret, setReAuthSecret] = useState("");
   const [reAuthError, setReAuthError] = useState("");
   const [reAuthing, setReAuthing] = useState(false);
+  // "לסמן כטופל אוטומטית כשנפתח PR" — הגדרה משותפת לשתי הלשוניות (Comments/
+  // Jynx), ולכן מוצגת כאן מעל ה-tabs, לא בתוך אחת מהן. ראו
+  // data/lib/annotationSettings.js להסבר המלא למה זו לא באמת "אוטומטי
+  // כשה-PR נמזג" אלא "אוטומטי כשה-PR נפתח" — האפליקציה הזו לא יודעת מתי PR
+  // ממוזג, רק מתי הרוטינה סימנה pr_opened.
+  const [autoResolve, setAutoResolveState] = useState(false);
+  const [autoResolveSaving, setAutoResolveSaving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,6 +55,24 @@ export default function DevAdminPanel({ onClose, onVerified }) {
     });
     return () => setAuthErrorListener(null);
   }, [authenticated]);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    fetchAnnotationSettings().then((s) => setAutoResolveState(!!s.autoResolveOnPrOpened)).catch(() => {});
+  }, [authenticated]);
+
+  async function toggleAutoResolve() {
+    const next = !autoResolve;
+    setAutoResolveState(next); // אופטימי — הטוגל עצמו מהיר, אין צורך לחכות
+    setAutoResolveSaving(true);
+    try {
+      await setAutoResolveOnPrOpened(next);
+    } catch {
+      setAutoResolveState(!next); // נכשל — חוזרים למצב הקודם
+    } finally {
+      setAutoResolveSaving(false);
+    }
+  }
 
   async function verify() {
     setError("");
@@ -112,6 +137,24 @@ export default function DevAdminPanel({ onClose, onVerified }) {
                 {reAuthError && <span className="dev-admin-reauth-error">{reAuthError}</span>}
               </div>
             )}
+            {(tab === "annotations" || tab === "jynx") && (
+              <div className="dev-admin-autoresolve-row">
+                <span>
+                  <b>{autoResolve ? "Auto" : "Manual"}</b> mark as Done — {autoResolve
+                    ? "a comment resolves itself the moment a PR is opened for it"
+                    : "you click ✓ yourself once a PR is merged (see the hint on pr_opened rows)"}
+                </span>
+                <button
+                  type="button"
+                  className={"dev-admin-autoresolve-toggle" + (autoResolve ? " on" : "")}
+                  onClick={toggleAutoResolve}
+                  disabled={autoResolveSaving}
+                  title={autoResolve ? "Switch to manual" : "Switch to automatic"}
+                >
+                  <span className="dev-admin-autoresolve-knob" />
+                </button>
+              </div>
+            )}
             <div className="pill-tabs" style={{ marginBottom: 14 }}>
               <button type="button" className={"pill-tab" + (tab === "users" ? " active" : "")} onClick={() => setTab("users")}>Dev Users</button>
               <button type="button" className={"pill-tab" + (tab === "annotations" ? " active" : "")} onClick={() => setTab("annotations")}>Comments</button>
@@ -172,6 +215,24 @@ const CSS = `
 }
 .dev-admin-reauth-banner button:disabled{ opacity:.5; cursor:not-allowed; }
 .dev-admin-reauth-error{ color:var(--red); font-size:11.5px; flex-basis:100%; }
+
+.dev-admin-autoresolve-row{
+  display:flex; align-items:center; gap:10px; margin-bottom:12px; padding:8px 10px;
+  background:var(--panel-raised); border:1px solid var(--line); border-radius:9px;
+}
+.dev-admin-autoresolve-row span{ flex:1; font-size:11.5px; color:var(--text-dim); line-height:1.5; }
+.dev-admin-autoresolve-row span b{ color:var(--text); }
+.dev-admin-autoresolve-toggle{
+  flex:none; width:36px; height:20px; border-radius:12px; border:1px solid var(--line); background:var(--bg);
+  cursor:pointer; position:relative; padding:0; transition:background .15s ease, border-color .15s ease;
+}
+.dev-admin-autoresolve-toggle.on{ background:var(--jynx); border-color:var(--jynx); }
+.dev-admin-autoresolve-toggle:disabled{ opacity:.6; cursor:not-allowed; }
+.dev-admin-autoresolve-knob{
+  position:absolute; top:1px; left:1px; width:16px; height:16px; border-radius:50%; background:#fff;
+  box-shadow:var(--shadow-sm); transition:transform .15s ease;
+}
+.dev-admin-autoresolve-toggle.on .dev-admin-autoresolve-knob{ transform:translateX(16px); }
 
 .dev-admin-tab{ display:flex; flex-direction:column; gap:12px; }
 .dev-admin-hint{ color:var(--text-dim); font-size:12px; line-height:1.6; margin:0; }
