@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, ShieldCheck } from "lucide-react";
+import { X, ShieldCheck, LogIn } from "lucide-react";
 import { adminVerify, fetchAdminMe } from "./devApi.js";
+import { setAuthErrorListener } from "../api-client/http.js";
 import DevAdminUsersScreen from "./DevAdminUsersScreen.jsx";
 import DevAnnotationsScreen from "./DevAnnotationsScreen.jsx";
 import JynxFeedbackScreen from "./JynxFeedbackScreen.jsx";
@@ -17,6 +18,16 @@ export default function DevAdminPanel({ onClose, onVerified }) {
   const [secret, setSecret] = useState("");
   const [error, setError] = useState("");
   const [tab, setTab] = useState("users");
+  // הסשן (X-Admin-Session) יכול לפוג באמצע שימוש בפאנל — למשל תוך כדי כתיבת
+  // תגובה בלשונית Jynx/Comments. במקום להחזיר את authenticated ל-false (מה
+  // שהיה מסיר לגמרי את הלשונית הפעילה ומאבד כל state מקומי שם — טיוטת-
+  // תגובה פתוחה, תיבת-עריכה וכו', בדיוק מה שהמשתמש התלונן עליו), מציגים
+  // באנר קטן מעל תוכן הלשונית והלשונית עצמה נשארת mounted לגמרי. ראו
+  // setAuthErrorListener ב-http.js — מאזין 401 יחיד ברמת המודול, לא Context.
+  const [reAuthNeeded, setReAuthNeeded] = useState(false);
+  const [reAuthSecret, setReAuthSecret] = useState("");
+  const [reAuthError, setReAuthError] = useState("");
+  const [reAuthing, setReAuthing] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -30,6 +41,14 @@ export default function DevAdminPanel({ onClose, onVerified }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!authenticated) return;
+    setAuthErrorListener((message) => {
+      if (message && message.startsWith("נדרש אימות מנהל")) setReAuthNeeded(true);
+    });
+    return () => setAuthErrorListener(null);
+  }, [authenticated]);
+
   async function verify() {
     setError("");
     try {
@@ -38,6 +57,20 @@ export default function DevAdminPanel({ onClose, onVerified }) {
       onVerified?.();
     } catch (e) {
       setError(e.message);
+    }
+  }
+
+  async function reLogin() {
+    setReAuthError("");
+    setReAuthing(true);
+    try {
+      await adminVerify(reAuthSecret);
+      setReAuthNeeded(false);
+      setReAuthSecret("");
+    } catch (e) {
+      setReAuthError(e.message);
+    } finally {
+      setReAuthing(false);
     }
   }
 
@@ -63,6 +96,22 @@ export default function DevAdminPanel({ onClose, onVerified }) {
           </div>
         ) : (
           <>
+            {reAuthNeeded && (
+              <div className="dev-admin-reauth-banner">
+                <ShieldCheck size={14} />
+                <span>Admin session expired — sign in again to keep working (nothing here is lost).</span>
+                <input
+                  type="password" autoFocus value={reAuthSecret} placeholder="Admin secret"
+                  onChange={(e) => setReAuthSecret(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && reLogin()}
+                  disabled={reAuthing}
+                />
+                <button type="button" onClick={reLogin} disabled={!reAuthSecret.trim() || reAuthing}>
+                  <LogIn size={12} /> {reAuthing ? "Signing in..." : "Sign in"}
+                </button>
+                {reAuthError && <span className="dev-admin-reauth-error">{reAuthError}</span>}
+              </div>
+            )}
             <div className="pill-tabs" style={{ marginBottom: 14 }}>
               <button type="button" className={"pill-tab" + (tab === "users" ? " active" : "")} onClick={() => setTab("users")}>Dev Users</button>
               <button type="button" className={"pill-tab" + (tab === "annotations" ? " active" : "")} onClick={() => setTab("annotations")}>Comments</button>
@@ -106,6 +155,23 @@ const CSS = `
 }
 .dev-admin-verify-btn:disabled{ opacity:.5; cursor:not-allowed; }
 .dev-admin-error{ color:var(--red); font-size:12px; }
+
+.dev-admin-reauth-banner{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px;
+  background:color-mix(in srgb, var(--yellow) 12%, transparent); border:1px solid var(--yellow);
+  border-radius:9px; padding:8px 10px; color:var(--yellow); font-size:12px;
+}
+.dev-admin-reauth-banner span{ flex:1 1 200px; min-width:0; }
+.dev-admin-reauth-banner input{
+  width:140px; background:var(--bg); border:1px solid var(--yellow); border-radius:7px; padding:6px 9px;
+  font-family:var(--font-mono); font-size:12px; color:var(--text);
+}
+.dev-admin-reauth-banner button{
+  display:inline-flex; align-items:center; gap:4px; background:var(--yellow); color:#000; border:none;
+  border-radius:7px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;
+}
+.dev-admin-reauth-banner button:disabled{ opacity:.5; cursor:not-allowed; }
+.dev-admin-reauth-error{ color:var(--red); font-size:11.5px; flex-basis:100%; }
 
 .dev-admin-tab{ display:flex; flex-direction:column; gap:12px; }
 .dev-admin-hint{ color:var(--text-dim); font-size:12px; line-height:1.6; margin:0; }
