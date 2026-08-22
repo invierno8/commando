@@ -142,6 +142,7 @@ router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
     route: req.body.route, targetLabel: req.body.targetLabel || null, targetSelector: req.body.targetSelector || null,
     secondaryTargets,
     comment: req.body.comment, attachment, attachmentName, resolved: false, resolvedAt: null, resolvedBy: null, resolutionNote: null,
+    reopenedNote: null,
     archived: false, archivedAt: null,
     actionStatus: actionRequested ? "queued" : "none",
     actionRequestedAt: actionRequested ? new Date().toISOString() : null,
@@ -170,12 +171,21 @@ router.get("/dev/annotations", requireDevUser, (req, res) => {
 });
 
 // תגובת-מעקב על הערה — כל משתמש-פיתוח מחובר, כולל מי שלא כתב את ההערה
-// המקורית (כדי לאפשר דיון אמיתי, לא רק "בעל ההערה מגיב לעצמו"). מנתחת את
-// טקסט התגובה עצמו לשני סוגי אזכור, בדיוק כמו שה-[→ תווית] כבר מנותח מטקסט
-// חופשי במקום picker נפרד (ראו DevOverlay.jsx): "@שם" של משתמש-פיתוח אמיתי
-// מייצר לו התראה (ראו lib/mentions.js), ו-"@jynx" (תמיד שמור, לעולם לא
-// משתמש אמיתי) מחזיר את ההערה לתור הפעולות כ-follow-up על ה-PR הקיים (אם
-// יש) — כדי שלא תצטרך לפתוח הערה חדשה רק כדי לומר "זה עוד לא בדיוק זה".
+// המקורית (כדי לאפשר דיון אמיתי, לא רק "בעל ההערה מגיב לעצמו"). שני דברים
+// עצמאיים קורים כאן על טקסט התגובה עצמו:
+//
+// 1. אם ההערה כבר "טופלה" (resolved:true) וכעת מגיעה תגובה חדשה, מניחים
+//    שהתגובה מבקשת המשך טיפול ופותחים אותה מחדש אוטומטית — עדיף מהערת
+//    "טופל" שקטה שממשיכה לצבור תגובות שאף אחד לא רואה. reopenedNote היא
+//    הודעה חד-פעמית שמוצגת על השורה עד שההערה תסומן "טופל" שוב (ראו PATCH
+//    /admin/annotations/:id למטה, ששם היא מתאפסת) — לא toast חוזר.
+// 2. מנתחת את הטקסט לשני סוגי אזכור, בדיוק כמו שה-[→ תווית] כבר מנותח
+//    מטקסט חופשי במקום picker נפרד (ראו DevOverlay.jsx): "@שם" של
+//    משתמש-פיתוח אמיתי מייצר לו התראה (ראו lib/mentions.js), ו-"@jynx"
+//    (תמיד שמור, לעולם לא משתמש אמיתי) מחזיר את ההערה לתור הפעולות
+//    כ-follow-up על ה-PR הקיים (אם יש) — כדי שלא תצטרך לפתוח הערה חדשה
+//    רק כדי לומר "זה עוד לא בדיוק זה". שני הדברים יכולים לקרות יחד —
+//    תגובה על הערה טופלה שגם מתייגת @jynx גם פותחת מחדש וגם מתורה חזרה.
 router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req, res) => {
   requireFields(req.body, ["text"]);
   const found = readAll().find((a) => a.id === req.params.id);
@@ -185,12 +195,20 @@ router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req,
     authorId: req.devUser.id, authorName: req.devUser.name,
     text: req.body.text, createdAt: new Date().toISOString(),
   };
+  const wasResolved = found.resolved;
   const jynxTagged = hasJynxMention(req.body.text);
-  let updated = { ...found, replies: [...(found.replies || []), reply] };
+  let updated = {
+    ...found,
+    replies: [...(found.replies || []), reply],
+    resolved: wasResolved ? false : found.resolved,
+    resolvedAt: wasResolved ? null : found.resolvedAt,
+    resolvedBy: wasResolved ? null : found.resolvedBy,
+    reopenedNote: wasResolved ? "Reopened — a new reply came in after this was marked done." : (found.reopenedNote || null),
+  };
   if (jynxTagged) {
     updated = { ...updated, actionStatus: "queued", actionRequestedAt: new Date().toISOString(), actionRequestedBy: req.devUser.name };
   }
-  await persistNote(updated, `reply on ${updated.id} — ${req.devUser.name}`);
+  await persistNote(updated, wasResolved ? `reply reopened ${updated.id} — ${req.devUser.name}` : `reply on ${updated.id} — ${req.devUser.name}`);
   for (const u of parseMentionedUsers(req.body.text)) {
     if (u.id === req.devUser.id) continue; // אל תתריע למי שמזכיר את עצמו
     await addMention(u.id, {
@@ -266,6 +284,9 @@ router.patch("/admin/annotations/:id", requireAdmin, asyncRoute(async (req, res)
     // סימון "טופל" גם על תור הפעולות — "מעבר לטופל" שהמנהל ביקש, לא רק
     // resolved נפרד מ-actionStatus שלא באמת מסתנכרן.
     actionStatus: resolved && found.actionStatus && found.actionStatus !== "none" ? "done" : found.actionStatus,
+    // "טופל" מחדש מאפס את הודעת "נפתחה מחדש" החד-פעמית (ראו POST
+    // /dev/annotations/:id/reply למעלה) — היא כבר מילאה את תפקידה.
+    reopenedNote: hasResolvedField && resolved ? null : (found.reopenedNote || null),
   };
   const verb = hasCommentField ? "edited" : hasArchivedField ? (archived ? "archived" : "unarchived") : (resolved ? "resolved" : "reopened");
   await persistNote(updated, `QA note ${verb} — ${updated.id}`);
