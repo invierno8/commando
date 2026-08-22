@@ -56,10 +56,34 @@ export default function DevAuthGate({ route, devFabProps }) {
     setToolbarOpen((v) => !v);
   }
 
+  // הבקאנד (Render, שכבה חינמית) יכול "לישון" אחרי חוסר פעילות ולקחת עד
+  // 30-50 שניות להתעורר על הבקשה הראשונה. בלי retry+catch כאן, כשל/timeout
+  // חד-פעמי על fetchDevMe() באותו חלון-התעוררות היה משאיר checking=true
+  // לתמיד (ה-.then() אף פעם לא רץ) — וכל ה-UI של Jynx נעלם, אפילו הכפתור
+  // הנעול, בלי שום דרך לתקן חוץ מרענון ידני. עכשיו יש נסיון חוזר עם השהיה
+  // גדלה (2s/4s/6s/8s/10s ≈ 30s בסך הכל, קרוב לזמן ההתעוררות המקסימלי), וגם
+  // בכישלון סופי — checking תמיד יורד ל-false, כך שלפחות הכפתור הנעול מוצג
+  // ואפשר לנסות שוב ידנית (התחברות) במקום שהכל ייעלם בלי הסבר.
   useEffect(() => {
     let cancelled = false;
-    fetchDevMe().then((d) => { if (!cancelled) { setDevName(d?.name || null); setDevUserId(d?.id || null); setCanJynxComment(!!d?.canJynxComment); setChecking(false); } });
-    fetchAdminMe().then((d) => { if (!cancelled) setIsAdmin(!!d?.authenticated); });
+    (async () => {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        if (cancelled) return;
+        try {
+          const d = await fetchDevMe();
+          if (cancelled) return;
+          setDevName(d?.name || null);
+          setDevUserId(d?.id || null);
+          setCanJynxComment(!!d?.canJynxComment);
+          setChecking(false);
+          return;
+        } catch {
+          if (attempt === 4) { if (!cancelled) setChecking(false); return; }
+          await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));
+        }
+      }
+    })();
+    fetchAdminMe().then((d) => { if (!cancelled) setIsAdmin(!!d?.authenticated); }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
 
