@@ -1,0 +1,13 @@
+{
+  "id": "ann-mt4mu2zvloz3",
+  "route": "catalog",
+  "targetLabel": "Catalog — header and description",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "Catalog — item: מצפן דיגיטלי (NAV-01)"
+  ],
+  "comment": "להזיז שמאלה אל: [→ Catalog — item: מצפן דיגיטלי (NAV-01)]",
+  "authorName": "itsik",
+  "requestedAt": "2026-08-22T17:15:00.736Z",
+  "requestedBy": "admin"
+}
