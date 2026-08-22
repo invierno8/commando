@@ -1394,3 +1394,38 @@ were cut. Each was resolved in an isolated worktree (`git worktree add`),
 rebuilt clean (`npx vite build` + `node --check` on touched backend
 routes), and pushed back to its actual PR branch so the existing PR
 updates in place rather than opening a new one.
+
+### 2026-08-22 — Yet another duplicate-PR race, despite the lesson already
+### being written down twice: check `list_pull_requests` BEFORE implementing
+A run processing `jynx-mt4y6t8f3lh6` (the "Export Markdown does nothing"
+comment) implemented, committed, and pushed a fix on branch
+`jynx-export-error-feedback-8f3lh6` — only to discover, when trying to do
+the post-PR bookkeeping pull, that `origin/main` had already moved past its
+starting point to include a *third* independent fix for the exact same
+work item: PR #25 (a lesser, non-fix duplicate) and PR #26 (the real fix,
+already correctly bookkept in the note with `actionStatus:"pr_opened"` and
+`actionPrUrl` pointing at #26) had both landed on `main` in between this
+run's step-zero check and its `git push`. This run's own PR (#29) was a
+third, now-redundant duplicate of #26 — closed with an explanatory comment
+rather than left open, and the note (already correctly pointing at #26,
+never touched by this run) was left as-is.
+
+Root cause, plainly: this run skipped the exact check the 2026-08-21
+entries above already prescribe ("check `list_pull_requests` for every
+branch matching that id... before pushing your own branch"). It's worth
+restating why the branch-suffix collision guard alone doesn't save you
+here: the last-6-of-id suffix is deterministic, but the descriptive slug
+prefix is not (`jynx-export-error-feedback-8f3lh6` vs. the other run's
+`jynx-export-button-error-feedback-8f3lh6`) — two independent runs can
+each pick a different but equally-reasonable slug for the same id, so
+`git push` never collides and neither run gets the "someone already has
+this branch" signal that would normally catch it. **The only reliable
+guard is checking PRs by id, not by exact branch name** — e.g.
+`list_pull_requests` with a `head` filter won't catch a differently-slugged
+branch, so search PR titles/bodies (which always embed the work-item id
+verbatim per the "## The comment" section) or grep recently-changed
+`data/annotations/*-notes/*.json` files for `actionStatus` before starting
+implementation, not just at step zero. Do this check immediately before
+`git push`, not only once at the start of the run — the collision window is
+the entire implementation time, and a concurrent run can land its PR at any
+point during it.

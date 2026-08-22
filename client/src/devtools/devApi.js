@@ -79,6 +79,15 @@ export async function exportJynxFeedbackMarkdown() {
   return http.getText(`/admin/jynx-feedback/export`);
 }
 
+// @mentions — ראו data/routes/mentions.js. משותף לשני סוגי ההערות (app/jynx),
+// לכן route עצמאי משלו, לא מוצמד ל-annotations.js/jynx-feedback.js.
+export async function fetchMentions() {
+  return http.get(`/dev/mentions`);
+}
+export async function markMentionRead(id) {
+  return http.post(`/dev/mentions/${id}/read`);
+}
+
 export async function adminVerify(secret) {
   const res = await http.post(`/admin/verify`, { secret });
   setAdminToken(res.token);

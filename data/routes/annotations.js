@@ -30,6 +30,7 @@ import { requireDevUser } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/adminAuth.js";
 import { asyncRoute, requireFields } from "../middleware/validate.js";
 import { commitFileToGithub, deleteFileFromGithub, githubPersistEnabled, listDirFromGithub, readFileFromGithub } from "../lib/githubPersist.js";
+import { parseMentionedUsers, hasJynxMention, addMention } from "../lib/mentions.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const NOTES_DIR = path.join(__dirname, "..", "annotations", "notes");
@@ -93,6 +94,25 @@ async function queueAction(note, requestedBy) {
   }
 }
 
+// @jynx בתגובה (ראו POST .../reply למטה) — בניגוד ל-queueAction (בקשה
+// טרייה), זה חוזר על פריט שכבר טופל בעבר: existingPrUrl מצביע על ה-PR
+// הקיים (אם יש), כדי שהרוטינה תדע לעדכן אותו במקום לפתוח כפול. isFollowUp
+// הוא הדגל שגורם לה לא לדלג למרות ש-actionStatus כבר "pr_opened"/"done".
+async function queueFollowUp(note, followUpText, requestedBy) {
+  const workItem = {
+    id: note.id, route: note.route, targetLabel: note.targetLabel, targetSelector: note.targetSelector,
+    secondaryTargets: note.secondaryTargets || [],
+    comment: note.comment, followUpText, authorName: note.authorName,
+    requestedAt: new Date().toISOString(), requestedBy,
+    isFollowUp: true, existingPrUrl: note.actionPrUrl || null,
+  };
+  fs.mkdirSync(ACTIONS_DIR, { recursive: true });
+  fs.writeFileSync(path.join(ACTIONS_DIR, `${note.id}.json`), JSON.stringify(workItem, null, 2) + "\n");
+  if (githubPersistEnabled()) {
+    await commitFileToGithub(`${GITHUB_ACTIONS_DIR}/${note.id}.json`, JSON.stringify(workItem, null, 2) + "\n", `follow-up queued (${note.route}) — ${note.id}`);
+  }
+}
+
 const router = Router();
 
 router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
@@ -151,13 +171,21 @@ router.get("/dev/annotations", requireDevUser, (req, res) => {
 });
 
 // תגובת-מעקב על הערה — כל משתמש-פיתוח מחובר, כולל מי שלא כתב את ההערה
-// המקורית (כדי לאפשר דיון אמיתי, לא רק "בעל ההערה מגיב לעצמו").
+// המקורית (כדי לאפשר דיון אמיתי, לא רק "בעל ההערה מגיב לעצמו"). שני דברים
+// עצמאיים קורים כאן על טקסט התגובה עצמו:
 //
-// אם ההערה כבר "טופלה" (resolved:true) וכעת מגיעה תגובה חדשה, מניחים
-// שהתגובה מבקשת המשך טיפול ופותחים אותה מחדש אוטומטית — עדיף מהערת "טופל"
-// שקטה שממשיכה לצבור תגובות שאף אחד לא רואה. reopenedNote היא הודעה
-// חד-פעמית שמוצגת על השורה עד שההערה תסומן "טופל" שוב (ראו PATCH
-// /admin/annotations/:id למטה, ששם היא מתאפסת) — לא toast חוזר.
+// 1. אם ההערה כבר "טופלה" (resolved:true) וכעת מגיעה תגובה חדשה, מניחים
+//    שהתגובה מבקשת המשך טיפול ופותחים אותה מחדש אוטומטית — עדיף מהערת
+//    "טופל" שקטה שממשיכה לצבור תגובות שאף אחד לא רואה. reopenedNote היא
+//    הודעה חד-פעמית שמוצגת על השורה עד שההערה תסומן "טופל" שוב (ראו PATCH
+//    /admin/annotations/:id למטה, ששם היא מתאפסת) — לא toast חוזר.
+// 2. מנתחת את הטקסט לשני סוגי אזכור, בדיוק כמו שה-[→ תווית] כבר מנותח
+//    מטקסט חופשי במקום picker נפרד (ראו DevOverlay.jsx): "@שם" של
+//    משתמש-פיתוח אמיתי מייצר לו התראה (ראו lib/mentions.js), ו-"@jynx"
+//    (תמיד שמור, לעולם לא משתמש אמיתי) מחזיר את ההערה לתור הפעולות
+//    כ-follow-up על ה-PR הקיים (אם יש) — כדי שלא תצטרך לפתוח הערה חדשה
+//    רק כדי לומר "זה עוד לא בדיוק זה". שני הדברים יכולים לקרות יחד —
+//    תגובה על הערה טופלה שגם מתייגת @jynx גם פותחת מחדש וגם מתורה חזרה.
 router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req, res) => {
   requireFields(req.body, ["text"]);
   const found = readAll().find((a) => a.id === req.params.id);
@@ -168,7 +196,8 @@ router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req,
     text: req.body.text, createdAt: new Date().toISOString(),
   };
   const wasResolved = found.resolved;
-  const updated = {
+  const jynxTagged = hasJynxMention(req.body.text);
+  let updated = {
     ...found,
     replies: [...(found.replies || []), reply],
     resolved: wasResolved ? false : found.resolved,
@@ -176,7 +205,18 @@ router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req,
     resolvedBy: wasResolved ? null : found.resolvedBy,
     reopenedNote: wasResolved ? "Reopened — a new reply came in after this was marked done." : (found.reopenedNote || null),
   };
+  if (jynxTagged) {
+    updated = { ...updated, actionStatus: "queued", actionRequestedAt: new Date().toISOString(), actionRequestedBy: req.devUser.name };
+  }
   await persistNote(updated, wasResolved ? `reply reopened ${updated.id} — ${req.devUser.name}` : `reply on ${updated.id} — ${req.devUser.name}`);
+  for (const u of parseMentionedUsers(req.body.text)) {
+    if (u.id === req.devUser.id) continue; // אל תתריע למי שמזכיר את עצמו
+    await addMention(u.id, {
+      kind: "app", noteId: found.id, replyId: reply.id, route: found.route, targetLabel: found.targetLabel,
+      mentionedBy: req.devUser.name, snippet: req.body.text.slice(0, 200),
+    });
+  }
+  if (jynxTagged) await queueFollowUp(updated, req.body.text, req.devUser.name);
   res.status(201).json(updated);
 }));
 

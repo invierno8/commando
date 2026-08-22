@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt4y6t8f3lh6",
+  "authorId": null,
+  "authorName": "Admin",
+  "createdAt": "2026-08-22T22:26:27.327Z",
+  "route": "dashboard",
+  "targetLabel": "dev-admin-export-btn",
+  "secondaryTargets": [],
+  "comment": "what is this supposed to do? beacuse now it does nothing",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "pr_opened",
+  "actionRequestedAt": "2026-08-22T22:26:27.327Z",
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/26",
+  "actionLog": "PR #26 fixes the actual bug (unhandled promise rejection swallowing export failures). PR #25, opened by a concurrent run, only reorders the result box and doesn't address the report — left open for a human to close if judged redundant.",
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}

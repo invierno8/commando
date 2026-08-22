@@ -28,6 +28,7 @@ import adminAuthRouter from "./routes/admin-auth.js";
 import devUsersRouter from "./routes/dev-users.js";
 import annotationsRouter, { hydrateAnnotationsFromGithub } from "./routes/annotations.js";
 import jynxFeedbackRouter, { hydrateJynxFeedbackFromGithub } from "./routes/jynx-feedback.js";
+import mentionsRouter from "./routes/mentions.js";
 import { hydrateDevUsersFromGithub } from "./lib/devUsers.js";
 import { hydrateMockDataFromGithub } from "./lib/jsonStore.js";
 
@@ -62,6 +63,7 @@ app.use("/api", adminAuthRouter);
 app.use("/api", devUsersRouter);
 app.use("/api", annotationsRouter);
 app.use("/api", jynxFeedbackRouter);
+app.use("/api", mentionsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
