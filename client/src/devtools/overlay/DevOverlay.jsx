@@ -30,7 +30,7 @@ function parseSecondaryTargetsFromComment(comment) {
   return found.slice(0, 10);
 }
 
-export default function DevOverlay({ active, route, isAdmin, canJynxChrome, onSubmitted }) {
+export default function DevOverlay({ active, route, isAdmin, canJynxChrome, markersOn, onSubmitted }) {
   // canJynxChrome (isAdmin OR a per-user canJynxComment grant, combined
   // upstream in DevAuthGate.jsx) קובע אם מותר לגלוש בכלל על ה-UI של Jynx
   // עצמו (.jynx-chrome) — ראו useHoverTarget.js. משתמשי-פיתוח רגילים בלי
@@ -166,7 +166,7 @@ export default function DevOverlay({ active, route, isAdmin, canJynxChrome, onSu
           onSubmit={submit}
         />
       )}
-      <AdminAnnotationMarkers isAdmin={isAdmin} route={route} refreshKey={markersRefreshKey} />
+      <AdminAnnotationMarkers isAdmin={isAdmin} active={markersOn} route={route} refreshKey={markersRefreshKey} />
     </div>,
     document.body
   );
