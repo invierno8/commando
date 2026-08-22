@@ -1,0 +1,11 @@
+{
+  "id": "ann-mt500dkv4azf",
+  "route": "dashboard",
+  "targetLabel": "Dashboard — widget: מוכנות מערכת",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "numbers are leaving the frame",
+  "authorName": "Admin",
+  "requestedAt": "2026-08-22T23:17:27.363Z",
+  "requestedBy": "Admin"
+}
