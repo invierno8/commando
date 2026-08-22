@@ -10,10 +10,10 @@
   "resolved": false,
   "resolvedAt": null,
   "resolutionNote": null,
-  "actionStatus": "queued",
+  "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-22T22:26:27.327Z",
-  "actionPrUrl": null,
-  "actionLog": null,
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/26",
+  "actionLog": "PR #26 fixes the actual bug (unhandled promise rejection swallowing export failures). PR #25, opened by a concurrent run, only reorders the result box and doesn't address the report — left open for a human to close if judged redundant.",
   "replies": [],
   "reactions": {
     "👍": [],
