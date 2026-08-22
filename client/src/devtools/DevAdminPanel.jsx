@@ -65,7 +65,7 @@ export default function DevAdminPanel({ onClose, onVerified }) {
           <>
             <div className="pill-tabs" style={{ marginBottom: 14 }}>
               <button type="button" className={"pill-tab" + (tab === "users" ? " active" : "")} onClick={() => setTab("users")}>Dev Users</button>
-              <button type="button" className={"pill-tab" + (tab === "annotations" ? " active" : "")} onClick={() => setTab("annotations")}>QA Comments</button>
+              <button type="button" className={"pill-tab" + (tab === "annotations" ? " active" : "")} onClick={() => setTab("annotations")}>Comments</button>
               <button type="button" className={"pill-tab" + (tab === "jynx" ? " active jynx-tab-active" : "")} onClick={() => setTab("jynx")}>🔮 Jynx</button>
             </div>
             {tab === "users" && <DevAdminUsersScreen />}
