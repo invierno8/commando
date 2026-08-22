@@ -113,7 +113,25 @@ export default function DevAuthGate({ route, devFabProps }) {
     setCanJynxComment(false);
   }
 
-  if (checking) return null;
+  // "Jynx בועה נעלמת בלי הסבר בזמן ה-cold start" — תיקון: במקום return null
+  // (שמשאיר את המשתמש בלי שום סימן שמשהו קורה במשך עד ~30 שניות, ראו ההערה
+  // למעלה על fetchDevMe()'s retry loop), מציגים את אותה בועה נעולה עם ספינר
+  // וטקסט "Waking up…" — אינדיקציה חיה אמיתית, לא קישוט, ולכן מותרת גם לפי
+  // מדיניות האנימציה (ראו theme.js).
+  if (checking) {
+    return (
+      <div
+        className="dev-fab-wrap jynx-chrome jynx-ui"
+        style={{ right: lockedFab.pos.right, bottom: lockedFab.pos.bottom }}
+      >
+        <style>{CSS}</style>
+        <div className="dev-fab dev-fab-locked dev-fab-waking" title="Jynx is waking up the dev server — this can take up to ~30s on a cold start">
+          <Loader2 size={13} className="dev-fab-waking-spinner" />
+          <span className="jynx-logo dev-fab-waking-label">Waking up…</span>
+        </div>
+      </div>
+    );
+  }
 
   if (!devName) {
     return (
@@ -205,6 +223,11 @@ const CSS = `
 .dev-login-submit:disabled{ opacity:.5; cursor:not-allowed; }
 .dev-login-spinner{ display:block; margin:0 auto; animation:devLoginSpin .7s linear infinite; }
 @keyframes devLoginSpin{ to{ transform:rotate(360deg); } }
+
+.dev-fab-waking{ cursor:wait; }
+.dev-fab-waking-spinner{ animation:devLoginSpin .9s linear infinite; }
+.dev-fab-waking-label{ animation:devFabWakingPulse 1.6s ease-in-out infinite; }
+@keyframes devFabWakingPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.45; } }
 
 .dev-fab-toolbar{
   position:fixed; z-index:79; display:flex; align-items:center; gap:6px;
