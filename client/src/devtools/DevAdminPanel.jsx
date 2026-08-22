@@ -235,6 +235,9 @@ const CSS = `
   display:flex; align-items:flex-start; gap:5px; font-size:11.5px; color:var(--green);
   background:color-mix(in srgb, var(--green) 10%, transparent); border-radius:6px; padding:5px 8px; margin-top:2px;
 }
+.dev-admin-resolution-note.reopened{
+  color:var(--yellow); background:color-mix(in srgb, var(--yellow) 10%, transparent);
+}
 .dev-admin-resolve-note-box{ display:flex; flex-direction:column; gap:6px; margin-top:4px; }
 .dev-admin-resolve-note-box textarea{
   width:100%; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:7px 9px;

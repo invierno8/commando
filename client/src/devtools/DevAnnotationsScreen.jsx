@@ -152,6 +152,9 @@ export default function DevAnnotationsScreen() {
                   {a.resolved && a.resolutionNote && (
                     <div className="dev-admin-resolution-note"><CheckCircle2 size={12} /> {a.resolutionNote}</div>
                   )}
+                  {!a.resolved && a.reopenedNote && (
+                    <div className="dev-admin-resolution-note reopened"><Undo2 size={12} /> {a.reopenedNote}</div>
+                  )}
                   {resolvingId === a.id && (
                     <div className="dev-admin-resolve-note-box">
                       <textarea autoFocus rows={2} placeholder="What did you fix? (optional, notifies the author)" value={resolveNote} onChange={(e) => setResolveNote(e.target.value)} />

@@ -122,6 +122,7 @@ router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
     route: req.body.route, targetLabel: req.body.targetLabel || null, targetSelector: req.body.targetSelector || null,
     secondaryTargets,
     comment: req.body.comment, attachment, attachmentName, resolved: false, resolvedAt: null, resolvedBy: null, resolutionNote: null,
+    reopenedNote: null,
     archived: false, archivedAt: null,
     actionStatus: actionRequested ? "queued" : "none",
     actionRequestedAt: actionRequested ? new Date().toISOString() : null,
@@ -151,6 +152,12 @@ router.get("/dev/annotations", requireDevUser, (req, res) => {
 
 // תגובת-מעקב על הערה — כל משתמש-פיתוח מחובר, כולל מי שלא כתב את ההערה
 // המקורית (כדי לאפשר דיון אמיתי, לא רק "בעל ההערה מגיב לעצמו").
+//
+// אם ההערה כבר "טופלה" (resolved:true) וכעת מגיעה תגובה חדשה, מניחים
+// שהתגובה מבקשת המשך טיפול ופותחים אותה מחדש אוטומטית — עדיף מהערת "טופל"
+// שקטה שממשיכה לצבור תגובות שאף אחד לא רואה. reopenedNote היא הודעה
+// חד-פעמית שמוצגת על השורה עד שההערה תסומן "טופל" שוב (ראו PATCH
+// /admin/annotations/:id למטה, ששם היא מתאפסת) — לא toast חוזר.
 router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req, res) => {
   requireFields(req.body, ["text"]);
   const found = readAll().find((a) => a.id === req.params.id);
@@ -160,8 +167,16 @@ router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req,
     authorId: req.devUser.id, authorName: req.devUser.name,
     text: req.body.text, createdAt: new Date().toISOString(),
   };
-  const updated = { ...found, replies: [...(found.replies || []), reply] };
-  await persistNote(updated, `reply on ${updated.id} — ${req.devUser.name}`);
+  const wasResolved = found.resolved;
+  const updated = {
+    ...found,
+    replies: [...(found.replies || []), reply],
+    resolved: wasResolved ? false : found.resolved,
+    resolvedAt: wasResolved ? null : found.resolvedAt,
+    resolvedBy: wasResolved ? null : found.resolvedBy,
+    reopenedNote: wasResolved ? "Reopened — a new reply came in after this was marked done." : (found.reopenedNote || null),
+  };
+  await persistNote(updated, wasResolved ? `reply reopened ${updated.id} — ${req.devUser.name}` : `reply on ${updated.id} — ${req.devUser.name}`);
   res.status(201).json(updated);
 }));
 
@@ -229,6 +244,9 @@ router.patch("/admin/annotations/:id", requireAdmin, asyncRoute(async (req, res)
     // סימון "טופל" גם על תור הפעולות — "מעבר לטופל" שהמנהל ביקש, לא רק
     // resolved נפרד מ-actionStatus שלא באמת מסתנכרן.
     actionStatus: resolved && found.actionStatus && found.actionStatus !== "none" ? "done" : found.actionStatus,
+    // "טופל" מחדש מאפס את הודעת "נפתחה מחדש" החד-פעמית (ראו POST
+    // /dev/annotations/:id/reply למעלה) — היא כבר מילאה את תפקידה.
+    reopenedNote: hasResolvedField && resolved ? null : (found.reopenedNote || null),
   };
   const verb = hasCommentField ? "edited" : hasArchivedField ? (archived ? "archived" : "unarchived") : (resolved ? "resolved" : "reopened");
   await persistNote(updated, `QA note ${verb} — ${updated.id}`);
