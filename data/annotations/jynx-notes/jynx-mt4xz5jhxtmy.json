@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt4xz5jhxtmy",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-22T22:20:30.029Z",
+  "route": "dashboard",
+  "targetLabel": "dev-admin-annotation-row",
+  "secondaryTargets": [],
+  "comment": "i think you fixed it , why is it not automaticlly moved to \"done\"",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-22T22:20:30.029Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
