@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Zap, Loader2, GitPullRequest, CheckCircle2, XCircle } from "lucide-react";
 import { fetchAnnotations, requestAnnotationAction } from "../devApi.js";
 import { useKeepInViewport } from "../useKeepInViewport.js";
+import DrawingOverlay from "./DrawingOverlay.jsx";
 
 /* ================================================================== */
 /* LEGO BLOCK — admin-only, always-on (not hover-triggered) indicator    */
@@ -165,6 +166,7 @@ function AdminMarkerDot({ label, list, rect, open, onToggle, onAction }) {
               style={{ top: r.top, left: r.left, width: r.width, height: r.height }}
             />
           ))}
+          {list.filter((a) => a.drawing).map((a) => <DrawingOverlay key={a.id} drawing={a.drawing} />)}
         </>
       )}
       <div
@@ -199,6 +201,7 @@ function AdminMarkerDot({ label, list, rect, open, onToggle, onAction }) {
                     )}
                   </div>
                   <p className="admin-marker-detail-comment">{a.comment}</p>
+                  {a.drawing && <span className="admin-marker-detail-drawing">✏️ has a drawing — hover the dot to see it</span>}
                   <span className="admin-marker-detail-meta">{a.authorName}</span>
                   {!hasAction && !a.resolved && (
                     <button type="button" className="admin-marker-action-btn" onClick={() => onAction(a.id)} title="Run the automated agent on this comment">
@@ -276,6 +279,7 @@ const CSS_TEXT = `
 .admin-marker-detail-status{ display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.02em; }
 .admin-marker-detail-pr{ font-size:10.5px; color:var(--jynx); text-decoration:underline; }
 .admin-marker-detail-comment{ margin:0; font-size:12px; color:var(--text); }
+.admin-marker-detail-drawing{ font-size:10.5px; color:var(--jynx); }
 .admin-marker-detail-meta{ font-size:10px; color:var(--text-dim); }
 .admin-marker-action-btn{
   align-self:flex-start; display:inline-flex; align-items:center; gap:4px; background:var(--jynx); color:#fff;

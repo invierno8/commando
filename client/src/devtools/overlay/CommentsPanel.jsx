@@ -6,6 +6,7 @@ import {
   fetchJynxFeedback, fetchMyJynxFeedback, replyToJynxFeedback, reactToJynxFeedback, submitJynxFeedback,
 } from "../devApi.js";
 import { useDraggableFab } from "../useDraggableFab.js";
+import DrawingOverlay from "./DrawingOverlay.jsx";
 
 const ACTION_STATUS_LABEL = { queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed" };
 const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: GitPullRequest, done: CheckCircle2, failed: XCircle };
@@ -418,6 +419,10 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                           </a>
                         )
                       )}
+                      {a.drawing && (
+                        <span className="comments-drawing-badge"><Pencil size={10} /> drawing — hover to see it on the page</span>
+                      )}
+                      {hoveredListId === a.id && a.drawing && <DrawingOverlay drawing={a.drawing} />}
                       <span className="comments-sidebar-item-meta">{a.authorName} · {new Date(a.createdAt).toLocaleString("en-US")}</span>
                       {a.resolved && a.resolutionNote && (
                         <div className="comments-resolution-note"><CheckCircle2 size={11} /> {a.resolutionNote}</div>
@@ -501,6 +506,9 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
 }
 
 function CommentDot({ label, rect, list, hovered, onHover }) {
+  // ציורים (ראו DrawingCanvas.jsx) מוצגים על העמוד עצמו רק בזמן שהנקודה
+  // הזו מרחפת — לא כל הזמן, כדי שמסך עם כמה ציורים לא ייראה משורבט לצמיתות.
+  const drawings = list.filter((a) => a.drawing);
   return (
     <div
       className="comments-dot-wrap"
@@ -509,6 +517,7 @@ function CommentDot({ label, rect, list, hovered, onHover }) {
       onMouseLeave={() => onHover(null)}
     >
       <div className="comments-dot">{list.length > 1 ? list.length : ""}</div>
+      {hovered && drawings.map((a) => <DrawingOverlay key={a.id} drawing={a.drawing} />)}
       {hovered && (
         <div className="comments-dot-tooltip">
           {list.map((a) => (
@@ -606,6 +615,10 @@ const CSS_TEXT = `
   border-radius:12px; padding:3px 8px; font-size:10.5px; color:var(--text-dim); text-decoration:none;
 }
 .comments-attachment-file:hover{ color:var(--jynx); border-color:var(--jynx); }
+.comments-drawing-badge{
+  display:inline-flex; align-items:center; gap:4px; background:color-mix(in srgb, var(--jynx) 12%, transparent);
+  border:1px solid var(--jynx); border-radius:12px; padding:3px 8px; font-size:10.5px; color:var(--jynx); margin:2px 0;
+}
 .comments-sidebar-item-meta{ font-size:10.5px; color:var(--text-dim); }
 .comments-done-badge{ display:inline-flex; align-items:center; gap:2px; color:var(--green); font-size:9.5px; text-transform:none; }
 .comments-jynx-badge{

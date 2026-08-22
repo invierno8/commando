@@ -26,7 +26,7 @@ const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
 /* גרירה: useDraggableFab (אותו hook בדיוק כמו CommentsPanel.jsx) — לא מצב   */
 /* מקומי. המיקום הראשוני מחושב פעם אחת מנקודת הקליק שפתחה את הקופסה; גרירה   */
 /* משם ואילך משתלטת ונשמרת ב-localStorage בדיוק כמו כל שאר כלי ה-Jynx.       */
-export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdmin, isJynxMeta, onCancel, onSubmit }) {
+export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdmin, isJynxMeta, hasDrawing, onCancel, onSubmit }) {
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -143,6 +143,9 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
       </div>
       {isJynxMeta && (
         <div className="dev-annotate-popover-jynx-hint">🔮 Feedback about Jynx itself — separate queue, unrelated to the app</div>
+      )}
+      {hasDrawing && (
+        <div className="dev-annotate-popover-drawing-hint">✏️ Attached to your drawing — it'll stay saved with this comment</div>
       )}
       {(isJynxMeta || isAdmin) && (
         <button

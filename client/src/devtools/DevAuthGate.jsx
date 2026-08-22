@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, X, Loader2, Target, RotateCcw } from "lucide-react";
+import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, X, Loader2, Target, RotateCcw, Pencil } from "lucide-react";
 import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
@@ -14,7 +14,7 @@ import { useKeepInViewport } from "./useKeepInViewport.js";
 // יציאה/קיפול — אלה קבועים בכוונה, ראו ה-JSX). "markers" תמיד נשמר ברשימה
 // המלאה גם למשתמש לא-מנהל, כדי שהשוואת orderChanged תישאר יציבה בלי קשר
 // למי שמחובר כרגע — הסינון לפי isAdmin קורה רק ברינדור, לא כאן.
-const DEFAULT_TOOLBAR_ORDER = ["overlay", "comments", "markers", "admin", "mentions"];
+const DEFAULT_TOOLBAR_ORDER = ["overlay", "draw", "comments", "markers", "admin", "mentions"];
 const TOOLBAR_ORDER_KEY = "jynx-toolbar-item-order";
 const TOOLBAR_ORIENTATION_KEY = "jynx-toolbar-orientation";
 
@@ -58,6 +58,9 @@ export default function DevAuthGate({ route, devFabProps }) {
   // כברירת מחדל, אבל למי שמוצא אותם מפריעים על מסך עמוס יש עכשיו כפתור
   // ייעודי משלו בסרגל, לא רק "הכל או כלום" עם overlayOn.
   const [markersOn, setMarkersOn] = useState(true);
+  // מצב-ציור (Ctrl/Cmd+גרירה על העמוד) — ראו DrawingCanvas.jsx. נפרד
+  // מ-overlayOn: אפשר לצייר גם כשהילת-ה-hover כבויה, ולהיפך.
+  const [drawMode, setDrawMode] = useState(false);
   const [toolbarOpen, setToolbarOpen] = useState(true);
   // כיוון הסרגל (אופקי/אנכי) וסדר כפתורי-הפעולה בתוכו — שני דברים נפרדים
   // שנשמרים ב-localStorage משלהם, לא קשורים למיקום הפיזי (toolbarFab.pos).
@@ -181,6 +184,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       if (!Number.isInteger(n) || n < 1) return;
       const actions = {
         overlay: () => setOverlayOn((v) => !v),
+        draw: () => setDrawMode((v) => !v),
         comments: () => setCommentsOn((v) => !v),
         markers: isAdmin ? () => setMarkersOn((v) => !v) : null,
         admin: () => setAdminOpen(true),
@@ -301,6 +305,11 @@ export default function DevAuthGate({ route, devFabProps }) {
         {overlayOn ? <Eye size={13} /> : <EyeOff size={13} />}
       </button>
     ),
+    draw: (
+      <button type="button" className={"dev-toolbar-icon-btn" + (drawMode ? " active" : "")} data-devblock="dev-toolbar-draw-toggle" onClick={() => setDrawMode((v) => !v)} title={drawMode ? "Turn off drawing (Ctrl/Cmd+drag draws while on)" : "Turn on drawing — hold Ctrl/Cmd and drag on the page to draw"}>
+        <Pencil size={13} />
+      </button>
+    ),
     comments: (
       <button type="button" className={"dev-toolbar-icon-btn" + (commentsOn ? " active" : "")} data-devblock="dev-toolbar-comments-toggle" onClick={() => setCommentsOn((v) => !v)} title={commentsOn ? "Hide screen comments" : "Show all comments on this screen"}>
         <MessageSquare size={13} />
@@ -320,13 +329,13 @@ export default function DevAuthGate({ route, devFabProps }) {
   };
   // "mentions" בכוונה לא כאן — פותח/סוגר dropdown פנימי משלו, אין לו toggle
   // חיצוני חשוף כרגע להפעלה מהמקלדת (ראו useEffect למעלה).
-  const KEYABLE_IDS = ["overlay", "comments", "markers", "admin"];
+  const KEYABLE_IDS = ["overlay", "draw", "comments", "markers", "admin"];
   let keyableIndex = 0;
 
   return (
     <>
       <style>{CSS}</style>
-      <DevOverlay active={overlayOn} route={route} isAdmin={isAdmin} canJynxChrome={isAdmin || canJynxComment} markersOn={markersOn} />
+      <DevOverlay active={overlayOn || drawMode} route={route} isAdmin={isAdmin} canJynxChrome={isAdmin || canJynxComment} markersOn={markersOn} drawMode={drawMode} />
       <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} isAdmin={isAdmin} canJynxComment={canJynxComment} />
       {toolbarOpen ? (
         <div

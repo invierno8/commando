@@ -43,7 +43,13 @@ function isFallbackContainer(el) {
 // wrapper החיצוני — מה שגרם לכל שני כרטיסים להיראות כ"אותו יעד" ולתיוג יעד
 // משני (Ctrl/Cmd+קליק, ראו DevOverlay.jsx) להיכשל בשקט על ההשוואה
 // lbl === p.label.
-function findTarget(el) {
+// מיוצא (לא רק שימוש פנימי) כדי ש-DevOverlay.jsx's handleDrawingComplete
+// יוכל להפעיל את אותו חיפוש-אב נכון על אלמנט גולמי מ-elementFromPoint (מרכז
+// תיבת-התוחמת של ציור, ראו DrawingCanvas.jsx) — בלי זה, ציור על כרטיס
+// קטלוג היה נופל בדיוק לאותו באג שהתועד למעלה (prod-card הפנימי במקום
+// ה-wrapper המתויג), כי labelForElement למטה בודק רק את הצומת שקיבל, בלי
+// שום מעבר-אבות משלו.
+export function findTarget(el) {
   let node = el;
   while (node && node !== document.body) {
     if (hasDevblock(node)) return node;

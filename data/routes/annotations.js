@@ -136,12 +136,24 @@ router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
   const attachmentName = attachment && typeof req.body.attachmentName === "string"
     ? req.body.attachmentName.slice(0, 200)
     : null;
+  // ציור-חופשי/פוליגון על העמוד (ראו DrawingCanvas.jsx) — נקודות כאחוזים
+  // (0-100) מגודל ה-viewport בזמן הציור, לא פיקסלים מוחלטים, כדי ש-
+  // DrawingOverlay.jsx יוכל לשחזר אותו במידה יחסית נכונה גם על מסך אחר.
+  // מוגבל ל-500 נקודות — הגנה על גודל הקובץ (זה מתחייב ל-git), לא מגבלה
+  // אמנותית; קו יד חופשית טיפוסי לא מתקרב לזה.
+  const rawDrawing = req.body.drawing;
+  const drawing = rawDrawing && Array.isArray(rawDrawing.points) && rawDrawing.points.length >= 2
+    ? {
+        type: rawDrawing.type === "polygon" ? "polygon" : "freehand",
+        points: rawDrawing.points.slice(0, 500).map((p) => [Number(p[0]) || 0, Number(p[1]) || 0]),
+      }
+    : null;
   const entry = {
     id: "ann-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     authorId: req.devUser.id, authorName: req.devUser.name, createdAt: new Date().toISOString(),
     route: req.body.route, targetLabel: req.body.targetLabel || null, targetSelector: req.body.targetSelector || null,
     secondaryTargets,
-    comment: req.body.comment, attachment, attachmentName, resolved: false, resolvedAt: null, resolvedBy: null, resolutionNote: null,
+    comment: req.body.comment, attachment, attachmentName, drawing, resolved: false, resolvedAt: null, resolvedBy: null, resolutionNote: null,
     reopenedNote: null,
     archived: false, archivedAt: null,
     actionStatus: actionRequested ? "queued" : "none",

@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useHoverTarget, labelForElement } from "./useHoverTarget.js";
+import { useHoverTarget, labelForElement, findTarget } from "./useHoverTarget.js";
 import AnnotationPopover from "./AnnotationPopover.jsx";
 import AdminAnnotationMarkers from "./AdminAnnotationMarkers.jsx";
+import DrawingCanvas from "./DrawingCanvas.jsx";
+import DrawingOverlay from "./DrawingOverlay.jsx";
 import { submitAnnotation, submitJynxFeedback } from "../devApi.js";
 
 /* ================================================================== */
@@ -30,7 +32,7 @@ function parseSecondaryTargetsFromComment(comment) {
   return found.slice(0, 10);
 }
 
-export default function DevOverlay({ active, route, isAdmin, canJynxChrome, markersOn, onSubmitted }) {
+export default function DevOverlay({ active, route, isAdmin, canJynxChrome, markersOn, drawMode, onSubmitted }) {
   // canJynxChrome (isAdmin OR a per-user canJynxComment grant, combined
   // upstream in DevAuthGate.jsx) קובע אם מותר לגלוש בכלל על ה-UI של Jynx
   // עצמו (.jynx-chrome) — ראו useHoverTarget.js. משתמשי-פיתוח רגילים בלי
@@ -109,6 +111,23 @@ export default function DevOverlay({ active, route, isAdmin, canJynxChrome, mark
     };
   }, [active, target, popover, canJynxChrome]);
 
+  // ציור מוכן (Ctrl/Cmd+גרירה, ראו DrawingCanvas.jsx) — פותח את אותה קופסת
+  // תגובה בדיוק כמו Ctrl/Cmd+קליק רגיל, רק עם drawing מצורף על ה-popover
+  // עצמו (לא state נפרד) כדי ש-submit() למטה ישלח אותו יחד עם התגובה.
+  // תמיד app-comment רגיל, לא Jynx-meta — ציור על סרגל/פאנל של Jynx עצמו
+  // אינו נתמך כרגע.
+  function handleDrawingComplete({ drawing, targetEl, screenX, screenY }) {
+    // findTarget() (לא רק labelForElement על האלמנט הגולמי) — בלי זה, ציור
+    // על אלמנט כמו כרטיס קטלוג היה מתייג לפי ה-<button> הפנימי (flex, עוצר
+    // מעבר-יחיד) במקום ה-wrapper המתויג בפועל, בדיוק הבאג שתועד ותוקן
+    // ב-useHoverTarget.js עבור ה-hover הרגיל.
+    const resolved = targetEl ? findTarget(targetEl) : null;
+    setPopover({
+      x: screenX, y: screenY, label: labelForElement(resolved || targetEl || document.body),
+      secondaryTargets: [], isJynxMeta: false, drawing,
+    });
+  }
+
   if (!active) return null;
 
   const rect = target?.getBoundingClientRect();
@@ -135,6 +154,7 @@ export default function DevOverlay({ active, route, isAdmin, canJynxChrome, mark
         route, targetLabel: popover.label, comment, actionRequested: isAdmin && actionOn,
         secondaryTargets,
         attachment: attachment?.dataUrl || null, attachmentName: attachment?.name || null,
+        drawing: popover.drawing || null,
       });
     }
     setPopover(null);
@@ -154,6 +174,7 @@ export default function DevOverlay({ active, route, isAdmin, canJynxChrome, mark
           style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height }}
         />
       )}
+      {popover?.drawing && <DrawingOverlay drawing={popover.drawing} />}
       {popover && (
         <AnnotationPopover
           x={popover.x}
@@ -162,17 +183,22 @@ export default function DevOverlay({ active, route, isAdmin, canJynxChrome, mark
           secondaryTargets={popover.secondaryTargets}
           isAdmin={isAdmin}
           isJynxMeta={popover.isJynxMeta}
+          hasDrawing={!!popover.drawing}
           onCancel={() => setPopover(null)}
           onSubmit={submit}
         />
       )}
       <AdminAnnotationMarkers isAdmin={isAdmin} active={markersOn} route={route} refreshKey={markersRefreshKey} />
+      <DrawingCanvas active={drawMode && !popover} onComplete={handleDrawingComplete} />
     </div>,
     document.body
   );
 }
 
 const CSS = `
+.jynx-drawing-live, .jynx-drawing-overlay{
+  position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:99994;
+}
 .dev-overlay-highlight{
   position:fixed; pointer-events:none; z-index:99999; border-radius:8px;
   border:2px solid var(--jynx);
@@ -219,6 +245,10 @@ const CSS = `
 .dev-annotate-popover-label-jynx{ color:var(--dev); }
 .dev-annotate-popover-jynx-hint{
   font-size:11px; color:var(--dev); background:color-mix(in srgb, var(--dev) 14%, transparent);
+  border-radius:6px; padding:4px 8px;
+}
+.dev-annotate-popover-drawing-hint{
+  font-size:11px; color:var(--jynx); background:color-mix(in srgb, var(--jynx) 12%, transparent);
   border-radius:6px; padding:4px 8px;
 }
 .dev-annotate-popover-jynx textarea:focus{ border-color:var(--dev); }
