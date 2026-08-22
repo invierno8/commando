@@ -30,5 +30,13 @@
     "passwordHash": "$2a$12$H58G7triIcTv5ApPi6fzMOaJ9OtQpqSBJDyymYn3srwBtE7wJIZM.",
     "active": true,
     "createdAt": "2026-08-21T20:11:16.634Z"
+  },
+  {
+    "id": "dev-mt4mivxlir9i",
+    "name": "itsik",
+    "role": "jynx tester",
+    "passwordHash": "$2a$12$pDDOIfBDzsPgYbI/TCOL2.K843/nS4/7gTt1JJg9fPVebt.XHsot.",
+    "active": true,
+    "createdAt": "2026-08-22T16:59:57.383Z"
   }
 ]
