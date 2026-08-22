@@ -1,0 +1,32 @@
+{
+  "id": "ann-mt500dkv4azf",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-22T23:17:26.335Z",
+  "route": "dashboard",
+  "targetLabel": "Dashboard — widget: מוכנות מערכת",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "numbers are leaving the frame",
+  "attachment": null,
+  "attachmentName": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-22T23:17:26.335Z",
+  "actionRequestedBy": "Admin",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
