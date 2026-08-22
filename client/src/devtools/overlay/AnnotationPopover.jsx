@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { GripVertical, Paperclip, Zap } from "lucide-react";
+import { GripVertical, Paperclip, Zap, Sparkles } from "lucide-react";
 import { useDraggableFab } from "../useDraggableFab.js";
 
 // גג-גודל לקובץ מצורף — data-URL זה מתחייב ל-git דרך githubPersist.js, אז
@@ -25,7 +25,7 @@ const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024;
 /* גרירה: useDraggableFab (אותו hook בדיוק כמו CommentsPanel.jsx) — לא מצב   */
 /* מקומי. המיקום הראשוני מחושב פעם אחת מנקודת הקליק שפתחה את הקופסה; גרירה   */
 /* משם ואילך משתלטת ונשמרת ב-localStorage בדיוק כמו כל שאר כלי ה-Jynx.       */
-export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdmin, isJynxMeta, onCancel, onSubmit }) {
+export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdmin, isJynxMeta, canJynxChrome, onCancel, onSubmit, onSwitchToJynxMeta }) {
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -119,6 +119,18 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
       </div>
       {isJynxMeta && (
         <div className="dev-annotate-popover-jynx-hint">🔮 Feedback about Jynx itself — separate queue, unrelated to the app</div>
+      )}
+      {!isJynxMeta && canJynxChrome && (
+        // הפופאובר עצמו נושא dev-overlay-ignore (ראו useHoverTarget.js) ואף
+        // פעם לא יעד-hover תקין — אין דרך "לרחף ולהעיר" עליו כמו כל אלמנט
+        // אחר. זה הפתרון: לינק ידני שהופך את הפופאובר הפתוח הזה עצמו למשוב
+        // Jynx-meta (על מה שהמשתמש כבר התחיל להקליד, אם בכלל), בלי לסגור
+        // ולפתוח פופאובר חדש — אותו רעיון בדיוק כמו כפתור "+ Feedback about
+        // Jynx" הידני ב-CommentsPanel.jsx, לאלמנטים שהמנגנון הרגיל לא יכול
+        // להגיע אליהם.
+        <button type="button" className="dev-annotate-meta-link" onClick={onSwitchToJynxMeta}>
+          <Sparkles size={11} /> Feedback about this popup instead
+        </button>
       )}
       {(isJynxMeta || isAdmin) && (
         <button

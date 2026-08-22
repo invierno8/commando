@@ -162,8 +162,14 @@ export default function DevOverlay({ active, route, isAdmin, canJynxChrome, onSu
           secondaryTargets={popover.secondaryTargets}
           isAdmin={isAdmin}
           isJynxMeta={popover.isJynxMeta}
+          canJynxChrome={canJynxChrome}
           onCancel={() => setPopover(null)}
           onSubmit={submit}
+          // הופך את הפופאובר הפתוח הזה עצמו למשוב Jynx-meta ("dev-annotate-popover"
+          // — התווית שהוא עצמו מתויג בה מבחינה מושגית, גם בלי data-devblock
+          // אמיתי) — ראו ההערה ב-AnnotationPopover.jsx להסבר המלא למה זה
+          // המנגנון היחיד שיכול בכלל להשיג "השאר משוב על הפופאפ עצמו".
+          onSwitchToJynxMeta={() => setPopover((p) => (p ? { ...p, label: "dev-annotate-popover", isJynxMeta: true } : p))}
         />
       )}
       <AdminAnnotationMarkers isAdmin={isAdmin} route={route} refreshKey={markersRefreshKey} />
@@ -221,6 +227,11 @@ const CSS = `
   font-size:11px; color:var(--dev); background:color-mix(in srgb, var(--dev) 14%, transparent);
   border-radius:6px; padding:4px 8px;
 }
+.dev-annotate-meta-link{
+  display:inline-flex; align-items:center; gap:4px; align-self:flex-start; background:none; border:none;
+  color:var(--jynx); font-size:10.5px; font-weight:700; cursor:pointer; padding:0; font-family:var(--font-sans);
+}
+.dev-annotate-meta-link:hover{ text-decoration:underline; }
 .dev-annotate-popover-jynx textarea:focus{ border-color:var(--dev); }
 .dev-annotate-popover-jynx .dev-annotate-btn-primary{ background:var(--dev); }
 .dev-annotate-popover textarea{
