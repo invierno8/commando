@@ -15,6 +15,19 @@ const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: G
 // (ראו data/routes/annotations.js ו-data/routes/jynx-feedback.js).
 const REACTION_EMOJI = ["👍", "😄", "🤔", "❤️"];
 
+// מדגיש @שם/@jynx בטקסט תגובה שכבר נשלח — אותו regex בדיוק כמו זה שהשרת
+// מנתח מולו (lib/mentions.js), רק לצורך תצוגה, לא לוגיקה.
+function renderWithMentions(text) {
+  const parts = text.split(/(@[\p{L}\p{N}_]+)/gu);
+  return parts.map((part, i) =>
+    part.startsWith("@") ? (
+      <span key={i} className={"comments-mention" + (part.toLowerCase() === "@jynx" ? " comments-mention-jynx" : "")}>{part}</span>
+    ) : (
+      part
+    )
+  );
+}
+
 /* ================================================================== */
 /* LEGO BLOCK — "who commented on what, here" for EVERY dev user (not    */
 /* admin-only, unlike AdminAnnotationMarkers.jsx which is the action-    */
@@ -156,6 +169,30 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
       .map((el) => el.getBoundingClientRect());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hoveredListId, items, tick]);
+
+  // @mentions בתגובה — מועמדים הם שמות המחברים שכבר מופיעים בתור הזה (אין
+  // עדיין endpoint שחושף את מרשם משתמשי-הפיתוח המלא למי שאינו מנהל) ועוד
+  // "jynx" השמור, תמיד זמין. אותה פילוסופיה של "הטקסט הוא מקור האמת" כמו
+  // [→ תווית] ב-DevOverlay.jsx — אין state נפרד לרשימת אזכורים, רק ניתוח
+  // הטוקן החלקי בסוף replyText כרגע (התגובה היא input חד-שורתי, אז "בסוף
+  // הטקסט" מספיק טוב בלי מעקב מיקום-סמן מדויק).
+  const mentionCandidates = useMemo(() => {
+    const names = new Set(["jynx"]);
+    items.forEach((a) => { if (a.authorName) names.add(a.authorName); });
+    return [...names];
+  }, [items]);
+  const activeMentionQuery = useMemo(() => {
+    const m = replyText.match(/(?:^|\s)@([\p{L}\p{N}_]*)$/u);
+    return m ? m[1] : null;
+  }, [replyText]);
+  const mentionMatches = useMemo(() => {
+    if (activeMentionQuery === null) return [];
+    const q = activeMentionQuery.toLowerCase();
+    return mentionCandidates.filter((n) => n.toLowerCase().replace(/\s+/g, "").startsWith(q)).slice(0, 6);
+  }, [activeMentionQuery, mentionCandidates]);
+  function insertMention(name) {
+    setReplyText((prev) => prev.replace(/(?:^|\s)@([\p{L}\p{N}_]*)$/u, (m) => (m.startsWith(" ") ? " " : "") + "@" + name.replace(/\s+/g, "") + " "));
+  }
 
   function jumpTo(a) {
     const found = rectFor(a);
@@ -425,11 +462,26 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                     {openThreadId === a.id && (
                       <div className="comments-thread" onClick={(e) => e.stopPropagation()}>
                         {replies.map((r) => (
-                          <div key={r.id} className="comments-thread-item"><b>{r.authorName}:</b> {r.text}</div>
+                          <div key={r.id} className="comments-thread-item"><b>{r.authorName}:</b> {renderWithMentions(r.text)}</div>
                         ))}
-                        <div className="comments-thread-input">
-                          <input value={replyText} placeholder="Write a reply..." onChange={(e) => setReplyText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendReply(a)} />
-                          <button type="button" onClick={() => sendReply(a)} disabled={!replyText.trim()}>Send</button>
+                        <div className="comments-thread-input-wrap">
+                          {mentionMatches.length > 0 && (
+                            <div className="comments-mention-dropdown">
+                              {mentionMatches.map((n) => (
+                                <button key={n} type="button" onClick={() => insertMention(n)}>
+                                  {n === "jynx" ? "🔮 @jynx — re-open the PR for this" : `@${n}`}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <div className="comments-thread-input">
+                            <input
+                              value={replyText} placeholder="Write a reply... (@name to notify, @jynx to update the PR)"
+                              onChange={(e) => setReplyText(e.target.value)}
+                              onKeyDown={(e) => e.key === "Enter" && sendReply(a)}
+                            />
+                            <button type="button" onClick={() => sendReply(a)} disabled={!replyText.trim()}>Send</button>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -581,6 +633,19 @@ const CSS_TEXT = `
 .comments-thread{ display:flex; flex-direction:column; gap:5px; background:var(--bg); border-radius:8px; padding:7px; margin:0 12px 9px; }
 .comments-thread-item{ font-size:11px; color:var(--text); }
 .comments-thread-item b{ color:var(--jynx); }
+.comments-mention{ color:var(--jynx); font-weight:700; }
+.comments-mention-jynx{ color:var(--dev); }
+.comments-thread-input-wrap{ position:relative; }
+.comments-mention-dropdown{
+  position:absolute; bottom:100%; left:0; right:0; margin-bottom:4px; background:var(--panel);
+  border:1px solid var(--jynx); border-radius:8px; padding:4px; display:flex; flex-direction:column; gap:2px;
+  box-shadow:var(--shadow-md); z-index:1; max-height:140px; overflow-y:auto;
+}
+.comments-mention-dropdown button{
+  background:none; border:none; text-align:left; padding:5px 7px; border-radius:5px; font-size:11.5px;
+  color:var(--text); cursor:pointer;
+}
+.comments-mention-dropdown button:hover{ background:color-mix(in srgb, var(--jynx) 12%, transparent); color:var(--jynx); }
 .comments-thread-input{ display:flex; gap:5px; }
 .comments-thread-input input{
   flex:1; background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:5px 8px; font-size:11.5px; color:var(--text);

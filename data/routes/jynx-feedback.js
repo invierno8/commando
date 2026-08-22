@@ -29,6 +29,7 @@ import { resolveSession } from "../lib/sessions.js";
 import { readDevUsers } from "../lib/devUsers.js";
 import { asyncRoute, requireFields } from "../middleware/validate.js";
 import { commitFileToGithub, githubPersistEnabled, listDirFromGithub, readFileFromGithub } from "../lib/githubPersist.js";
+import { parseMentionedUsers, hasJynxMention, addMention } from "../lib/mentions.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const NOTES_DIR = path.join(__dirname, "..", "annotations", "jynx-notes");
@@ -73,6 +74,21 @@ async function queueAction(note) {
   fs.writeFileSync(path.join(ACTIONS_DIR, `${note.id}.json`), JSON.stringify(workItem, null, 2) + "\n");
   if (githubPersistEnabled()) {
     await commitFileToGithub(`${GITHUB_ACTIONS_DIR}/${note.id}.json`, JSON.stringify(workItem, null, 2) + "\n", `jynx action queued — ${note.id}`);
+  }
+}
+
+// @jynx בתגובה — ראו ההסבר המלא ב-data/routes/annotations.js's queueFollowUp
+// (אותו רעיון בדיוק, רק על תור jynx-actions/ הנפרד).
+async function queueFollowUp(note, followUpText, requestedBy) {
+  const workItem = {
+    id: note.id, route: note.route, targetLabel: note.targetLabel, secondaryTargets: note.secondaryTargets || [],
+    comment: note.comment, followUpText, requestedAt: new Date().toISOString(), requestedBy,
+    isFollowUp: true, existingPrUrl: note.actionPrUrl || null,
+  };
+  fs.mkdirSync(ACTIONS_DIR, { recursive: true });
+  fs.writeFileSync(path.join(ACTIONS_DIR, `${note.id}.json`), JSON.stringify(workItem, null, 2) + "\n");
+  if (githubPersistEnabled()) {
+    await commitFileToGithub(`${GITHUB_ACTIONS_DIR}/${note.id}.json`, JSON.stringify(workItem, null, 2) + "\n", `jynx follow-up queued — ${note.id}`);
   }
 }
 
@@ -172,10 +188,23 @@ router.post("/admin/jynx-feedback/:id/reply", requireAdmin, asyncRoute(async (re
   if (!found) return res.status(404).json({ error: "לא נמצא" });
   const reply = {
     id: "rep-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    authorName: "Admin", text: req.body.text, createdAt: new Date().toISOString(),
+    authorId: req.devUser?.id || null, authorName: req.devUser?.name || "Admin",
+    text: req.body.text, createdAt: new Date().toISOString(),
   };
-  const updated = { ...found, replies: [...(found.replies || []), reply] };
+  const jynxTagged = hasJynxMention(req.body.text);
+  let updated = { ...found, replies: [...(found.replies || []), reply] };
+  if (jynxTagged) {
+    updated = { ...updated, actionStatus: "queued", actionRequestedAt: new Date().toISOString() };
+  }
   await persistNote(updated, `reply on ${updated.id}`);
+  for (const u of parseMentionedUsers(req.body.text)) {
+    if (u.id === reply.authorId) continue;
+    await addMention(u.id, {
+      kind: "jynx", noteId: found.id, replyId: reply.id, route: found.route, targetLabel: found.targetLabel,
+      mentionedBy: reply.authorName, snippet: req.body.text.slice(0, 200),
+    });
+  }
+  if (jynxTagged) await queueFollowUp(updated, req.body.text, reply.authorName);
   res.status(201).json(updated);
 }));
 

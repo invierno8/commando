@@ -5,6 +5,7 @@ import DevFab from "./DevFab.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
 import DevOverlay from "./overlay/DevOverlay.jsx";
 import CommentsPanel from "./overlay/CommentsPanel.jsx";
+import MentionsBell from "./MentionsBell.jsx";
 import { useDraggableFab } from "./useDraggableFab.js";
 import { useKeepInViewport } from "./useKeepInViewport.js";
 
@@ -192,6 +193,7 @@ export default function DevAuthGate({ route, devFabProps }) {
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-admin-btn" onClick={() => setAdminOpen(true)} title="Admin (admin only)">
             <Settings2 size={13} />
           </button>
+          <MentionsBell />
           <span className="dev-toolbar-devname">Hi, {devName}</span>
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-logout-btn" onClick={logout} title="Log out of Jynx">
             <LogOut size={13} />
