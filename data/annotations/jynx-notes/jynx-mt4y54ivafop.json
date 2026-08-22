@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt4y54ivafop",
+  "authorId": null,
+  "authorName": "Admin",
+  "createdAt": "2026-08-22T22:25:08.647Z",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-comments-toggle",
+  "secondaryTargets": [],
+  "comment": "why jynx popups and basiclly anything jynx related that is not the meneu mostly comments and comments list are unable for jynx dev users to leave comments on... i want to be able to leave acomment for jynx dev to redesign or change color on the comment pop up and the comment list... also when im mid session or comment open or any action that in the middle of the jynx user gets diconected, near the \"נדרש אימות \" massage add a relogin button so i can login and not lose my progress",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-22T22:25:08.647Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
