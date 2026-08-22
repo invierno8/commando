@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { GripVertical, Paperclip, Zap } from "lucide-react";
 import { useDraggableFab } from "../useDraggableFab.js";
+import { devLogin } from "../devApi.js";
 
 // גג-גודל לקובץ מצורף — data-URL זה מתחייב ל-git דרך githubPersist.js, אז
 // אסור לתת לו לתפוח בלי גבול. אותו ההיגיון בדיוק כמו LogoUpload.jsx, רק עם
@@ -29,6 +30,20 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  // "התנתקתי באמצע ולא רוצה לאבד את מה שכתבתי" — סשן-פיתוח (ולפעמים גם
+  // סשן-מנהל) חי בזיכרון בלבד (ראו data/lib/sessions.js) ונמחק בכל
+  // אתחול-מחדש של שרת Render בשכבה החינמית, גם הרבה לפני תפוגת ה-token
+  // עצמו (שבוע) — כך שקבלת שגיאת "נדרש אימות..." תוך כדי כתיבת הערה היא
+  // תרחיש אמיתי, לא רק תיאורטי. במקום לאלץ רענון-דף מלא (שהיה מאבד את
+  // הטקסט/הקובץ המצורף שכבר הוכנו כאן), מציעים כניסה-מחדש דרך אותה תיבת
+  // "/dev/login" בדיוק (מקבלת גם סיסמת משתמש-פיתוח וגם ה-ADMIN_SECRET
+  // ישירות, ראו data/routes/dev-auth.js) בלי לסגור את הפופאובר — ה-state
+  // המקומי (comment/attachment/actionOn) לא נוגע כלל, כך שאחרי כניסה
+  // מחדש מוצלחת אפשר פשוט ללחוץ "Send" שוב.
+  const [reauthOpen, setReauthOpen] = useState(false);
+  const [reauthPassword, setReauthPassword] = useState("");
+  const [reauthSubmitting, setReauthSubmitting] = useState(false);
+  const [reauthError, setReauthError] = useState("");
   // כפתור פעולה מפורש — ברירת מחדל דלוקה למנהל (התנהגות ה"כל מה שאני כותב
   // הופך לפעולה" הקיימת), אבל עכשיו גם ניתן לכיבוי לפני שליחה, למי שרוצה
   // הפעם רק להשאיר הערה בלי להפעיל את הצינור האוטומטי.
@@ -103,6 +118,22 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
     }
   }
 
+  async function reauth() {
+    if (!reauthPassword.trim() || reauthSubmitting) return;
+    setReauthSubmitting(true);
+    setReauthError("");
+    try {
+      await devLogin(reauthPassword.trim());
+      setReauthOpen(false);
+      setReauthPassword("");
+      setError(""); // הטוקן החדש כבר ב-localStorage; הטקסט/הקובץ המצורף כאן לא נגעו, אז "Send" יעבוד עכשיו
+    } catch (e) {
+      setReauthError(e.message || "Sign-in failed");
+    } finally {
+      setReauthSubmitting(false);
+    }
+  }
+
   return (
     <div
       ref={sizeRef}
@@ -161,7 +192,32 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
           <input ref={fileInputRef} type="file" style={{ display: "none" }} onChange={handleFile} />
         </div>
       )}
-      {error && <div className="dev-login-error">{error}</div>}
+      {error && (
+        <div className="dev-annotate-reauth">
+          <div className="dev-login-error">{error}</div>
+          {!reauthOpen ? (
+            <button type="button" className="dev-annotate-reauth-btn" onClick={() => setReauthOpen(true)}>
+              Log back in
+            </button>
+          ) : (
+            <div className="dev-annotate-reauth-box">
+              <input
+                type="password"
+                autoFocus
+                placeholder="Password"
+                value={reauthPassword}
+                onChange={(e) => setReauthPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && reauth()}
+                disabled={reauthSubmitting}
+              />
+              <button type="button" onClick={reauth} disabled={!reauthPassword.trim() || reauthSubmitting}>
+                {reauthSubmitting ? "Signing in..." : "Sign in"}
+              </button>
+            </div>
+          )}
+          {reauthError && <div className="dev-login-error">{reauthError}</div>}
+        </div>
+      )}
       <div className="dev-annotate-popover-actions">
         <button type="button" className="dev-annotate-btn" onClick={onCancel} disabled={sending}>
           Cancel

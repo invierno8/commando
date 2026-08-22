@@ -262,4 +262,24 @@ const CSS = `
   padding:0; margin-inline-start:auto; flex:none;
 }
 .dev-annotate-attachment-preview button:hover{ color:var(--red); }
+
+/* "Log back in" — ראו ההערה ב-AnnotationPopover.jsx: מוצג ליד כל שגיאת
+   שליחה, נותן אפשרות להתחבר מחדש (אותה תיבת /dev/login בדיוק) בלי לסגור
+   את הפופאובר ובלי לאבד את הטקסט/הקובץ המצורף שכבר הוכנו. */
+.dev-annotate-reauth{ display:flex; flex-direction:column; gap:6px; }
+.dev-annotate-reauth-btn{
+  align-self:flex-start; background:none; border:1px solid var(--dev); color:var(--dev); border-radius:7px;
+  padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer; font-family:var(--font-sans);
+}
+.dev-annotate-reauth-btn:hover{ background:color-mix(in srgb, var(--dev) 10%, transparent); }
+.dev-annotate-reauth-box{ display:flex; gap:6px; }
+.dev-annotate-reauth-box input{
+  flex:1; min-width:0; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:6px 8px;
+  font-size:12px; color:var(--text); font-family:var(--font-sans);
+}
+.dev-annotate-reauth-box button{
+  border:none; border-radius:7px; padding:6px 12px; font-size:11.5px; font-weight:700; cursor:pointer;
+  background:var(--dev); color:#fff; white-space:nowrap;
+}
+.dev-annotate-reauth-box button:disabled{ opacity:.5; cursor:not-allowed; }
 `;

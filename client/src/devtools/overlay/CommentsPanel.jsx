@@ -80,6 +80,18 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   // מי שכתב הערה דרך מצב "משוב Jynx" (הילה סגולה, ראו DevOverlay.jsx) לא היה
   // רואה אותה בכלל כאן, כי היא לא באה מ-/dev/annotations. מסומנת kind:"jynx"
   // להבחנה.
+  //
+  // "+ Feedback about Jynx" הרכיב למטה גלוי גם ל-Jynx commenter, לא רק
+  // למנהל — בדיוק כמו שער השליחה בשרת (POST /admin/jynx-feedback דרך
+  // requireAdminOrJynxCommenter, ראו data/routes/jynx-feedback.js) שכבר
+  // תומך בזה מ-2026-08-21. זו הדרך המיועדת בשביל Jynx commenter להשאיר
+  // משוב כללי (עיצוב/צבע/כל דבר) על חלקי Jynx שאי אפשר לסמן ישירות ב-
+  // Ctrl/Cmd+קליק — למשל הפופאובר עצמו (AnnotationPopover.jsx) או הרשימה
+  // הזו (.comments-sidebar-list, כאן למעלה): שניהם נושאים .dev-overlay-ignore
+  // בכוונה (ה-UI הזמני-לחלוטין של האוברליי עצמו, ראו ההערה למעלה ב-return)
+  // ולעולם לא יהפכו ליעד תקין ל-Ctrl/Cmd+קליק, גם לא למנהל — אז הקומפוזר
+  // הכללי כאן הוא הדרך היחידה לתת עליהם משוב, לא באג שצריך "לתקן" בדרך
+  // ההיא.
   function reload() {
     // .catch(() => []) on EACH branch independently — not just one shared
     // catch on the combined Promise.all — because the dev-session token
@@ -313,7 +325,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
             {collapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           </button>
         </div>
-        {!collapsed && isAdmin && (
+        {!collapsed && (isAdmin || canJynxComment) && (
           <div className="comments-jynx-composer-wrap">
             {!jynxComposerOpen ? (
               <button type="button" className="comments-jynx-composer-toggle" onClick={() => setJynxComposerOpen(true)}>
