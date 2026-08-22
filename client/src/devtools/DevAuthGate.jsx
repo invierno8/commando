@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, X, Loader2, Target } from "lucide-react";
+import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, X, Loader2, Target, RotateCcw } from "lucide-react";
 import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
@@ -9,6 +9,26 @@ import MentionsBell from "./MentionsBell.jsx";
 import JynxThought from "./JynxThought.jsx";
 import { useDraggableFab } from "./useDraggableFab.js";
 import { useKeepInViewport } from "./useKeepInViewport.js";
+
+// סדר ברירת המחדל של כפתורי-הפעולה בסרגל (לא כולל את הידית/שם-המשתמש/
+// יציאה/קיפול — אלה קבועים בכוונה, ראו ה-JSX). "markers" תמיד נשמר ברשימה
+// המלאה גם למשתמש לא-מנהל, כדי שהשוואת orderChanged תישאר יציבה בלי קשר
+// למי שמחובר כרגע — הסינון לפי isAdmin קורה רק ברינדור, לא כאן.
+const DEFAULT_TOOLBAR_ORDER = ["overlay", "comments", "markers", "admin", "mentions"];
+const TOOLBAR_ORDER_KEY = "jynx-toolbar-item-order";
+const TOOLBAR_ORIENTATION_KEY = "jynx-toolbar-orientation";
+
+function loadToolbarOrder() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(TOOLBAR_ORDER_KEY));
+    if (Array.isArray(raw) && raw.every((id) => DEFAULT_TOOLBAR_ORDER.includes(id))) {
+      // תוספת-קדימה: אם נוספו ids חדשים ל-DEFAULT מאז השמירה האחרונה,
+      // מוסיפים אותם בסוף במקום לאבד אותם.
+      return [...raw, ...DEFAULT_TOOLBAR_ORDER.filter((id) => !raw.includes(id))];
+    }
+  } catch { /* ignore */ }
+  return DEFAULT_TOOLBAR_ORDER;
+}
 
 /* ================================================================== */
 /* השער היחיד לכל מצב הפיתוח — לא מחליף את .dev-fab הקיים, רק שומר       */
@@ -39,6 +59,13 @@ export default function DevAuthGate({ route, devFabProps }) {
   // ייעודי משלו בסרגל, לא רק "הכל או כלום" עם overlayOn.
   const [markersOn, setMarkersOn] = useState(true);
   const [toolbarOpen, setToolbarOpen] = useState(true);
+  // כיוון הסרגל (אופקי/אנכי) וסדר כפתורי-הפעולה בתוכו — שני דברים נפרדים
+  // שנשמרים ב-localStorage משלהם, לא קשורים למיקום הפיזי (toolbarFab.pos).
+  const [toolbarOrientation, setToolbarOrientation] = useState(
+    () => (localStorage.getItem(TOOLBAR_ORIENTATION_KEY) === "vertical" ? "vertical" : "horizontal")
+  );
+  const [toolbarOrder, setToolbarOrder] = useState(loadToolbarOrder);
+  const orderChanged = JSON.stringify(toolbarOrder) !== JSON.stringify(DEFAULT_TOOLBAR_ORDER);
   // ידוע מראש (בלי לפתוח את פאנל הניהול) כדי ש-DevOverlay יוכל לסמן
   // אוטומטית "פעולה" על הערות שהמנהל עצמו כותב, ולהציג סימוני מנהל קבועים
   // על המסך — גם מיד אחרי רענון דף, כל עוד עוגיית המנהל עדיין תקפה.
@@ -67,6 +94,44 @@ export default function DevAuthGate({ route, devFabProps }) {
   function toggleToolbarOpen() {
     if (toolbarFab.consumeWasDragged()) return;
     setToolbarOpen((v) => !v);
+  }
+  // הידית (⋮) עצמה עכשיו גם כפתור — קליק "נקי" (לא גרירה) עליה מחליף
+  // אופקי/אנכי. אותה בדיקת consumeWasDragged בדיוק כמו שאר הכפתורים בסרגל
+  // הזה, כי הידית עדיין חלק מהאזור שגורר את כל הסרגל.
+  function toggleOrientation() {
+    if (toolbarFab.consumeWasDragged()) return;
+    setToolbarOrientation((o) => {
+      const next = o === "horizontal" ? "vertical" : "horizontal";
+      try { localStorage.setItem(TOOLBAR_ORIENTATION_KEY, next); } catch { /* ignore */ }
+      return next;
+    });
+  }
+  // גרירה-לסידור-מחדש עם native HTML5 drag-and-drop (draggable/onDragStart/
+  // onDrop) — לא pointer-based כמו useDraggableFab.js, כי זו "החלף מקום
+  // ברשימה", לא "הזז חופשי ב-2D"; ה-DnD המובנה של הדפדפן פשוט מתאים יותר
+  // למשימה הזאת ספציפית.
+  function persistToolbarOrder(next) {
+    setToolbarOrder(next);
+    try { localStorage.setItem(TOOLBAR_ORDER_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+  }
+  function handleItemDragStart(e, id) {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", id);
+  }
+  function handleItemDrop(e, targetId) {
+    e.preventDefault();
+    const draggedId = e.dataTransfer.getData("text/plain");
+    if (!draggedId || draggedId === targetId) return;
+    const next = [...toolbarOrder];
+    const from = next.indexOf(draggedId);
+    const to = next.indexOf(targetId);
+    if (from === -1 || to === -1) return;
+    next.splice(from, 1);
+    next.splice(to, 0, draggedId);
+    persistToolbarOrder(next);
+  }
+  function resetToolbarOrder() {
+    persistToolbarOrder(DEFAULT_TOOLBAR_ORDER);
   }
 
   // הבקאנד (Render, שכבה חינמית) יכול "לישון" אחרי חוסר פעילות ולקחת עד
@@ -199,6 +264,33 @@ export default function DevAuthGate({ route, devFabProps }) {
     );
   }
 
+  // מרשם כפתורי-הפעולה הניתנים-לסידור-מחדש — ראו DEFAULT_TOOLBAR_ORDER
+  // למעלה. "markers" תמיד ברשימה (גם לא-מנהל) כדי שסדר-השמירה יישאר יציב;
+  // מוסר כאן ברינדור בלבד דרך .filter(Boolean).
+  const TOOLBAR_ITEM_NODES = {
+    overlay: (
+      <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-overlay-toggle" onClick={() => setOverlayOn((v) => !v)} title={overlayOn ? "Turn off hover overlay" : "Turn on hover overlay"}>
+        {overlayOn ? <Eye size={13} /> : <EyeOff size={13} />}
+      </button>
+    ),
+    comments: (
+      <button type="button" className={"dev-toolbar-icon-btn" + (commentsOn ? " active" : "")} data-devblock="dev-toolbar-comments-toggle" onClick={() => setCommentsOn((v) => !v)} title={commentsOn ? "Hide screen comments" : "Show all comments on this screen"}>
+        <MessageSquare size={13} />
+      </button>
+    ),
+    markers: isAdmin ? (
+      <button type="button" className={"dev-toolbar-icon-btn" + (markersOn ? " active" : "")} data-devblock="dev-toolbar-markers-toggle" onClick={() => setMarkersOn((v) => !v)} title={markersOn ? "Hide comment status dots on the page" : "Show comment status dots on the page"}>
+        <Target size={13} />
+      </button>
+    ) : null,
+    admin: (
+      <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-admin-btn" onClick={() => setAdminOpen(true)} title="Admin (admin only)">
+        <Settings2 size={13} />
+      </button>
+    ),
+    mentions: <MentionsBell />,
+  };
+
   return (
     <>
       <style>{CSS}</style>
@@ -207,26 +299,31 @@ export default function DevAuthGate({ route, devFabProps }) {
       {toolbarOpen ? (
         <div
           ref={toolbarFab.sizeRef}
-          className="dev-fab-toolbar jynx-chrome jynx-ui"
+          className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "")}
           style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}
           {...toolbarFab.dragHandlers}
         >
-          <span className="dev-toolbar-grip" title="Drag anywhere on the toolbar to move it"><GripVertical size={13} /></span>
-          <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-overlay-toggle" onClick={() => setOverlayOn((v) => !v)} title={overlayOn ? "Turn off hover overlay" : "Turn on hover overlay"}>
-            {overlayOn ? <Eye size={13} /> : <EyeOff size={13} />}
+          <button type="button" className="dev-toolbar-grip" onClick={toggleOrientation} title={`Switch to ${toolbarOrientation === "horizontal" ? "vertical" : "horizontal"} menu (drag anywhere else on the bar to move it)`}>
+            <GripVertical size={13} />
           </button>
-          <button type="button" className={"dev-toolbar-icon-btn" + (commentsOn ? " active" : "")} data-devblock="dev-toolbar-comments-toggle" onClick={() => setCommentsOn((v) => !v)} title={commentsOn ? "Hide screen comments" : "Show all comments on this screen"}>
-            <MessageSquare size={13} />
-          </button>
-          {isAdmin && (
-            <button type="button" className={"dev-toolbar-icon-btn" + (markersOn ? " active" : "")} data-devblock="dev-toolbar-markers-toggle" onClick={() => setMarkersOn((v) => !v)} title={markersOn ? "Hide comment status dots on the page" : "Show comment status dots on the page"}>
-              <Target size={13} />
+          {toolbarOrder.map((id) => TOOLBAR_ITEM_NODES[id] && (
+            <div
+              key={id}
+              className="jynx-toolbar-item"
+              draggable
+              onDragStart={(e) => handleItemDragStart(e, id)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => handleItemDrop(e, id)}
+              title="Drag to reorder"
+            >
+              {TOOLBAR_ITEM_NODES[id]}
+            </div>
+          ))}
+          {orderChanged && (
+            <button type="button" className="dev-toolbar-icon-btn dev-toolbar-reset-btn" onClick={resetToolbarOrder} title="Reset menu item order">
+              <RotateCcw size={11} />
             </button>
           )}
-          <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-admin-btn" onClick={() => setAdminOpen(true)} title="Admin (admin only)">
-            <Settings2 size={13} />
-          </button>
-          <MentionsBell />
           <span className="dev-toolbar-devname">Hi, {devName}</span>
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-logout-btn" onClick={logout} title="Log out of Jynx">
             <LogOut size={13} />
@@ -303,10 +400,19 @@ const CSS = `
   cursor:grab; touch-action:none;
 }
 .dev-fab-toolbar:active{ cursor:grabbing; }
+.dev-fab-toolbar.vertical{ flex-direction:column; align-items:stretch; }
+.dev-fab-toolbar.vertical .dev-toolbar-devname{ text-align:center; }
 .dev-toolbar-grip{
   display:flex; align-items:center; justify-content:center; width:16px; height:30px; color:var(--text-dim);
-  flex:none;
+  flex:none; background:none; border:none; padding:0; cursor:grab;
 }
+.dev-toolbar-grip:hover{ color:var(--jynx); }
+/* פריט-בסרגל הניתן לגרירה-לסידור-מחדש — קצת שקוף בזמן שהוא עצמו נגרר, כדי
+   שיהיה ברור חזותית מה זז. */
+.jynx-toolbar-item{ display:flex; flex:none; cursor:grab; }
+.jynx-toolbar-item:active{ cursor:grabbing; }
+.dev-toolbar-reset-btn{ color:var(--text-dim); border-color:var(--line); }
+.dev-toolbar-reset-btn:hover{ color:var(--jynx); border-color:var(--jynx); }
 .dev-toolbar-icon-btn{
   width:30px; height:30px; border-radius:8px; border:1px solid var(--jynx); background:var(--panel);
   color:var(--jynx); display:flex; align-items:center; justify-content:center; cursor:pointer;
