@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt51gbyjmopq",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-22T23:57:50.347Z",
+  "route": "dashboard",
+  "targetLabel": "dev-fab-toolbar",
+  "secondaryTargets": [],
+  "comment": "when i click on it to be vertical the numbers for the keyboart dont go along also the entire design now is ugly of the numbers make them darker and think about the design",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
