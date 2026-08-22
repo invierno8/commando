@@ -165,6 +165,34 @@ export default function DevAuthGate({ route, devFabProps }) {
     return () => { cancelled = true; };
   }, []);
 
+  // ניווט-מקלדת בסרגל — מספר N מפעיל את הכפתור ה-N-י בסדר הנוכחי (אחרי
+  // סידור-מחדש, ראו toolbarOrder), לא לפי מיקום קבוע. לא כולל "mentions"
+  // (פותח/סוגר dropdown פנימי משלו, אין לו toggle חיצוני חשוף כרגע) —
+  // מספור מדלג עליו, לא משאיר "חור" עם מספר מת. מתעלם מהקלדה בתוך
+  // input/textarea (כדי לא להפריע לכתיבת תגובה/סיסמה) ומ-Ctrl/Cmd/Alt
+  // (לא להתנגש עם קיצורי דפדפן/מערכת).
+  useEffect(() => {
+    if (!devName || !toolbarOpen) return;
+    function onKeyDown(e) {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const tag = e.target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || e.target?.isContentEditable) return;
+      const n = Number(e.key);
+      if (!Number.isInteger(n) || n < 1) return;
+      const actions = {
+        overlay: () => setOverlayOn((v) => !v),
+        comments: () => setCommentsOn((v) => !v),
+        markers: isAdmin ? () => setMarkersOn((v) => !v) : null,
+        admin: () => setAdminOpen(true),
+      };
+      const keyableIds = toolbarOrder.filter((id) => actions[id]);
+      const id = keyableIds[n - 1];
+      if (id) { e.preventDefault(); actions[id](); }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [devName, toolbarOpen, toolbarOrder, isAdmin]);
+
   async function login() {
     setError("");
     setLoginPhase("thinking");
@@ -290,6 +318,10 @@ export default function DevAuthGate({ route, devFabProps }) {
     ),
     mentions: <MentionsBell />,
   };
+  // "mentions" בכוונה לא כאן — פותח/סוגר dropdown פנימי משלו, אין לו toggle
+  // חיצוני חשוף כרגע להפעלה מהמקלדת (ראו useEffect למעלה).
+  const KEYABLE_IDS = ["overlay", "comments", "markers", "admin"];
+  let keyableIndex = 0;
 
   return (
     <>
@@ -306,7 +338,11 @@ export default function DevAuthGate({ route, devFabProps }) {
           <button type="button" className="dev-toolbar-grip" onClick={toggleOrientation} title={`Switch to ${toolbarOrientation === "horizontal" ? "vertical" : "horizontal"} menu (drag anywhere else on the bar to move it)`}>
             <GripVertical size={13} />
           </button>
-          {toolbarOrder.map((id) => TOOLBAR_ITEM_NODES[id] && (
+          {toolbarOrder.map((id) => {
+            if (!TOOLBAR_ITEM_NODES[id]) return null;
+            const isKeyable = KEYABLE_IDS.includes(id);
+            const keyNum = isKeyable ? ++keyableIndex : null;
+            return (
             <div
               key={id}
               className="jynx-toolbar-item"
@@ -314,11 +350,13 @@ export default function DevAuthGate({ route, devFabProps }) {
               onDragStart={(e) => handleItemDragStart(e, id)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => handleItemDrop(e, id)}
-              title="Drag to reorder"
+              title={isKeyable ? `Drag to reorder — press ${keyNum} to trigger` : "Drag to reorder"}
             >
+              {keyNum && <span className="jynx-toolbar-key-badge">{keyNum}</span>}
               {TOOLBAR_ITEM_NODES[id]}
             </div>
-          ))}
+            );
+          })}
           {orderChanged && (
             <button type="button" className="dev-toolbar-icon-btn dev-toolbar-reset-btn" onClick={resetToolbarOrder} title="Reset menu item order">
               <RotateCcw size={11} />
@@ -409,7 +447,11 @@ const CSS = `
 .dev-toolbar-grip:hover{ color:var(--jynx); }
 /* פריט-בסרגל הניתן לגרירה-לסידור-מחדש — קצת שקוף בזמן שהוא עצמו נגרר, כדי
    שיהיה ברור חזותית מה זז. */
-.jynx-toolbar-item{ display:flex; flex:none; cursor:grab; }
+.jynx-toolbar-item{ position:relative; display:flex; flex:none; cursor:grab; }
+.jynx-toolbar-key-badge{
+  position:absolute; bottom:-3px; right:-3px; background:var(--jynx); color:#fff; border-radius:6px;
+  font-size:8px; font-weight:700; line-height:1; padding:1px 3px; pointer-events:none; font-family:var(--font-mono);
+}
 .jynx-toolbar-item:active{ cursor:grabbing; }
 .dev-toolbar-reset-btn{ color:var(--text-dim); border-color:var(--line); }
 .dev-toolbar-reset-btn:hover{ color:var(--jynx); border-color:var(--jynx); }
