@@ -236,6 +236,22 @@ const CSS = `
 .dev-annotate-btn-primary{ background:var(--dev); color:#fff; }
 .dev-annotate-btn:disabled{ opacity:.5; cursor:not-allowed; }
 
+.dev-annotate-relogin-link{
+  background:none; border:none; color:var(--dev); font-weight:700; font-size:11px; text-decoration:underline;
+  cursor:pointer; padding:0;
+}
+.dev-annotate-relogin-box{ display:flex; gap:6px; }
+.dev-annotate-relogin-box input{
+  flex:1; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:6px 8px;
+  font-size:12px; color:var(--text); font-family:var(--font-sans);
+}
+.dev-annotate-relogin-box input:focus{ outline:none; border-color:var(--dev); }
+.dev-annotate-relogin-box button{
+  border:none; border-radius:7px; padding:6px 12px; font-family:var(--font-sans); font-weight:700; font-size:12px;
+  cursor:pointer; background:var(--dev); color:#fff;
+}
+.dev-annotate-relogin-box button:disabled{ opacity:.5; cursor:not-allowed; }
+
 /* רמז "עדיין בוחר יעדים" — תמיד גלוי כל עוד ה-popover פתוח (אין יותר כפתור
    "+ קשר אלמנט נוסף" נפרד — Ctrl/Cmd+קליק על אלמנט תקין בעמוד מוסיף תג
    לטקסט; קליק רגיל בלי Ctrl/Cmd עובר כרגיל לאפליקציה מתחת). */

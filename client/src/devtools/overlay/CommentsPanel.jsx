@@ -67,7 +67,10 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   const [tick, setTick] = useState(0);
   // "+ Feedback about Jynx" — הרכבה מינימלית inline, לא שימוש חוזר
   // ב-AnnotationPopover.jsx (שממוקם לפי קואורדינטות x/y של קליק, שלא
-  // רלוונטיות כאן). מנהל בלבד, בדיוק כמו שער השליחה הקיים בשרת.
+  // רלוונטיות כאן). מנהל, וגם משתמש-פיתוח עם canJynxComment (ראו
+  // POST /admin/jynx-feedback ב-data/routes/jynx-feedback.js, שכבר תומך
+  // בשני אלה) — היה נעול ל-isAdmin בלבד כאן בטעות, מה שחסם את כל הנקודה
+  // של הרשאת "Jynx commenter" מלהגיע לכפתור המהיר הזה.
   const [jynxComposerOpen, setJynxComposerOpen] = useState(false);
   const [jynxComposerText, setJynxComposerText] = useState("");
   const [jynxComposerSending, setJynxComposerSending] = useState(false);
@@ -313,7 +316,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
             {collapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           </button>
         </div>
-        {!collapsed && isAdmin && (
+        {!collapsed && (isAdmin || canJynxComment) && (
           <div className="comments-jynx-composer-wrap">
             {!jynxComposerOpen ? (
               <button type="button" className="comments-jynx-composer-toggle" onClick={() => setJynxComposerOpen(true)}>

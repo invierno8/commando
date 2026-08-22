@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { GripVertical, Paperclip, Zap } from "lucide-react";
 import { useDraggableFab } from "../useDraggableFab.js";
+import { devLogin } from "../devApi.js";
 
 // גג-גודל לקובץ מצורף — data-URL זה מתחייב ל-git דרך githubPersist.js, אז
 // אסור לתת לו לתפוח בלי גבול. אותו ההיגיון בדיוק כמו LogoUpload.jsx, רק עם
@@ -29,6 +30,14 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  // הפעלה מחדש בלי לאבד את הטיוטה: אם הסשן פג באמצע ניסוח תגובה (השרת
+  // "ישן" מרגע לרגע, ראו DevAuthGate.jsx), submit() למטה נכשל ומציג שגיאה
+  // — אבל הטקסט שכבר הוקלד נשאר ב-state הזה (לא מנוקה בכישלון), אז כפתור
+  // "Log in again" כאן מאפשר להתחבר שוב בלי לסגור את הקופסה ובלי לאבד
+  // אותו, ואז ללחוץ Send שוב.
+  const [reloginOpen, setReloginOpen] = useState(false);
+  const [reloginPassword, setReloginPassword] = useState("");
+  const [reloggingIn, setReloggingIn] = useState(false);
   // כפתור פעולה מפורש — ברירת מחדל דלוקה למנהל (התנהגות ה"כל מה שאני כותב
   // הופך לפעולה" הקיימת), אבל עכשיו גם ניתן לכיבוי לפני שליחה, למי שרוצה
   // הפעם רק להשאיר הערה בלי להפעיל את הצינור האוטומטי.
@@ -103,6 +112,21 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
     }
   }
 
+  async function relogin() {
+    if (!reloginPassword.trim() || reloggingIn) return;
+    setReloggingIn(true);
+    try {
+      await devLogin(reloginPassword.trim());
+      setReloginOpen(false);
+      setReloginPassword("");
+      setError("");
+    } catch (e) {
+      setError(e.message || "Login failed");
+    } finally {
+      setReloggingIn(false);
+    }
+  }
+
   return (
     <div
       ref={sizeRef}
@@ -161,7 +185,26 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
           <input ref={fileInputRef} type="file" style={{ display: "none" }} onChange={handleFile} />
         </div>
       )}
-      {error && <div className="dev-login-error">{error}</div>}
+      {error && (
+        <div className="dev-login-error">
+          {error}{" "}
+          <button type="button" className="dev-annotate-relogin-link" onClick={() => setReloginOpen((v) => !v)}>
+            Log in again
+          </button>
+        </div>
+      )}
+      {reloginOpen && (
+        <div className="dev-annotate-relogin-box">
+          <input
+            type="password" autoFocus placeholder="Password" value={reloginPassword} disabled={reloggingIn}
+            onChange={(e) => setReloginPassword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && relogin()}
+          />
+          <button type="button" onClick={relogin} disabled={!reloginPassword.trim() || reloggingIn}>
+            {reloggingIn ? "..." : "Sign in"}
+          </button>
+        </div>
+      )}
       <div className="dev-annotate-popover-actions">
         <button type="button" className="dev-annotate-btn" onClick={onCancel} disabled={sending}>
           Cancel
