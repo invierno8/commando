@@ -29,10 +29,9 @@
       "openRequests",
       "readiness",
       "equipment",
-      "activityLog"
-    ],
-    "hidden": [
+      "activityLog",
       "kpis"
-    ]
+    ],
+    "hidden": []
   }
 }
