@@ -16,6 +16,7 @@ export default function JynxFeedbackScreen() {
   const [items, setItems] = useState(null);
   const [filter, setFilter] = useState("open");
   const [exported, setExported] = useState(null);
+  const [exportError, setExportError] = useState("");
   const [resolvingId, setResolvingId] = useState(null);
   const [resolveNote, setResolveNote] = useState("");
   const [openThreadId, setOpenThreadId] = useState(null);
@@ -43,7 +44,12 @@ export default function JynxFeedbackScreen() {
     reload();
   }
   async function exportMd() {
-    setExported(await exportJynxFeedbackMarkdown());
+    setExportError("");
+    try {
+      setExported(await exportJynxFeedbackMarkdown());
+    } catch (e) {
+      setExportError(e.message);
+    }
   }
   async function sendReply(a) {
     if (!replyText.trim()) return;
@@ -81,6 +87,7 @@ export default function JynxFeedbackScreen() {
         </div>
         <button type="button" className="dev-admin-export-btn" onClick={exportMd}><Download size={13} /> Export Markdown</button>
       </div>
+      {exportError && <div className="dev-admin-error">{exportError}</div>}
       {shown.length === 0 && <div className="dev-admin-empty">No {filter === "all" ? "" : filter + " "}feedback about Jynx right now.</div>}
       {shown.length > 0 && (
         <div className="dev-admin-annotation-list">
