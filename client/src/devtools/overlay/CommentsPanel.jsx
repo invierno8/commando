@@ -425,7 +425,9 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                     {openThreadId === a.id && (
                       <div className="comments-thread" onClick={(e) => e.stopPropagation()}>
                         {replies.map((r) => (
-                          <div key={r.id} className="comments-thread-item"><b>{r.authorName}:</b> {r.text}</div>
+                          <div key={r.id} className={"comments-thread-item" + (r.system ? " comments-thread-item-system" : "")}>
+                            {r.system ? r.text : <><b>{r.authorName}:</b> {r.text}</>}
+                          </div>
                         ))}
                         <div className="comments-thread-input">
                           <input value={replyText} placeholder="Write a reply..." onChange={(e) => setReplyText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendReply(a)} />
@@ -581,6 +583,7 @@ const CSS_TEXT = `
 .comments-thread{ display:flex; flex-direction:column; gap:5px; background:var(--bg); border-radius:8px; padding:7px; margin:0 12px 9px; }
 .comments-thread-item{ font-size:11px; color:var(--text); }
 .comments-thread-item b{ color:var(--jynx); }
+.comments-thread-item-system{ font-style:italic; color:var(--text-dim); }
 .comments-thread-input{ display:flex; gap:5px; }
 .comments-thread-input input{
   flex:1; background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:5px 8px; font-size:11.5px; color:var(--text);

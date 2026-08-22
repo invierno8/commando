@@ -257,6 +257,7 @@ const CSS = `
 }
 .dev-admin-thread-item{ font-size:11.5px; color:var(--text); display:flex; flex-wrap:wrap; gap:6px; align-items:baseline; }
 .dev-admin-thread-item b{ color:var(--jynx); }
+.dev-admin-thread-item-system{ font-style:italic; color:var(--text-dim); }
 .dev-admin-thread-time{ font-size:10px; color:var(--text-dim); margin-inline-start:auto; }
 .dev-admin-thread-input{ display:flex; gap:6px; }
 .dev-admin-thread-input input{

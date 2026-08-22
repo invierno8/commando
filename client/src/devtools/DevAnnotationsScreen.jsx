@@ -167,8 +167,8 @@ export default function DevAnnotationsScreen() {
                   {openThreadId === a.id && (
                     <div className="dev-admin-thread">
                       {replies.map((r) => (
-                        <div key={r.id} className="dev-admin-thread-item">
-                          <b>{r.authorName}:</b> {r.text}
+                        <div key={r.id} className={"dev-admin-thread-item" + (r.system ? " dev-admin-thread-item-system" : "")}>
+                          {r.system ? r.text : <><b>{r.authorName}:</b> {r.text}</>}
                           <span className="dev-admin-thread-time">{new Date(r.createdAt).toLocaleString("en-US")}</span>
                         </div>
                       ))}

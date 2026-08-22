@@ -151,6 +151,13 @@ router.get("/dev/annotations", requireDevUser, (req, res) => {
 
 // תגובת-מעקב על הערה — כל משתמש-פיתוח מחובר, כולל מי שלא כתב את ההערה
 // המקורית (כדי לאפשר דיון אמיתי, לא רק "בעל ההערה מגיב לעצמו").
+//
+// אם ההערה כבר "טופלה" (resolved) ומגיעה תגובה חדשה עליה, פותחים אותה
+// מחדש אוטומטית — אין דרך אמינה לנתח מתוך הטקסט אם התגובה "מבקשת פעולה
+// נוספת" או סתם מודה, אז ההנחה המעשית היא שכל תגובה על הערה סגורה היא
+// בקשה להמשיך להתייחס אליה (בדיוק כמו שתגובה על issue סגור ב-GitHub
+// פותחת אותו מחדש). מוסיפים גם הודעת-מערכת חד-פעמית לשרשור (system:true)
+// כדי שיהיה ברור *למה* היא זזה בחזרה ל"פתוח" ולא רק שהתגובה עצמה נראית שם.
 router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req, res) => {
   requireFields(req.body, ["text"]);
   const found = readAll().find((a) => a.id === req.params.id);
@@ -160,8 +167,24 @@ router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req,
     authorId: req.devUser.id, authorName: req.devUser.name,
     text: req.body.text, createdAt: new Date().toISOString(),
   };
-  const updated = { ...found, replies: [...(found.replies || []), reply] };
-  await persistNote(updated, `reply on ${updated.id} — ${req.devUser.name}`);
+  const wasResolved = !!found.resolved;
+  const replies = [...(found.replies || []), reply];
+  if (wasResolved) {
+    replies.push({
+      id: "rep-" + (Date.now() + 1).toString(36) + Math.random().toString(36).slice(2, 6),
+      authorName: "Jynx", system: true,
+      text: "↩️ Reopened automatically — a new reply arrived after this was marked done.",
+      createdAt: new Date().toISOString(),
+    });
+  }
+  const updated = {
+    ...found,
+    replies,
+    resolved: wasResolved ? false : found.resolved,
+    resolvedAt: wasResolved ? null : found.resolvedAt,
+    resolvedBy: wasResolved ? null : found.resolvedBy,
+  };
+  await persistNote(updated, wasResolved ? `reopened by reply on ${updated.id} — ${req.devUser.name}` : `reply on ${updated.id} — ${req.devUser.name}`);
   res.status(201).json(updated);
 }));
 
