@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt51os137qxz",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T00:04:24.423Z",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-grip",
+  "secondaryTargets": [],
+  "comment": "make the dots horisantal when in vertical mode and vertical when in horisontal and make it hint its clickable to change mods",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
