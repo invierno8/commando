@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt55l086ng39",
+  "authorId": null,
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T01:53:26.886Z",
+  "route": "dashboard",
+  "targetLabel": "dev-admin-autoresolve-row",
+  "secondaryTargets": [],
+  "comment": "what is conciderd done? when auto is selected send all the once that wasent sent on manual automaticlly not just new ones the ones that. ware already there also (to vs agent, please ignore this comment im leaving it as a question to myself later)",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
