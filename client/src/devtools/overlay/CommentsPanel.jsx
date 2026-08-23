@@ -8,7 +8,8 @@ import {
 } from "../devApi.js";
 import { useDraggableFab } from "../useDraggableFab.js";
 import DrawingOverlay from "./DrawingOverlay.jsx";
-import { parseMentionQuery, matchMentionCandidates, insertMentionText, renderWithMentions as renderMentionsShared } from "../mentionUtils.jsx";
+import { parseMentionQuery, matchMentionCandidates, insertMentionText, renderWithMentions as renderMentionsShared, useDevUserDirectory } from "../mentionUtils.jsx";
+import { openUserProfile } from "../openUserProfile.js";
 
 const ACTION_STATUS_LABEL = { queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed" };
 const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: GitPullRequest, done: CheckCircle2, failed: XCircle };
@@ -23,8 +24,10 @@ const REACTION_EMOJI = ["👍", "😄", "🤔", "❤️"];
 // (שרשורי-תגובה בפאנל הניהול) — שני אלה נמחקו כשניהול ההערות עבר כולו לכאן
 // (ראו הבלוק למעלה), אז זה כרגע היחיד שמשתמש בפונקציה המשותפת הזו, אבל
 // mentionUtils.jsx עצמו נשאר מודול משותף בכוונה למקרה שדבר-מה יזדקק לזה שוב.
-function renderWithMentions(text) {
-  return renderMentionsShared(text, { mentionClassName: "comments-mention", jynxClassName: "comments-mention-jynx" });
+// `directory` (ראו useDevUserDirectory) הופך אזכור אמיתי ללחיץ — קליק פותח
+// את כרטיס הפרופיל של אותו משתמש (openUserProfile.js, UserProfileCard.jsx).
+function renderWithMentions(text, directory) {
+  return renderMentionsShared(text, { mentionClassName: "comments-mention", jynxClassName: "comments-mention-jynx", directory });
 }
 
 /* ================================================================== */
@@ -67,6 +70,7 @@ function renderWithMentions(text) {
 /* ================================================================== */
 
 export default function CommentsPanel({ active, route, currentDevUserId, isAdmin, canJynxComment }) {
+  const userDirectory = useDevUserDirectory();
   const [items, setItems] = useState([]);
   const [statusFilter, setStatusFilter] = useState("open"); // open | done
   const [mineOnly, setMineOnly] = useState(false);
@@ -225,9 +229,10 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   // הטקסט" מספיק טוב בלי מעקב מיקום-סמן מדויק).
   const mentionCandidates = useMemo(() => {
     const names = new Set(["jynx"]);
+    userDirectory.forEach((u) => names.add(u.name));
     items.forEach((a) => { if (a.authorName) names.add(a.authorName); });
     return [...names];
-  }, [items]);
+  }, [items, userDirectory]);
   const activeMentionQuery = useMemo(() => parseMentionQuery(replyText), [replyText]);
   const mentionMatches = useMemo(
     () => matchMentionCandidates(activeMentionQuery, mentionCandidates),
@@ -530,7 +535,15 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                         <span className="comments-drawing-badge"><Pencil size={10} /> drawing — hover to see it on the page</span>
                       )}
                       {hoveredListId === a.id && a.drawing && <DrawingOverlay drawing={a.drawing} />}
-                      <span className="comments-sidebar-item-meta">{a.authorName} · {new Date(a.createdAt).toLocaleString("en-US")}</span>
+                      <span className="comments-sidebar-item-meta">
+                        <span
+                          className="jynx-author-link" role="button" tabIndex={0}
+                          onClick={(e) => { e.stopPropagation(); openUserProfile(a.authorId); }}
+                        >
+                          {a.authorName}
+                        </span>
+                        {" · "}{new Date(a.createdAt).toLocaleString("en-US")}
+                      </span>
                       {a.resolved && a.resolutionNote && (
                         <div className="comments-resolution-note"><CheckCircle2 size={11} /> {a.resolutionNote}</div>
                       )}
@@ -618,7 +631,11 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                     {openThreadId === a.id && (
                       <div className="comments-thread" onClick={(e) => e.stopPropagation()}>
                         {replies.map((r) => (
-                          <div key={r.id} className="comments-thread-item"><b>{r.authorName}:</b> {renderWithMentions(r.text)}</div>
+                          <div key={r.id} className="comments-thread-item">
+                            <b className="jynx-author-link" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openUserProfile(r.authorId); }}>
+                              {r.authorName}:
+                            </b> {renderWithMentions(r.text, userDirectory)}
+                          </div>
                         ))}
                         <div className="comments-thread-input-wrap">
                           {mentionMatches.length > 0 && (
@@ -775,6 +792,8 @@ const CSS_TEXT = `
   border:1px solid var(--jynx); border-radius:12px; padding:3px 8px; font-size:10.5px; color:var(--jynx); margin:2px 0;
 }
 .comments-sidebar-item-meta{ font-size:10.5px; color:var(--text-dim); }
+.jynx-author-link{ cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+.jynx-author-link:hover{ color:var(--jynx); }
 .comments-done-badge{ display:inline-flex; align-items:center; gap:2px; color:var(--green); font-size:9.5px; text-transform:none; }
 .comments-jynx-badge{
   display:inline-flex; align-items:center; background:color-mix(in srgb, var(--dev) 15%, transparent);

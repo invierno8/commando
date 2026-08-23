@@ -9,6 +9,8 @@ import CommentsPanel from "./overlay/CommentsPanel.jsx";
 import MentionsBell from "./MentionsBell.jsx";
 import JynxThought from "./JynxThought.jsx";
 import JynxFace from "./JynxFace.jsx";
+import UserProfileCard from "./UserProfileCard.jsx";
+import { useOpenUserProfileListener } from "./openUserProfile.js";
 import { useDraggableFab } from "./useDraggableFab.js";
 import { useKeepInViewport } from "./useKeepInViewport.js";
 
@@ -111,6 +113,12 @@ export default function DevAuthGate({ route, devFabProps }) {
     () => Number(localStorage.getItem(TOOLBAR_ICON_SCALE_KEY)) || 1
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // כרטיס פרופיל-משתמש (UserProfileCard.jsx) — נפתח מכל מקום (אזכור/שם-
+  // מחבר) דרך אירוע DOM גלובלי, ראו openUserProfile.js. השומע חייב להיות
+  // כאן, לפני כל return מוקדם (checking/!devName), כי חוקי-Hooks אוסרים
+  // להתנות קריאת hook ברינדור שקורה רק אחרי אחד מהם.
+  const [profileUserId, setProfileUserId] = useState(null);
+  useOpenUserProfileListener(setProfileUserId);
   const [roleDocked, setRoleDocked] = useState(
     () => localStorage.getItem(ROLE_DOCKED_KEY) !== "false"
   );
@@ -514,6 +522,7 @@ export default function DevAuthGate({ route, devFabProps }) {
           onSetIconScale={setIconScale}
         />
       )}
+      {profileUserId && <UserProfileCard userId={profileUserId} onClose={() => setProfileUserId(null)} />}
     </>
   );
 }

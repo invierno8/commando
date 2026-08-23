@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Download, Loader2, GitPullRequest, CheckCircle2, XCircle } from "lucide-react";
 import { fetchAnnotations, fetchJynxFeedback, exportAnnotationsMarkdown, exportJynxFeedbackMarkdown } from "./devApi.js";
+import { openUserProfile } from "./openUserProfile.js";
 
 const ACTION_STATUS_LABEL = { queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed" };
 const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: GitPullRequest, done: CheckCircle2, failed: XCircle };
@@ -110,7 +111,15 @@ export default function DevLogsScreen() {
                   )}
                   <p className="dev-admin-annotation-comment">{a.comment}</p>
                   <span className="dev-admin-annotation-meta">
-                    {a.authorName ? `${a.authorName} · ` : ""}{new Date(a.createdAt).toLocaleString("en-US")}
+                    {a.authorName ? (
+                      <>
+                        <span className="jynx-author-link" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openUserProfile(a.authorId); }}>
+                          {a.authorName}
+                        </span>
+                        {" · "}
+                      </>
+                    ) : ""}
+                    {new Date(a.createdAt).toLocaleString("en-US")}
                   </span>
                   {hasAction && (
                     <span className={`pill pill-${ACTION_STATUS_TONE[a.actionStatus] || "neutral"} dev-admin-action-pill`}>

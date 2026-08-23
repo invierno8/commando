@@ -151,3 +151,15 @@ export async function fetchAnnotationSettings() {
 export async function setAutoResolveOnPrOpened(autoResolveOnPrOpened) {
   return http.patch(`/admin/annotation-settings`, { autoResolveOnPrOpened });
 }
+
+// {id, name} for every ACTIVE dev user — any logged-in dev user, not just
+// admin (unlike fetchDevUsers() above, which is the admin roster-management
+// list with role/active/online/canJynxComment). Backs @mention autocomplete
+// (the full roster, not just names already seen on screen) and resolving a
+// typed "@Name" back to an id for UserProfileCard.jsx.
+export async function fetchDevUserDirectory() {
+  return http.get(`/dev/users`);
+}
+export async function fetchUserProfile(id) {
+  return http.get(`/dev/users/${id}/profile`);
+}

@@ -8,9 +8,9 @@
   "targetSelector": null,
   "secondaryTargets": [],
   "comment": "אני צריך אופציה ללחוץ ולהגיע למיקום התגובה על המסך באתר, ואופציה למחוק או לשים תגובה בארכיון לבינתיים בנוסף שיהיה כפתור שמאפשר לי לראות או להסתיר את כל התגובות מהמסך עצמו כאשר אני משאיר תגובה, שעל מסך מסויים שאני נמצא בוא אוכל לראות את כל התגובות שהשארתי פיזית על המסך ולערוך אותם משם",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolvedBy": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:40:00.000Z",
+  "resolvedBy": "Admin",
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T11:33:23.021Z",
   "actionRequestedBy": "מנהל",
@@ -24,5 +24,6 @@
       "text": "Partial progress: the show/hide-all-comments toggle and click-to-jump-to-location are both live now (the comments sidebar). Delete/archive and editing your own comment text are still open — tracked separately.",
       "createdAt": "2026-08-21T14:27:53.963Z"
     }
-  ]
+  ],
+  "resolutionNote": "Bookkeeping cleanup: PR already merged (https://github.com/invierno8/commando/pull/4) but note was never marked resolved."
 }

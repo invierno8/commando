@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Plus, Trash2, ShieldOff, ShieldCheck, KeyRound, Wand2 } from "lucide-react";
 import { fetchDevUsers, createDevUser, updateDevUser, deleteDevUser } from "./devApi.js";
+import { openUserProfile } from "./openUserProfile.js";
 
 /* לא נושא <style> משלו — תמיד ממוסגר בתוך DevAdminPanel.jsx, שכבר מזריק     */
 /* <style> יחיד לכל הלשוניות (בדיוק כמו תת-רכיבי מודל בתוך מסך אחר בקוד הזה).*/
@@ -75,7 +76,7 @@ export default function DevAdminUsersScreen() {
             <div className="dev-admin-user-row" key={u.id}>
               <div className="dev-admin-user-info">
                 <span className={"dev-admin-online-dot" + (u.online ? " online" : "")} title={u.online ? "Online now" : "Offline"} />
-                <b>{u.name}</b>
+                <b className="jynx-author-link" role="button" tabIndex={0} onClick={() => openUserProfile(u.id)} title="View profile">{u.name}</b>
                 {u.role && <span className="dev-admin-user-role">{u.role}</span>}
                 {!u.active && <span className="dev-admin-user-inactive">Disabled</span>}
                 {u.canJynxComment && <span className="dev-admin-user-jynx-badge">Jynx commenter</span>}

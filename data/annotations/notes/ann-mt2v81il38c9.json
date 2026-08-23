@@ -10,9 +10,9 @@
     "app-topbar"
   ],
   "comment": "אין צורך בכל כך הרבה מקופ ודיב חדש בשביל לכתוב את שם החטיבה שוב רק משימת החטיבה זה מה שחשוב פה שכולם יראו, בוא נעביר את משימת החטיבה לפה: (מצורף כאלמנט נוסף) למעלה ובאמצע ורק את משימת החטיבה בצורה שתציג אותה יפה",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolvedBy": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:40:00.000Z",
+  "resolvedBy": "Admin",
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T11:27:53.517Z",
   "actionRequestedBy": "מנהל",
@@ -26,5 +26,6 @@
       "text": "but its not solved this all misison bar div is still there",
       "createdAt": "2026-08-21T15:01:15.771Z"
     }
-  ]
+  ],
+  "resolutionNote": "Bookkeeping cleanup: PR already merged (https://github.com/invierno8/commando/pull/1) but note was never marked resolved."
 }
