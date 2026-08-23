@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Pencil, Paperclip, Zap, Loader2, GitPullRequest, XCircle, Sparkles, RotateCcw, Check, Undo2, Trash2 } from "lucide-react";
+import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Pencil, Paperclip, Zap, Loader2, GitPullRequest, XCircle, Sparkles, RotateCcw, Check, Undo2, Trash2, Search, Calendar, Crosshair, X } from "lucide-react";
 import {
   fetchDevAnnotations, replyToAnnotation, editMyAnnotation, reactToAnnotation, requestAnnotationAction,
   fetchJynxFeedback, fetchMyJynxFeedback, replyToJynxFeedback, reactToJynxFeedback, submitJynxFeedback,
@@ -10,7 +10,17 @@ import { useDraggableFab } from "../useDraggableFab.js";
 import DrawingOverlay from "./DrawingOverlay.jsx";
 import { parseMentionQuery, matchMentionCandidates, insertMentionText, renderWithMentions as renderMentionsShared, useDevUserDirectory } from "../mentionUtils.jsx";
 import { openUserProfile } from "../openUserProfile.js";
+import { findTarget, labelForElement } from "./useHoverTarget.js";
 import { getStickyChromeRects, isCoveredBySticky } from "./stickyChromeBounds.js";
+
+// "Last 24h / Last week / Last month" (jynx-mt5f2ow7dqrw) — plain ms
+// windows off Date.now(), not calendar-aligned days, same "good enough for
+// a QA filter, not a reporting tool" spirit as the rest of this overlay.
+const DATE_FILTER_WINDOWS = {
+  "24h": 24 * 60 * 60 * 1000,
+  "7d": 7 * 24 * 60 * 60 * 1000,
+  "30d": 30 * 24 * 60 * 60 * 1000,
+};
 
 const ACTION_STATUS_LABEL = { queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed" };
 const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: GitPullRequest, done: CheckCircle2, failed: XCircle };
@@ -78,6 +88,17 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   // "This page" (default — route-filtered, the original behavior) vs "All
   // pages" (no route filter at all) — see the LEGO BLOCK comment above.
   const [scope, setScope] = useState("page"); // page | all
+  // Filtering pass (jynx-mt5f2ow7dqrw): date-range pills, a keyword search
+  // box, and an "element filter" — Ctrl/Cmd+click any element on the page
+  // (while "pick" mode is on) to narrow the list to comments whose own
+  // targetLabel or secondaryTargets match that element, reusing the exact
+  // same findTarget/labelForElement heuristic DevOverlay.jsx already uses
+  // for hover/Ctrl+click-to-annotate, so "the element you clicked" always
+  // means the same thing here as it does when leaving a new comment.
+  const [dateFilter, setDateFilter] = useState("all"); // all | 24h | 7d | 30d
+  const [keywordFilter, setKeywordFilter] = useState("");
+  const [pickingElement, setPickingElement] = useState(false);
+  const [elementFilterLabel, setElementFilterLabel] = useState(null);
   const [hoveredListId, setHoveredListId] = useState(null);
   const [hoveredDotLabel, setHoveredDotLabel] = useState(null);
   const [flashId, setFlashId] = useState(null);
@@ -187,6 +208,35 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
       if (rafId) cancelAnimationFrame(rafId);
     };
   }, [active]);
+
+  // "Pick element" mode for the element filter (jynx-mt5f2ow7dqrw) — same
+  // capture-phase-on-window + stopPropagation technique DevOverlay.jsx uses
+  // for Ctrl/Cmd+click-to-annotate, so this doesn't fall through to the
+  // real app's own click handler underneath. Only reacts to a
+  // Ctrl/Cmd-held click, exactly like the annotate gesture, so a plain
+  // click while picking still does nothing surprising to the page.
+  // Deliberately NOT excluding .jynx-chrome (unlike DevOverlay.jsx's
+  // hover-highlight, which only allows it for allowJynxChrome callers) —
+  // this is filtering an already-existing list, not creating a new
+  // annotation, and plenty of real comments already target Jynx's own
+  // toolbar/settings elements (dev-toolbar-settings-btn, jynx-settings-
+  // panel, comments-sidebar-filters, ...), so picking one of those must
+  // work too. .dev-overlay-ignore (the transient dot/highlight layer
+  // itself) stays excluded — never a meaningful filter target.
+  useEffect(() => {
+    if (!pickingElement) return;
+    function onClick(e) {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      if (!el || el.closest(".dev-overlay-ignore")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setElementFilterLabel(labelForElement(findTarget(el)));
+      setPickingElement(false);
+    }
+    window.addEventListener("click", onClick, true);
+    return () => window.removeEventListener("click", onClick, true);
+  }, [pickingElement]);
 
   const grouped = useMemo(() => {
     void tick;
@@ -365,9 +415,13 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
 
   if (!active) return null;
 
+  const keywordNeedle = keywordFilter.trim().toLowerCase();
   const shown = items
     .filter((a) => (statusFilter === "open" ? !a.resolved : a.resolved))
-    .filter((a) => !mineOnly || a.authorId === currentDevUserId);
+    .filter((a) => !mineOnly || a.authorId === currentDevUserId)
+    .filter((a) => dateFilter === "all" || (Date.now() - new Date(a.createdAt).getTime()) <= DATE_FILTER_WINDOWS[dateFilter])
+    .filter((a) => !keywordNeedle || a.comment?.toLowerCase().includes(keywordNeedle) || a.targetLabel?.toLowerCase().includes(keywordNeedle))
+    .filter((a) => !elementFilterLabel || a.targetLabel === elementFilterLabel || (a.secondaryTargets || []).includes(elementFilterLabel));
   const flashRect = flashId ? rectFor(items.find((x) => x.id === flashId))?.rect : null;
 
   return createPortal(
@@ -478,7 +532,42 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                 <button type="button" className={"pill-tab" + (scope === "all" ? " active" : "")} onClick={() => setScope("all")}>All pages</button>
               </div>
             </div>
-            {shown.length === 0 && <div className="comments-sidebar-empty">No {statusFilter} comments {scope === "all" ? "anywhere" : "on this screen"}.</div>}
+            <div className="comments-sidebar-filters comments-sidebar-date-row">
+              <div className="pill-tabs">
+                <button type="button" className={"pill-tab" + (dateFilter === "all" ? " active" : "")} onClick={() => setDateFilter("all")}>Any time</button>
+                <button type="button" className={"pill-tab" + (dateFilter === "24h" ? " active" : "")} onClick={() => setDateFilter("24h")}>24h</button>
+                <button type="button" className={"pill-tab" + (dateFilter === "7d" ? " active" : "")} onClick={() => setDateFilter("7d")}>Week</button>
+                <button type="button" className={"pill-tab" + (dateFilter === "30d" ? " active" : "")} onClick={() => setDateFilter("30d")}>Month</button>
+              </div>
+            </div>
+            <div className="comments-sidebar-search-row">
+              <div className="comments-sidebar-search-box">
+                <Search size={12} />
+                <input
+                  value={keywordFilter}
+                  placeholder="Filter by keyword..."
+                  onChange={(e) => setKeywordFilter(e.target.value)}
+                />
+                {keywordFilter && (
+                  <button type="button" onClick={() => setKeywordFilter("")} title="Clear keyword filter"><X size={12} /></button>
+                )}
+              </div>
+              {!elementFilterLabel ? (
+                <button
+                  type="button"
+                  className={"comments-element-pick-toggle" + (pickingElement ? " active" : "")}
+                  onClick={() => setPickingElement((v) => !v)}
+                  title={pickingElement ? "Ctrl/Cmd+click any element on the page to filter to it (click again to cancel)" : "Filter to comments on one specific element"}
+                >
+                  <Crosshair size={12} /> {pickingElement ? "Ctrl/Cmd+click an element..." : "Element"}
+                </button>
+              ) : (
+                <button type="button" className="comments-element-filter-chip" onClick={() => setElementFilterLabel(null)} title="Clear element filter">
+                  <Crosshair size={11} /> {elementFilterLabel} <X size={11} />
+                </button>
+              )}
+            </div>
+            {shown.length === 0 && <div className="comments-sidebar-empty">No {statusFilter} comments {scope === "all" ? "anywhere" : "on this screen"}{(dateFilter !== "all" || keywordNeedle || elementFilterLabel) ? " matching these filters" : ""}.</div>}
             <div className="comments-sidebar-list">
               {shown.map((a) => {
                 const replies = a.replies || [];
@@ -802,6 +891,23 @@ const CSS_TEXT = `
 .comments-mine-toggle:hover{ color:var(--text); }
 .comments-mine-toggle.active{ background:var(--jynx); border-color:var(--jynx); color:#fff; }
 .comments-sidebar-scope-row{ padding-top:0; padding-bottom:8px; border-bottom:1px solid var(--line); }
+.comments-sidebar-date-row{ padding-top:0; }
+.comments-sidebar-search-row{ padding:6px 10px 0; display:flex; align-items:center; gap:6px; }
+.comments-sidebar-search-box{
+  flex:1; display:flex; align-items:center; gap:5px; background:var(--bg); border:1px solid var(--line);
+  border-radius:8px; padding:4px 8px; color:var(--text-dim); min-width:0;
+}
+.comments-sidebar-search-box input{
+  flex:1; min-width:0; background:none; border:none; font-size:11.5px; color:var(--text);
+}
+.comments-sidebar-search-box button{ background:none; border:none; color:var(--text-dim); cursor:pointer; display:flex; }
+.comments-sidebar-search-box button:hover{ color:var(--jynx); }
+.comments-element-pick-toggle, .comments-element-filter-chip{
+  display:inline-flex; align-items:center; gap:4px; white-space:nowrap; background:none; border:1px solid var(--line);
+  color:var(--text-dim); border-radius:14px; padding:4px 9px; font-size:10.5px; font-weight:700; cursor:pointer;
+}
+.comments-element-pick-toggle.active{ background:var(--jynx); border-color:var(--jynx); color:#fff; }
+.comments-element-filter-chip{ background:color-mix(in srgb, var(--jynx) 14%, transparent); border-color:var(--jynx); color:var(--jynx); }
 .comments-sidebar-item-other-page{ cursor:default; }
 .comments-sidebar-item-other-page:hover{ background:none; }
 .comments-route-badge{
