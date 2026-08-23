@@ -74,9 +74,18 @@ export const http = {
   patch: (path, body) => request(path, { method: "PATCH", body: body ?? {} }),
   delete: (path) => request(path, { method: "DELETE" }),
   // עבור endpoint יחיד שמחזיר טקסט/Markdown, לא JSON (ראו annotations export).
+  // על שגיאה מנסים לפרש JSON (השרת כן מחזיר JSON לשגיאות, גם מ-endpoint שמחזיר
+  // טקסט בהצלחה) ומפעילים את אותו authErrorListener כמו request() — בלעדיו,
+  // 401 (סשן מנהל שפג) היה מציג רק "שגיאת שרת (401)" גנרי במקום באנר ה-relogin
+  // הרגיל שכל פעולת-מנהל אחרת מציגה, מה שנראה כאילו הכפתור "עדיין לא עובד".
   getText: async (path) => {
     const res = await fetch(`${API_BASE}${path}`, { credentials: "include", headers: authHeaders() });
-    if (!res.ok) throw new Error(`שגיאת שרת (${res.status})`);
+    if (!res.ok) {
+      let data = null;
+      try { data = await res.json(); } catch { /* לא JSON */ }
+      if (res.status === 401) authErrorListener?.(data?.error || "");
+      throw new Error(data?.error || `שגיאת שרת (${res.status})`);
+    }
     return res.text();
   },
 };

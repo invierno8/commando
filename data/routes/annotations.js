@@ -27,7 +27,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { requireDevUser } from "../middleware/auth.js";
-import { requireAdmin } from "../middleware/adminAuth.js";
+import { requireAdmin, isAdminRequest } from "../middleware/adminAuth.js";
 import { asyncRoute, requireFields } from "../middleware/validate.js";
 import { commitFileToGithub, deleteFileFromGithub, githubPersistEnabled, listDirFromGithub, readFileFromGithub } from "../lib/githubPersist.js";
 import { parseMentionedUsers, hasJynxMention, addMention } from "../lib/mentions.js";
@@ -211,9 +211,17 @@ router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req,
   requireFields(req.body, ["text"]);
   const found = readAll().find((a) => a.id === req.params.id);
   if (!found) return res.status(404).json({ error: "לא נמצא" });
+  // "תגובה בתור Jynx" (jynx-mt5ev53xof3v: "make it have its own user so
+  // we'll know its jynx and not admin user") — רק מנהל אמיתי-מחובר יכול
+  // לבקש את זה (isAdminRequest, לא רק requireDevUser של הנתיב הזה), אחרת
+  // כל משתמש-פיתוח יכול היה "להתחזות" ל-Jynx. authorId נשאר null בכוונה
+  // (אין משתמש-פיתוח אמיתי מאחורי זה) — הרינדור בצד הלקוח (CommentsPanel.jsx)
+  // בודק isJynx כדי לתת תג ייחודי במקום קישור-לפרופיל רגיל.
+  const asJynx = req.body.asJynx === true && isAdminRequest(req);
   const reply = {
     id: "rep-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    authorId: req.devUser.id, authorName: req.devUser.name,
+    authorId: asJynx ? null : req.devUser.id, authorName: asJynx ? "Jynx" : req.devUser.name,
+    ...(asJynx ? { isJynx: true } : {}),
     text: req.body.text, createdAt: new Date().toISOString(),
   };
   const wasResolved = found.resolved;

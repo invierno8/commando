@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, ShieldCheck, LogIn } from "lucide-react";
+import { X, ShieldCheck, LogIn, Lock } from "lucide-react";
 import { adminVerify, fetchAdminMe, fetchAnnotationSettings, setAutoResolveOnPrOpened } from "./devApi.js";
 import { setAuthErrorListener } from "../api-client/http.js";
 import DevAdminUsersScreen from "./DevAdminUsersScreen.jsx";
@@ -8,30 +8,38 @@ import DevLogsScreen from "./DevLogsScreen.jsx";
 import { JynxMenuSettingsFields } from "./JynxSettings.jsx";
 
 /* ================================================================== */
-/* גישה למנהל בלבד (את/ה, לא משתמשי-פיתוח רגילים) — סוד יחיד (ADMIN_    */
-/* SECRET), לא חשבון-פר-אדם, בכוונה (ראו plan doc).                      */
-/*                                                                        */
 /* Became a general "Settings" hub on 2026-08-23 (work item                */
 /* jynx-mt558crxb02w) — previously this also housed the interactive QA-    */
 /* comment / Jynx-feedback management UI (resolve/edit/delete/reply),      */
 /* duplicating what CommentsPanel.jsx already did per-screen. That's all    */
 /* moved to CommentsPanel now (it grew a "this page / all pages" toggle so   */
 /* it can be the single place comment management happens), so what's left    */
-/* here is: Dev Users (roster CRUD, unchanged), Menu (the toolbar's own      */
-/* orientation/icon-size/reorder controls, folded in from JynxSettings.jsx   */
-/* so an admin already in this panel doesn't have to close it to reach       */
-/* them — the standalone gear-icon entry point stays too, see                */
-/* JynxMenuSettingsFields's own comment for why), and Logs (a read-only,     */
-/* every-screen-at-once audit trail of actionStatus/PR links — the same      */
-/* data the old two tabs showed, minus the now-redundant management          */
-/* controls).                                                                */
+/* here is: Dev Users (roster CRUD), Menu (the toolbar's own orientation/    */
+/* icon-size/reorder controls, folded in from JynxSettings.jsx), and Logs    */
+/* (a read-only, every-screen-at-once audit trail of actionStatus/PR links). */
+/*                                                                            */
+/* Single entry point for every dev user as of 2026-08-23 (work item         */
+/* jynx-mt5est4di1wp — "connect the admin button to settings, it should be   */
+/* one big settings page admins see more of, not two separate buttons").     */
+/* Previously this whole panel sat behind the ADMIN_SECRET gate, and the     */
+/* Menu tab's contents were only reachable non-admins via a second, separate */
+/* toolbar button (the old standalone `JynxSettings` modal). Now the ADMIN_  */
+/* SECRET gate only guards the **Dev Users** and **Logs** tabs — the Menu    */
+/* tab renders for anyone, no auth required, so a regular dev user gets      */
+/* their toolbar/appearance settings from the exact same entry point an      */
+/* admin uses to see and manage everything else. The old standalone         */
+/* `JynxSettings` modal + its own toolbar button were removed; `JynxSettings.*/
+/* jsx` still exists purely to export the shared `JynxMenuSettingsFields`    */
+/* used by the Menu tab below.                                              */
 /* ================================================================== */
 export default function DevAdminPanel({ onClose, onVerified, menuSettings }) {
   const [checking, setChecking] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [secret, setSecret] = useState("");
   const [error, setError] = useState("");
-  const [tab, setTab] = useState("users");
+  // ברירת מחדל "menu" (לא "users") — זו הלשונית שנגישה לכל משתמש-פיתוח בלי
+  // סוד-מנהל, אז פתיחת הפאנל לא צריכה לדרוש התחברות מיידית.
+  const [tab, setTab] = useState("menu");
   // הסשן (X-Admin-Session) יכול לפוג באמצע שימוש בפאנל — למשל תוך כדי כתיבת
   // תגובה בלשונית Jynx/Comments. במקום להחזיר את authenticated ל-false (מה
   // שהיה מסיר לגמרי את הלשונית הפעילה ומאבד כל state מקומי שם — טיוטת-
@@ -120,19 +128,6 @@ export default function DevAdminPanel({ onClose, onVerified, menuSettings }) {
         <button className="drawer-close" onClick={onClose}><X size={16} /></button>
         {checking ? (
           <div className="dev-admin-empty">Checking permission...</div>
-        ) : !authenticated ? (
-          <div className="dev-admin-gate">
-            <ShieldCheck size={24} />
-            <h3>Admin access</h3>
-            <p>The ADMIN_SECRET is required to manage dev users and view the universal activity log.</p>
-            <input
-              type="password" autoFocus value={secret} placeholder="Admin secret"
-              onChange={(e) => setSecret(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && verify()}
-            />
-            {error && <div className="dev-admin-error">{error}</div>}
-            <button type="button" className="dev-admin-verify-btn" onClick={verify} disabled={!secret.trim()}>Sign in</button>
-          </div>
         ) : (
           <>
             {reAuthNeeded && (
@@ -151,7 +146,7 @@ export default function DevAdminPanel({ onClose, onVerified, menuSettings }) {
                 {reAuthError && <span className="dev-admin-reauth-error">{reAuthError}</span>}
               </div>
             )}
-            {tab === "logs" && (
+            {authenticated && tab === "logs" && (
               <div className="dev-admin-autoresolve-row">
                 <span>
                   <b>{autoResolve ? "Auto" : "Manual"}</b> mark as Done — {autoResolve
@@ -169,20 +164,41 @@ export default function DevAdminPanel({ onClose, onVerified, menuSettings }) {
                 </button>
               </div>
             )}
+            {/* "Dev Users"/"Logs" carry a lock badge whenever the ADMIN_SECRET
+                hasn't been provided yet this session — "Menu" never does, it's
+                open to every dev user regardless of admin status. */}
             <div className="pill-tabs" style={{ marginBottom: 14 }}>
-              <button type="button" className={"pill-tab" + (tab === "users" ? " active" : "")} onClick={() => setTab("users")}>Dev Users</button>
+              <button type="button" className={"pill-tab" + (tab === "users" ? " active" : "")} onClick={() => setTab("users")}>
+                Dev Users{!authenticated && <Lock size={10} className="dev-admin-tab-lock" />}
+              </button>
               <button type="button" className={"pill-tab" + (tab === "menu" ? " active" : "")} onClick={() => setTab("menu")}>Menu</button>
-              <button type="button" className={"pill-tab" + (tab === "logs" ? " active jynx-tab-active" : "")} onClick={() => setTab("logs")}>Logs</button>
+              <button type="button" className={"pill-tab" + (tab === "logs" ? " active jynx-tab-active" : "")} onClick={() => setTab("logs")}>
+                Logs{!authenticated && <Lock size={10} className="dev-admin-tab-lock" />}
+              </button>
             </div>
-            {tab === "users" && <DevAdminUsersScreen />}
             {tab === "menu" && (
               <div className="dev-admin-tab">
                 {menuSettings ? <JynxMenuSettingsFields {...menuSettings} /> : (
-                  <p className="dev-admin-hint">Menu settings aren't available right now — open the ⚙ (gear) icon on the toolbar instead.</p>
+                  <p className="dev-admin-hint">Menu settings aren't available right now.</p>
                 )}
               </div>
             )}
-            {tab === "logs" && <DevLogsScreen />}
+            {(tab === "users" || tab === "logs") && !authenticated && (
+              <div className="dev-admin-gate">
+                <ShieldCheck size={24} />
+                <h3>Admin access</h3>
+                <p>The ADMIN_SECRET unlocks {tab === "users" ? "dev user management" : "the universal activity log"} — anyone can use the Menu tab without it.</p>
+                <input
+                  type="password" autoFocus value={secret} placeholder="Admin secret"
+                  onChange={(e) => setSecret(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && verify()}
+                />
+                {error && <div className="dev-admin-error">{error}</div>}
+                <button type="button" className="dev-admin-verify-btn" onClick={verify} disabled={!secret.trim()}>Sign in</button>
+              </div>
+            )}
+            {tab === "users" && authenticated && <DevAdminUsersScreen />}
+            {tab === "logs" && authenticated && <DevLogsScreen />}
           </>
         )}
       </div>
@@ -258,6 +274,7 @@ const CSS = `
 }
 .dev-admin-autoresolve-toggle.on .dev-admin-autoresolve-knob{ transform:translateX(16px); }
 
+.dev-admin-tab-lock{ margin-inline-start:5px; vertical-align:-1px; opacity:.6; }
 .dev-admin-tab{ display:flex; flex-direction:column; gap:12px; }
 .dev-admin-hint{ color:var(--text-dim); font-size:12px; line-height:1.6; margin:0; }
 

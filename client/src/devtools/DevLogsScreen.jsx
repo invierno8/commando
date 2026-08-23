@@ -27,6 +27,12 @@ export default function DevLogsScreen() {
   const [filter, setFilter] = useState("open"); // open | done | all
   const [exported, setExported] = useState(null);
   const [exportError, setExportError] = useState("");
+  // מציג ספינר "Exporting..." על הכפתור בזמן שהבקשה בעיבוד — בלי זה, על
+  // Render בחינם (שיכול לישון עד 30-50 שניות ב-cold start) הכפתור נראה
+  // "תקוע/לא עושה כלום" באותו חלון, גם כשההבקשה בסופו של דבר מצליחה
+  // (jynx-mt5dxjtw3u5b: "still doesent work its weird").
+  const [exportingApp, setExportingApp] = useState(false);
+  const [exportingJynx, setExportingJynx] = useState(false);
 
   function reload() {
     fetchAnnotations().then(setAnnotations);
@@ -46,18 +52,24 @@ export default function DevLogsScreen() {
 
   async function exportApp() {
     setExportError("");
+    setExportingApp(true);
     try {
       setExported({ label: "App comments", text: await exportAnnotationsMarkdown() });
     } catch (e) {
       setExportError(e.message || "Export failed, please try again");
+    } finally {
+      setExportingApp(false);
     }
   }
   async function exportJynx() {
     setExportError("");
+    setExportingJynx(true);
     try {
       setExported({ label: "Jynx feedback", text: await exportJynxFeedbackMarkdown() });
     } catch (e) {
       setExportError(e.message || "Export failed, please try again");
+    } finally {
+      setExportingJynx(false);
     }
   }
 
@@ -80,8 +92,12 @@ export default function DevLogsScreen() {
           <button type="button" className={"pill-tab" + (filter === "all" ? " active" : "")} onClick={() => setFilter("all")}>All ({items.length})</button>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" className="dev-admin-export-btn" onClick={exportApp}><Download size={13} /> App comments</button>
-          <button type="button" className="dev-admin-export-btn" onClick={exportJynx}><Download size={13} /> Jynx feedback</button>
+          <button type="button" className="dev-admin-export-btn" onClick={exportApp} disabled={exportingApp}>
+            {exportingApp ? <Loader2 size={13} className="dev-admin-spin" /> : <Download size={13} />} {exportingApp ? "Exporting..." : "App comments"}
+          </button>
+          <button type="button" className="dev-admin-export-btn" onClick={exportJynx} disabled={exportingJynx}>
+            {exportingJynx ? <Loader2 size={13} className="dev-admin-spin" /> : <Download size={13} />} {exportingJynx ? "Exporting..." : "Jynx feedback"}
+          </button>
         </div>
       </div>
       {exportError && <div className="dev-admin-error">{exportError}</div>}
