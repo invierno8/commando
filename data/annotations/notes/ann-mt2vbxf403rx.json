@@ -16,5 +16,13 @@
   "actionRequestedBy": "מנהל",
   "actionPrUrl": null,
   "actionLog": null,
-  "resolutionNote": "Fixed — Jynx's own UI (FAB, toolbar, admin panel) is now excluded from hover/comment for everyone except admin, who gets a separate purple-colored meta-feedback mode for commenting on Jynx itself."
+  "resolutionNote": "Fixed — Jynx's own UI (FAB, toolbar, admin panel) is now excluded from hover/comment for everyone except admin, who gets a separate purple-colored meta-feedback mode for commenting on Jynx itself.",
+  "reactions": {
+    "👍": [
+      "admin"
+    ],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
 }
