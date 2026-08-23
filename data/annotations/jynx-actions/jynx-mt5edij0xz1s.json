@@ -1,8 +1,0 @@
-{
-  "id": "jynx-mt5edij0xz1s",
-  "route": "dashboard",
-  "targetLabel": "admin-marker-dot-Dashboard — widget: מדדים כלליים — כלל החטיבה",
-  "secondaryTargets": [],
-  "comment": "make the dots aligned and stick to the element when scrolling and fix a common problem that some jynx overlayes are above the nav bar in z index so its just all over the place when scrolling, like the dots. or hover effects etc...",
-  "requestedAt": "2026-08-23T05:59:35.028Z"
-}
