@@ -6,19 +6,19 @@ export default function ThemeToggle({ theme, setTheme }) {
     <div className="theme-toggle" role="radiogroup" aria-label="מצב תצוגה">
       <button
         type="button"
-        className={"theme-toggle-opt" + (theme === "light" ? " active" : "")}
-        aria-pressed={theme === "light"}
-        onClick={() => setTheme("light")}
-      >
-        <Sun /> בהיר
-      </button>
-      <button
-        type="button"
         className={"theme-toggle-opt" + (theme === "dark" ? " active" : "")}
         aria-pressed={theme === "dark"}
         onClick={() => setTheme("dark")}
       >
         <Moon /> כהה
+      </button>
+      <button
+        type="button"
+        className={"theme-toggle-opt" + (theme === "light" ? " active" : "")}
+        aria-pressed={theme === "light"}
+        onClick={() => setTheme("light")}
+      >
+        <Sun /> בהיר
       </button>
     </div>
   );
