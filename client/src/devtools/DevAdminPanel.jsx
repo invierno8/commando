@@ -289,6 +289,10 @@ const CSS = `
 .dev-admin-user-created{ color:var(--text-dim); font-size:10.5px; }
 .dev-admin-online-dot{ width:8px; height:8px; border-radius:50%; background:var(--line); flex:none; }
 .dev-admin-online-dot.online{ background:var(--green); box-shadow:0 0 0 2px color-mix(in srgb, var(--green) 25%, transparent); }
+.dev-admin-online-summary{
+  display:flex; align-items:center; gap:7px; font-size:11.5px; font-weight:700; color:var(--green);
+  margin-bottom:8px;
+}
 .dev-admin-password-reset{ display:flex; gap:6px; margin-top:6px; width:100%; }
 .dev-admin-password-reset input{
   flex:1; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:6px 9px;
