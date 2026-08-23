@@ -139,14 +139,23 @@ router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
   // ציור-חופשי/פוליגון על העמוד (ראו DrawingCanvas.jsx) — נקודות כאחוזים
   // (0-100) מגודל ה-viewport בזמן הציור, לא פיקסלים מוחלטים, כדי ש-
   // DrawingOverlay.jsx יוכל לשחזר אותו במידה יחסית נכונה גם על מסך אחר.
-  // מוגבל ל-500 נקודות — הגנה על גודל הקובץ (זה מתחייב ל-git), לא מגבלה
-  // אמנותית; קו יד חופשית טיפוסי לא מתקרב לזה.
+  // מוגבל ל-500 נקודות לכל קו — הגנה על גודל הקובץ (זה מתחייב ל-git), לא
+  // מגבלה אמנותית; קו יד חופשית טיפוסי לא מתקרב לזה. מאז 2026-08-23 ציור
+  // הוא אוסף של strokes (ציור-רב-שלבי — שחרור העכבר לא מסיים את הציור
+  // יותר, ראו DrawingCanvas.jsx), עד 20 קווים לציור אחד, פלוס צבע אחד
+  // משותף לכל הציור (אחד מ-4 הצבעים בלוח של Jynx).
   const rawDrawing = req.body.drawing;
-  const drawing = rawDrawing && Array.isArray(rawDrawing.points) && rawDrawing.points.length >= 2
-    ? {
-        type: rawDrawing.type === "polygon" ? "polygon" : "freehand",
-        points: rawDrawing.points.slice(0, 500).map((p) => [Number(p[0]) || 0, Number(p[1]) || 0]),
-      }
+  const cleanedStrokes = Array.isArray(rawDrawing?.strokes)
+    ? rawDrawing.strokes
+        .filter((s) => Array.isArray(s?.points) && s.points.length >= 2)
+        .slice(0, 20)
+        .map((s) => ({
+          type: s.type === "polygon" ? "polygon" : "freehand",
+          points: s.points.slice(0, 500).map((p) => [Number(p[0]) || 0, Number(p[1]) || 0]),
+        }))
+    : [];
+  const drawing = cleanedStrokes.length
+    ? { strokes: cleanedStrokes, color: typeof rawDrawing.color === "string" ? rawDrawing.color.slice(0, 40) : null }
     : null;
   const entry = {
     id: "ann-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),

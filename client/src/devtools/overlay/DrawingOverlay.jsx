@@ -14,24 +14,36 @@ import { createPortal } from "react-dom";
 /* AdminAnnotationMarkers.jsx's AdminMarkerDot both render this only      */
 /* while their dot is hovered, so a page with several drawings doesn't    */
 /* look permanently scribbled-on.                                        */
+/*                                                                        */
+/* A drawing is one or more strokes (drawing.strokes[], added 2026-08-23  */
+/* for multi-step drawing — see DrawingCanvas.jsx) sharing one color,      */
+/* stored on the drawing itself rather than passed in by every caller —   */
+/* it's a property of what was drawn (the 4-swatch Jynx draw palette),     */
+/* not of who's currently viewing it.                                      */
 /* ================================================================== */
-export default function DrawingOverlay({ drawing, color = "var(--jynx)" }) {
-  if (!drawing?.points?.length) return null;
-  const pixelPoints = drawing.points.map(([x, y]) => [(x / 100) * window.innerWidth, (y / 100) * window.innerHeight]);
-  const pointsAttr = pixelPoints.map(([x, y]) => `${x},${y}`).join(" ");
-  const isPolygon = drawing.type === "polygon";
-  const Tag = isPolygon ? "polygon" : "polyline";
+export default function DrawingOverlay({ drawing }) {
+  if (!drawing?.strokes?.length) return null;
+  const color = drawing.color || "var(--jynx)";
 
   return createPortal(
     <svg className="dev-overlay-ignore jynx-drawing-overlay">
-      <Tag
-        points={pointsAttr}
-        fill={isPolygon ? `color-mix(in srgb, ${color} 16%, transparent)` : "none"}
-        stroke={color}
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      {drawing.strokes.map((s, i) => {
+        const pixelPoints = s.points.map(([x, y]) => [(x / 100) * window.innerWidth, (y / 100) * window.innerHeight]);
+        const pointsAttr = pixelPoints.map(([x, y]) => `${x},${y}`).join(" ");
+        const isPolygon = s.type === "polygon";
+        const Tag = isPolygon ? "polygon" : "polyline";
+        return (
+          <Tag
+            key={i}
+            points={pointsAttr}
+            fill={isPolygon ? `color-mix(in srgb, ${color} 16%, transparent)` : "none"}
+            stroke={color}
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        );
+      })}
     </svg>,
     document.body
   );

@@ -18,6 +18,25 @@ const DEFAULT_TOOLBAR_ORDER = ["overlay", "draw", "comments", "markers", "admin"
 const TOOLBAR_ORDER_KEY = "jynx-toolbar-item-order";
 const TOOLBAR_ORIENTATION_KEY = "jynx-toolbar-orientation";
 
+// 4-swatch draw-color palette (added 2026-08-23, per QA feedback asking for
+// one whenever the draw tool is turned on) — Jynx's own accent purple stays
+// the default so the drawing feature keeps looking like Jynx out of the box,
+// plus 3 more colors already used elsewhere in this same dev-tool chrome
+// (the secondary-target highlight blue, and the app's own caution/danger
+// tokens) rather than inventing new ones.
+const DRAW_COLOR_KEY = "jynx-draw-color";
+const JYNX_DRAW_COLORS = [
+  { name: "Purple (default)", value: "var(--jynx)" },
+  { name: "Blue", value: "#2F8FCE" },
+  { name: "Red", value: "var(--red)" },
+  { name: "Yellow", value: "var(--yellow)" },
+];
+
+function loadDrawColor() {
+  const saved = localStorage.getItem(DRAW_COLOR_KEY);
+  return JYNX_DRAW_COLORS.some((c) => c.value === saved) ? saved : JYNX_DRAW_COLORS[0].value;
+}
+
 function loadToolbarOrder() {
   try {
     const raw = JSON.parse(localStorage.getItem(TOOLBAR_ORDER_KEY));
@@ -61,6 +80,10 @@ export default function DevAuthGate({ route, devFabProps }) {
   // מצב-ציור (Ctrl/Cmd+גרירה על העמוד) — ראו DrawingCanvas.jsx. נפרד
   // מ-overlayOn: אפשר לצייר גם כשהילת-ה-hover כבויה, ולהיפך.
   const [drawMode, setDrawMode] = useState(false);
+  // צבע-הציור הפעיל — נבחר מלוח 4 הצבעים שנפתח כשמצב-הציור דלוק (ראו
+  // JYNX_DRAW_COLORS למעלה), נשמר כדי שהבחירה תישאר גם אחרי רענון דף.
+  const [drawColor, setDrawColor] = useState(loadDrawColor);
+  useEffect(() => { localStorage.setItem(DRAW_COLOR_KEY, drawColor); }, [drawColor]);
   const [toolbarOpen, setToolbarOpen] = useState(true);
   // כיוון הסרגל (אופקי/אנכי) וסדר כפתורי-הפעולה בתוכו — שני דברים נפרדים
   // שנשמרים ב-localStorage משלהם, לא קשורים למיקום הפיזי (toolbarFab.pos).
@@ -82,6 +105,7 @@ export default function DevAuthGate({ route, devFabProps }) {
   // יסתיר בטעות תוכן קבוע במסך כלשהו, גם אחרי שמתחברים ומופיע גם הסרגל.
   const lockedFab = useDraggableFab("jynx-fab-pos");
   const toolbarFab = useDraggableFab("jynx-toolbar-pos", { right: 20, bottom: 76 });
+  const drawPaletteFab = useDraggableFab("jynx-draw-palette-pos", { right: 20, bottom: 132 });
   // פאנל ההתחברות עצמו לא גרירי (הוא נפתח יחסית לכפתור הנעול) אבל יכול
   // בהחלט לצאת מה-viewport אם הכפתור נגרר קרוב לקצה — ראו useKeepInViewport.js.
   const loginPanelRef = useRef(null);
@@ -335,8 +359,28 @@ export default function DevAuthGate({ route, devFabProps }) {
   return (
     <>
       <style>{CSS}</style>
-      <DevOverlay active={overlayOn || drawMode} route={route} isAdmin={isAdmin} canJynxChrome={isAdmin || canJynxComment} markersOn={markersOn} drawMode={drawMode} />
+      <DevOverlay active={overlayOn || drawMode} route={route} isAdmin={isAdmin} canJynxChrome={isAdmin || canJynxComment} markersOn={markersOn} drawMode={drawMode} drawColor={drawColor} />
       <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} isAdmin={isAdmin} canJynxComment={canJynxComment} />
+      {drawMode && (
+        <div
+          ref={drawPaletteFab.sizeRef}
+          className="jynx-draw-palette jynx-chrome jynx-ui"
+          style={{ right: drawPaletteFab.pos.right, bottom: drawPaletteFab.pos.bottom }}
+          {...drawPaletteFab.dragHandlers}
+          title="Ctrl/Cmd+drag on the page to draw · release and drag again to add another stroke · Esc to finish and comment"
+        >
+          {JYNX_DRAW_COLORS.map((c) => (
+            <button
+              key={c.value}
+              type="button"
+              className={"jynx-draw-swatch" + (drawColor === c.value ? " active" : "")}
+              style={{ background: c.value }}
+              onClick={() => setDrawColor(c.value)}
+              title={c.name}
+            />
+          ))}
+        </div>
+      )}
       {toolbarOpen ? (
         <div
           ref={toolbarFab.sizeRef}
@@ -474,6 +518,17 @@ const CSS = `
   background:var(--panel); border:1px solid var(--jynx); color:var(--jynx); border-radius:20px;
   padding:6px 12px; font-family:var(--font-mono); font-size:11px; font-weight:700; white-space:nowrap;
 }
+
+.jynx-draw-palette{
+  position:fixed; z-index:79; display:flex; align-items:center; gap:6px; padding:6px;
+  background:var(--panel); border:1px solid var(--jynx); border-radius:20px; box-shadow:var(--shadow-md);
+  cursor:grab; touch-action:none;
+}
+.jynx-draw-palette:active{ cursor:grabbing; }
+.jynx-draw-swatch{
+  width:20px; height:20px; border-radius:50%; border:2px solid transparent; padding:0; cursor:pointer;
+}
+.jynx-draw-swatch.active{ border-color:var(--text); box-shadow:0 0 0 2px var(--panel), 0 0 0 3px var(--text); }
 
 .dev-fab-mock-toggle-row{ display:flex; margin-bottom:6px; }
 .mock-toggle{
