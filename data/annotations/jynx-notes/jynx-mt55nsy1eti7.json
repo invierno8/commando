@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt55nsy1eti7",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T01:55:37.417Z",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-icon-btn",
+  "secondaryTargets": [],
+  "comment": "make sure mentions and mentions logic works",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
