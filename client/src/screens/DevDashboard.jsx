@@ -823,14 +823,14 @@ ${SCOPE_PICKER_CSS}
 .req-title{ font-weight:600; }
 .req-unit{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--text-dim); }
 
-.readiness-card-inner{ display:flex; flex-direction:column; height:100%; }
+.readiness-card-inner{ display:flex; flex-direction:column; }
 .readiness-main{ text-align:center; padding:10px 0 14px; border-bottom:1px solid var(--line); margin-bottom:14px; }
 .readiness-big{ font-size:34px; font-weight:800; color:var(--accent); }
 .readiness-big-label{ font-size:12px; color:var(--text-dim); margin-top:2px; }
 .readiness-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
 .readiness-stat{ background:var(--panel-raised); border:1px solid var(--line); border-radius:var(--radius-md); padding:9px 11px; font-size:11px; color:var(--text-dim); display:flex; flex-direction:column; gap:4px; min-width:0; }
 .readiness-stat b{ font-size:15px; color:var(--text); font-family:var(--font-mono); font-weight:600; overflow-wrap:break-word; }
-.readiness-strip{ display:flex; justify-content:space-between; gap:4px; margin-top:auto; padding-top:10px; border-top:1px solid var(--line); }
+.readiness-strip{ display:flex; justify-content:space-between; gap:4px; margin-top:14px; padding-top:10px; border-top:1px solid var(--line); }
 .readiness-strip-day{ display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10px; color:var(--text-dim); flex:1 1 0; min-width:0; }
 .readiness-strip-val{ font-family:var(--font-mono); font-weight:700; color:var(--text); font-size:12px; }
 
