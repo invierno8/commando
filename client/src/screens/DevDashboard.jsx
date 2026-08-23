@@ -816,12 +816,13 @@ ${SCOPE_PICKER_CSS}
 }
 
 .req-table{ display:flex; flex-direction:column; margin-top:10px; }
-.req-row{ display:grid; grid-template-columns:90px 1fr 110px 130px; align-items:center; gap:10px; padding:11px 4px; border-bottom:1px solid var(--line); font-size:13px; }
+.req-row{ display:grid; grid-template-columns:80px 1fr 100px 150px; align-items:center; gap:10px; padding:11px 4px; border-bottom:1px solid var(--line); font-size:13px; }
 .req-row:last-child{ border-bottom:none; }
 .req-head{ font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; }
 .req-id{ font-family:var(--font-mono); font-size:12px; color:var(--accent); }
 .req-title{ font-weight:600; }
 .req-unit{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--text-dim); }
+.req-row .pill{ min-width:0; white-space:normal; text-align:center; line-height:1.3; font-size:10px; padding:4px 8px; }
 
 .readiness-card-inner{ display:flex; flex-direction:column; height:100%; }
 .readiness-main{ text-align:center; padding:10px 0 14px; border-bottom:1px solid var(--line); margin-bottom:14px; }
