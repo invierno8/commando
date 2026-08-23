@@ -1,14 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, GripHorizontal, X, Loader2, Target, Pencil, Users, SlidersHorizontal } from "lucide-react";
-import JynxSettings from "./JynxSettings.jsx";
+import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, GripHorizontal, X, Loader2, Target, Pencil, Users } from "lucide-react";
 import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
 import DevOverlay from "./overlay/DevOverlay.jsx";
 import CommentsPanel from "./overlay/CommentsPanel.jsx";
 import MentionsBell from "./MentionsBell.jsx";
-import JynxThought from "./JynxThought.jsx";
-import JynxFace from "./JynxFace.jsx";
+import JynxBubbleContent from "./JynxBubbleContent.jsx";
 import UserProfileCard from "./UserProfileCard.jsx";
 import { useOpenUserProfileListener } from "./openUserProfile.js";
 import { useDraggableFab } from "./useDraggableFab.js";
@@ -112,7 +110,6 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [iconScale, setIconScaleState] = useState(
     () => Number(localStorage.getItem(TOOLBAR_ICON_SCALE_KEY)) || 1
   );
-  const [settingsOpen, setSettingsOpen] = useState(false);
   // כרטיס פרופיל-משתמש (UserProfileCard.jsx) — נפתח מכל מקום (אזכור/שם-
   // מחבר) דרך אירוע DOM גלובלי, ראו openUserProfile.js. השומע חייב להיות
   // כאן, לפני כל return מוקדם (checking/!devName), כי חוקי-Hooks אוסרים
@@ -295,9 +292,9 @@ export default function DevAuthGate({ route, devFabProps }) {
 
   // "Jynx בועה נעלמת בלי הסבר בזמן ה-cold start" — תיקון: במקום return null
   // (שמשאיר את המשתמש בלי שום סימן שמשהו קורה במשך עד ~30 שניות, ראו ההערה
-  // למעלה על fetchDevMe()'s retry loop), מציגים את אותה בועה נעולה עם ספינר
-  // ובועת-מחשבה צפה "💤 Waking up…" (ראו JynxThought.jsx) — אינדיקציה חיה
-  // אמיתית, לא קישוט, ולכן מותרת גם לפי מדיניות האנימציה (ראו theme.js).
+  // למעלה על fetchDevMe()'s retry loop), מציגים את אותה בועה נעולה עם ספינר.
+  // הטקסט "מתעורר..." יושב היום בתוך הבועה עצמה (JynxBubbleContent.jsx),
+  // לא בבועת-מחשבה צפה מעליה — ראו ההערה שם למה (jynx-mt5e8ngp3qvx).
   if (checking) {
     return (
       <div
@@ -305,11 +302,9 @@ export default function DevAuthGate({ route, devFabProps }) {
         style={{ right: lockedFab.pos.right, bottom: lockedFab.pos.bottom }}
       >
         <style>{CSS}</style>
-        <JynxThought status="waking" />
         <div className="dev-fab dev-fab-locked jynx-thinking-pulse" title="Jynx is waking up the dev server — this can take up to ~30s on a cold start">
-          <JynxFace mood="thinking" />
           <Loader2 size={13} className="dev-fab-waking-spinner" />
-          <span className="jynx-logo">JYNX</span>
+          <JynxBubbleContent mood="waking" />
         </div>
       </div>
     );
@@ -324,12 +319,6 @@ export default function DevAuthGate({ route, devFabProps }) {
         onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget) && loginPhase !== "thinking" && loginPhase !== "success") setLoginOpen(false); }}
       >
         <style>{CSS}</style>
-        {loginOpen && (
-          <JynxThought
-            status={loginPhase !== "idle" ? loginPhase : null}
-            text={loginPhase === "success" ? `Welcome, ${pendingWelcomeName}!` : loginPhase === "error" ? error : undefined}
-          />
-        )}
         {loginOpen && (
           <div ref={loginPanelRef} className="dev-fab-panel dev-only dev-login-panel">
             <span className="dev-only-tag">JYNX — Sign in to dev mode</span>
@@ -358,9 +347,12 @@ export default function DevAuthGate({ route, devFabProps }) {
           {...lockedFab.dragHandlers}
           title="Sign in to dev mode — draggable"
         >
-          <JynxFace mood={loginPhase !== "idle" ? loginPhase : (passwordFocused ? "typing" : "idle")} />
           <Lock size={13} />
-          <span className="jynx-logo">JYNX</span>
+          <JynxBubbleContent
+            mood={loginPhase !== "idle" ? loginPhase : (passwordFocused ? "typing" : "idle")}
+            welcomeName={pendingWelcomeName}
+            errorText={error}
+          />
         </button>
       </div>
     );
@@ -396,7 +388,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       </button>
     ) : null,
     admin: (
-      <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-admin-btn" onClick={() => setAdminOpen(true)} title="Admin (admin only)">
+      <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-admin-btn" onClick={() => setAdminOpen(true)} title="Settings — admins see and manage more here">
         <Settings2 size={13} />
       </button>
     ),
@@ -462,9 +454,6 @@ export default function DevAuthGate({ route, devFabProps }) {
             </div>
             );
           })}
-          <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-settings-btn" onClick={() => setSettingsOpen(true)} title="Jynx settings — orientation, icon size, menu order">
-            <SlidersHorizontal size={13} />
-          </button>
           <span className="dev-toolbar-devname">Hi, {devName}</span>
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-logout-btn" onClick={logout} title="Log out of Jynx">
             <LogOut size={13} />
@@ -476,8 +465,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       ) : (
         <div className="dev-fab-wrap jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
           <button type="button" ref={toolbarFab.sizeRef} className="dev-fab jynx-breathe" data-jynx-dock-zone="" onClick={toggleToolbarOpen} {...toolbarFab.dragHandlers} title="Expand the Jynx toolbar — draggable (also a drop target for a detached role picker)">
-            <JynxFace mood="idle" />
-            <span className="jynx-logo">JYNX</span>
+            <JynxBubbleContent mood="idle" />
           </button>
         </div>
       )}
@@ -504,22 +492,6 @@ export default function DevAuthGate({ route, devFabProps }) {
             iconScale,
             onSetIconScale: setIconScale,
           }}
-        />
-      )}
-      {settingsOpen && (
-        <JynxSettings
-          onClose={() => setSettingsOpen(false)}
-          orientation={toolbarOrientation}
-          onSetOrientation={setOrientation}
-          order={toolbarOrder}
-          defaultOrder={DEFAULT_TOOLBAR_ORDER}
-          availableIds={Object.keys(TOOLBAR_ITEM_NODES).filter((id) => TOOLBAR_ITEM_NODES[id])}
-          onReorder={persistToolbarOrder}
-          onReset={resetToolbarOrder}
-          onUndo={undoToolbarOrder}
-          canUndo={!!undoOrder}
-          iconScale={iconScale}
-          onSetIconScale={setIconScale}
         />
       )}
       {profileUserId && <UserProfileCard userId={profileUserId} onClose={() => setProfileUserId(null)} />}
@@ -573,27 +545,10 @@ const CSS = `
   50% { transform:scale(1.08); box-shadow:0 0 14px 4px color-mix(in srgb, var(--jynx) 45%, transparent); }
 }
 
-/* בועת-מחשבה צפה מעל הבועה/הפאנל — ראו JynxThought.jsx. הזנב (::after)
-   מוצמד לימין כי כל כרום ה-Jynx עוגן-ימין (right/bottom פיזי, לא RTL). */
-.jynx-thought{
-  position:absolute; bottom:100%; right:0; margin-bottom:8px; display:inline-flex; align-items:center; gap:6px;
-  background:var(--panel); border:1px solid var(--jynx); border-radius:14px; padding:6px 12px;
-  font-size:12px; font-weight:700; color:var(--text); white-space:nowrap; box-shadow:var(--shadow-md);
-  animation:jynxThoughtPop .22s cubic-bezier(.34,1.56,.64,1); pointer-events:none; z-index:1;
-}
-.jynx-thought::after{
-  content:""; position:absolute; top:100%; right:16px; width:0; height:0;
-  border:6px solid transparent; border-top-color:var(--jynx);
-}
-@keyframes jynxThoughtPop{ from{ opacity:0; transform:translateY(4px) scale(.85); } to{ opacity:1; transform:translateY(0) scale(1); } }
-.jynx-thought-icon{ font-size:14px; }
-.jynx-thought-thinking .jynx-thought-icon{ display:inline-block; animation:jynxThoughtBounce .6s ease-in-out infinite; }
-@keyframes jynxThoughtBounce{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
-.jynx-thought-success{ border-color:var(--green); }
-.jynx-thought-success::after{ border-top-color:var(--green); }
-.jynx-thought-error{ border-color:var(--red); animation:jynxThoughtPop .22s cubic-bezier(.34,1.56,.64,1), jynxThoughtShake .4s ease .22s; }
-.jynx-thought-error::after{ border-top-color:var(--red); }
-@keyframes jynxThoughtShake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-3px); } 75%{ transform:translateX(3px); } }
+/* הטקסט שהיה פעם בבועת-מחשבה צפה (JynxThought.jsx, הוסר — ראו
+   JynxBubbleContent.jsx) יושב עכשיו בתוך הבועה עצמה, עם ה-jynx-logo הרגיל —
+   .jynx-logo-error רק משנה צבע, לא צריך מסגרת/זנב/מיקום נפרדים יותר. */
+.jynx-logo-error{ background:none; -webkit-background-clip:initial; background-clip:initial; color:var(--red); }
 
 .dev-fab-toolbar{
   position:fixed; z-index:79; display:flex; align-items:center; gap:6px;

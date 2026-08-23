@@ -4,6 +4,7 @@ import { Zap, Loader2, GitPullRequest, CheckCircle2, XCircle } from "lucide-reac
 import { fetchAnnotations, requestAnnotationAction } from "../devApi.js";
 import { useKeepInViewport } from "../useKeepInViewport.js";
 import { openUserProfile } from "../openUserProfile.js";
+import { getStickyChromeRects, isCoveredBySticky } from "./stickyChromeBounds.js";
 import DrawingOverlay from "./DrawingOverlay.jsx";
 
 /* ================================================================== */
@@ -64,9 +65,23 @@ export default function AdminAnnotationMarkers({ isAdmin, active, route, refresh
     return () => { cancelled = true; };
   }, [isAdmin, active, route, refreshKey]);
 
+  // rAF-throttled (jynx-mt5edij0xz1s: dots visibly lagged the element they
+  // point at during a fast scroll) — a raw setTick() per native scroll
+  // event queued a full re-render (recomputing every dot's
+  // getBoundingClientRect()) for every single event the browser fires,
+  // which on a long comment list couldn't keep up with a fast scroll.
+  // Collapsing to at most one recompute per animation frame is the same
+  // fix useHoverTarget.js already uses for mousemove.
   useEffect(() => {
     if (!isAdmin || !active) return;
-    function onLayoutChange() { setTick((t) => t + 1); }
+    let rafId = null;
+    function onLayoutChange() {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        setTick((t) => t + 1);
+      });
+    }
     window.addEventListener("scroll", onLayoutChange, true);
     window.addEventListener("resize", onLayoutChange);
     const id = setInterval(onLayoutChange, 1500); // תופס גם שינויי layout שלא קשורים לגלילה/resize
@@ -74,6 +89,7 @@ export default function AdminAnnotationMarkers({ isAdmin, active, route, refresh
       window.removeEventListener("scroll", onLayoutChange, true);
       window.removeEventListener("resize", onLayoutChange);
       clearInterval(id);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, [isAdmin, active]);
 
@@ -97,9 +113,15 @@ export default function AdminAnnotationMarkers({ isAdmin, active, route, refresh
       byLabel.get(a.targetLabel).push(a);
     });
     const out = [];
+    // ראו stickyChromeBounds.js — אלמנט שגלל מתחת ל-.app-topbar/.app-sidebar
+    // הדביקים לא אמור עדיין להראות נקודה צפה מעליהם.
+    const stickyRects = getStickyChromeRects();
     byLabel.forEach((list, label) => {
       const el = document.querySelector(`[data-devblock="${CSS.escape(label)}"]`);
-      if (el) out.push({ label, list, rect: el.getBoundingClientRect() });
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (isCoveredBySticky(rect, stickyRects)) return;
+      out.push({ label, list, rect });
     });
     return out;
   }, [items, tick, isAdmin, active]);

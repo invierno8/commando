@@ -186,9 +186,13 @@ router.post("/admin/jynx-feedback/:id/reply", requireAdmin, asyncRoute(async (re
   requireFields(req.body, ["text"]);
   const found = readAll().find((a) => a.id === req.params.id);
   if (!found) return res.status(404).json({ error: "לא נמצא" });
+  // "תגובה בתור Jynx" (jynx-mt5ev53xof3v) — הנתיב הזה כבר admin-only
+  // (requireAdmin), אז אין צורך בבדיקה נוספת כמו ב-routes/annotations.js.
+  const asJynx = req.body.asJynx === true;
   const reply = {
     id: "rep-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    authorId: req.devUser?.id || null, authorName: req.devUser?.name || "Admin",
+    authorId: asJynx ? null : (req.devUser?.id || null), authorName: asJynx ? "Jynx" : (req.devUser?.name || "Admin"),
+    ...(asJynx ? { isJynx: true } : {}),
     text: req.body.text, createdAt: new Date().toISOString(),
   };
   const jynxTagged = hasJynxMention(req.body.text);

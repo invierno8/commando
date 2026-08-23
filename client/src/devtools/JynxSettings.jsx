@@ -1,7 +1,16 @@
 import React, { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, RotateCcw, Undo2, GripVertical } from "lucide-react";
+import { X, RotateCcw, Undo2, GripVertical, Sparkles } from "lucide-react";
 import { useKeepInViewport } from "./useKeepInViewport.js";
+
+// גבולות ה-slider — "normal" per the work item's ask: 0.8/1.6 (the previous
+// bounds) read as arbitrary with no visual anchor. 0.75x/1.75x centered
+// exactly on 1x (the untouched default) reads as a more legible "half
+// smaller, three-quarters bigger" range, and the min/max preview icons
+// below (rendered at these exact scales) now make the actual bounds visible
+// instead of just numbers on a slider.
+const ICON_SCALE_MIN = 0.75;
+const ICON_SCALE_MAX = 1.75;
 
 /* ================================================================== */
 /* LEGO BLOCK — everything about how the Jynx toolbar itself looks/     */
@@ -46,21 +55,29 @@ export function JynxMenuSettingsFields({
   onReorder, onReset, onUndo, canUndo, iconScale, onSetIconScale,
 }) {
   const [dragId, setDragId] = useState(null);
+  // יעד-שחרור נוכחי בזמן גרירה — משמש רק להדגשה ויזואלית (ראו
+  // .jynx-settings-order-item.drag-over למטה); הלוגיקה עצמה עדיין קוראת
+  // dragId/handleDrop כרגיל. בלי זה הגרירה "עובדת" אבל לא נותנת שום משוב
+  // איפה בדיוק היא תיפול עד שמשחררים — זה מה שהמשוב "the dragging can be
+  // better" תיאר.
+  const [dragOverId, setDragOverId] = useState(null);
 
   const orderChanged = JSON.stringify(order) !== JSON.stringify(defaultOrder);
   const visibleOrder = order.filter((id) => availableIds.includes(id));
 
   function handleDrop(targetId) {
-    if (!dragId || dragId === targetId) return;
-    const next = [...order];
-    const from = next.indexOf(dragId);
-    const to = next.indexOf(targetId);
-    if (from !== -1 && to !== -1) {
-      next.splice(from, 1);
-      next.splice(to, 0, dragId);
-      onReorder(next);
+    if (dragId && dragId !== targetId) {
+      const next = [...order];
+      const from = next.indexOf(dragId);
+      const to = next.indexOf(targetId);
+      if (from !== -1 && to !== -1) {
+        next.splice(from, 1);
+        next.splice(to, 0, dragId);
+        onReorder(next);
+      }
     }
     setDragId(null);
+    setDragOverId(null);
   }
 
   return (
@@ -74,9 +91,19 @@ export function JynxMenuSettingsFields({
       </div>
 
       <div className="jynx-settings-section">
-        <span className="jynx-settings-label">Icon size</span>
+        <div className="jynx-settings-label-row">
+          <span className="jynx-settings-label">Icon size</span>
+          <span className="jynx-settings-scale-readout">{Math.round(iconScale * 100)}%</span>
+        </div>
+        <div className="jynx-settings-icon-preview-row">
+          <Sparkles size={14} className="jynx-settings-icon-bound" />
+          <div className="jynx-settings-icon-preview-stage">
+            <Sparkles size={18} style={{ transform: `scale(${iconScale})` }} className="jynx-settings-icon-preview" />
+          </div>
+          <Sparkles size={22} className="jynx-settings-icon-bound" />
+        </div>
         <input
-          type="range" min="0.8" max="1.6" step="0.1" value={iconScale}
+          type="range" min={ICON_SCALE_MIN} max={ICON_SCALE_MAX} step="0.05" value={iconScale}
           onChange={(e) => onSetIconScale(Number(e.target.value))}
           className="jynx-settings-slider"
         />
@@ -98,12 +125,18 @@ export function JynxMenuSettingsFields({
           {visibleOrder.map((id) => (
             <div
               key={id}
-              className={"jynx-settings-order-item" + (dragId === id ? " dragging" : "")}
+              className={
+                "jynx-settings-order-item"
+                + (dragId === id ? " dragging" : "")
+                + (dragOverId === id && dragId && dragId !== id ? " drag-over" : "")
+              }
               draggable
               onDragStart={() => setDragId(id)}
+              onDragEnter={() => dragId && dragId !== id && setDragOverId(id)}
               onDragOver={(e) => e.preventDefault()}
+              onDragLeave={() => setDragOverId((prev) => (prev === id ? null : prev))}
               onDrop={() => handleDrop(id)}
-              onDragEnd={() => setDragId(null)}
+              onDragEnd={() => { setDragId(null); setDragOverId(null); }}
             >
               <GripVertical size={12} className="jynx-settings-order-grip" />
               {ITEM_LABELS[id] || id}
@@ -165,13 +198,25 @@ const CSS = `
   padding:7px 0; font-size:12px; font-weight:700; cursor:pointer;
 }
 .jynx-settings-orientation-row button.active{ background:var(--jynx); border-color:var(--jynx); color:#fff; }
+.jynx-settings-scale-readout{ font-family:var(--font-mono); font-size:11px; color:var(--jynx); font-weight:700; }
+.jynx-settings-icon-preview-row{ display:flex; align-items:center; justify-content:center; gap:12px; padding:2px 0 4px; }
+.jynx-settings-icon-bound{ color:var(--text-dim); flex:none; }
+.jynx-settings-icon-preview-stage{
+  width:38px; height:38px; border-radius:9px; background:var(--panel-raised); border:1px solid var(--line);
+  display:flex; align-items:center; justify-content:center; flex:none; overflow:hidden;
+}
+.jynx-settings-icon-preview{ color:var(--jynx); transition:transform .08s ease; }
 .jynx-settings-slider{ width:100%; accent-color:var(--jynx); }
 .jynx-settings-order-list{ display:flex; flex-direction:column; gap:4px; }
 .jynx-settings-order-item{
   display:flex; align-items:center; gap:7px; background:var(--panel-raised); border:1px solid var(--line);
   border-radius:8px; padding:7px 9px; font-size:12px; color:var(--text); cursor:grab;
+  transition:background .1s ease, border-color .1s ease, transform .1s ease;
 }
 .jynx-settings-order-item:active{ cursor:grabbing; }
 .jynx-settings-order-item.dragging{ opacity:.4; }
+.jynx-settings-order-item.drag-over{
+  border-color:var(--jynx); background:color-mix(in srgb, var(--jynx) 14%, transparent); transform:translateY(1px);
+}
 .jynx-settings-order-grip{ color:var(--text-dim); flex:none; }
 `;
