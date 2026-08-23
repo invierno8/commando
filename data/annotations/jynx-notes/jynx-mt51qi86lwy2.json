@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt51qi86lwy2",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T00:05:45.030Z",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-markers-toggle",
+  "secondaryTargets": [],
+  "comment": "make the dots on the screen also jynxed anabled, so when i hover it i can give them and the cards that open if clicked a comment",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
