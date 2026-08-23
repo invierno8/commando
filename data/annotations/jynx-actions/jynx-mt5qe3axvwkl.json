@@ -1,8 +1,0 @@
-{
-  "id": "jynx-mt5qe3axvwkl",
-  "route": "dashboard",
-  "targetLabel": "dev-toolbar-role-btn",
-  "secondaryTargets": [],
-  "comment": "when tryin to drag the role play icon from the menu the drag just stuck for the entire menu, have it as a toggle in the menu settings oriatation and fix the dragging",
-  "requestedAt": "2026-08-23T11:35:57.129Z"
-}

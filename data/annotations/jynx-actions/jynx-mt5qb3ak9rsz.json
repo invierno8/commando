@@ -1,8 +1,0 @@
-{
-  "id": "jynx-mt5qb3ak9rsz",
-  "route": "dashboard",
-  "targetLabel": "dev-toolbar-icon-btn",
-  "secondaryTargets": [],
-  "comment": "make the mention and status update on a comment notifications work and notifications will be shown by a red circle with the icon or the number of notifications in it it should look just like the keyboard numbers near the icons just jyxy red and when the bubble is collapsed but user is logged in have the bubble have that circlr to it as well smal red with a notification number",
-  "requestedAt": "2026-08-23T11:33:37.339Z"
-}
