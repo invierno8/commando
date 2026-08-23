@@ -588,6 +588,7 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
               className={
                 "panel-card dash-section dash-widget"
                 + (def.size === "half" ? " widget-half" : " widget-full")
+                + (key === "readiness" ? " widget-readiness" : "")
                 + (isDragging ? " dragging" : "")
                 + (isDragOver ? " drag-over" : "")
               }
@@ -823,7 +824,8 @@ ${SCOPE_PICKER_CSS}
 .req-title{ font-weight:600; }
 .req-unit{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--text-dim); }
 
-.readiness-card-inner{ display:flex; flex-direction:column; height:100%; }
+.widget-readiness{ display:flex; flex-direction:column; }
+.readiness-card-inner{ display:flex; flex-direction:column; flex:1 1 auto; min-height:0; }
 .readiness-main{ text-align:center; padding:10px 0 14px; border-bottom:1px solid var(--line); margin-bottom:14px; }
 .readiness-big{ font-size:34px; font-weight:800; color:var(--accent); }
 .readiness-big-label{ font-size:12px; color:var(--text-dim); margin-top:2px; }
