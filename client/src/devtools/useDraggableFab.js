@@ -60,7 +60,7 @@ function clampToViewport(pos, horizKey, el) {
   return horiz === pos[horizKey] && bottom === pos.bottom ? pos : { [horizKey]: horiz, bottom };
 }
 
-export function useDraggableFab(storageKey, defaultPos = DEFAULT_POS, anchor = "right") {
+export function useDraggableFab(storageKey, defaultPos = DEFAULT_POS, anchor = "right", { onDragEnd } = {}) {
   const horizKey = anchor === "left" ? "left" : "right";
   const [pos, setPos] = useState(() => readStoredPos(storageKey, defaultPos, horizKey));
   const dragRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, startPos: defaultPos });
@@ -114,6 +114,10 @@ export function useDraggableFab(storageKey, defaultPos = DEFAULT_POS, anchor = "
     d.dragging = false;
     if (d.moved) {
       try { localStorage.setItem(storageKey, JSON.stringify(pos)); } catch { /* ignore */ }
+      // נקרא לפני ש-consumeWasDragged() (בתוך onClick) מאפס את הדגל, כדי
+      // שקריאה חיצונית תדע שזאת הייתה גרירה אמיתית ולא קליק — ראו DevFab.jsx
+      // (בדיקת "שוחרר מעל דוק של Jynx" להצמדה-מחדש).
+      onDragEnd?.(elRef.current);
     }
   }
   // קליק "אמיתי" (לא גרירה) — לקרוא בתוך onClick, לפני שמפעילים את הפעולה.

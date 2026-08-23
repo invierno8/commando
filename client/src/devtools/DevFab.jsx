@@ -20,8 +20,33 @@ export default function DevFab({
   teamMemberOptions, userId, setUserId, becomeTeamMember,
   officerUnit, setOfficerUnit,
   isTeamLead,
+  // detached=true (ברירת מחדל, לתאימות אם קורא אחר לא מעביר את הפרופ הזה):
+  // בועה+כפתור עצמאיים לגמרי, גרירים בחופשיות (כפי שהיה תמיד). detached=false
+  // (הוגדר ב-DevAuthGate.jsx): הכפתור עצמו כבר לא מוצג — הוא הוחלף בכפתור-אייקון
+  // בתוך תפריט ה-toolbar של Jynx (ראו TOOLBAR_ITEM_NODES.role שם) — כאן רק
+  // הפאנל (אם open) עדיין מוצג, מעוגן ל-dockPos (מיקום התפריט) במקום למיקום-
+  // הגרירה העצמאי. גרירה מתוך התפריט "מנתקת" (DevAuthGate.jsx's
+  // handleItemDragEnd עובר ל-detached=true); גרירת הבועה המנותקת בחזרה על גבי
+  // כל אלמנט [data-jynx-dock] (התפריט הפתוח או הבועה המכווצת) קוראת ל-
+  // onReattach כדי לחבר בחזרה.
+  detached = true,
+  dockPos,
+  onReattach,
 }) {
-  const roleFab = useDraggableFab("jynx-role-fab-pos");
+  function handleFabDragEnd(el) {
+    if (!onReattach) return;
+    const rect = el?.getBoundingClientRect();
+    if (!rect) return;
+    // elementFromPoint לבד תמיד היה מחזיר את הכפתור הנגרר עצמו (ה-wrap שלו
+    // z-index:80, מעל התפריט/הבועה שמתחתיו z-index:79) — צריך את כל הערמה
+    // (elementsFromPoint), לדלג על עצמו, ולבדוק את מה שמתחתיו.
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    const wrap = el.closest(".dev-fab-wrap");
+    const dock = document.elementsFromPoint(cx, cy).find((n) => !wrap?.contains(n) && n.closest("[data-jynx-dock]"));
+    if (dock) onReattach();
+  }
+  const roleFab = useDraggableFab("jynx-role-fab-pos", undefined, "right", { onDragEnd: handleFabDragEnd });
+  const wrapPos = detached ? roleFab.pos : (dockPos || roleFab.pos);
   function onTriggerClick() {
     if (roleFab.consumeWasDragged()) return;
     setOpen((v) => !v);
@@ -36,7 +61,7 @@ export default function DevFab({
   return (
     <div
       className="dev-fab-wrap jynx-chrome jynx-ui"
-      style={{ right: roleFab.pos.right, bottom: roleFab.pos.bottom }}
+      style={{ right: wrapPos.right, bottom: wrapPos.bottom }}
       tabIndex={-1}
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false); }}
     >
@@ -143,10 +168,12 @@ export default function DevFab({
           )}
         </div>
       )}
-      <button type="button" ref={roleFab.sizeRef} className="dev-fab" onClick={onTriggerClick} {...roleFab.dragHandlers} title="Role & brigade picker — draggable">
-        <Users size={14} />
-        <ChevronLeft size={14} className={"dev-fab-arrow" + (open ? " open" : "")} />
-      </button>
+      {detached && (
+        <button type="button" ref={roleFab.sizeRef} className="dev-fab" onClick={onTriggerClick} {...roleFab.dragHandlers} title="Role & brigade picker — drag onto the Jynx menu/bubble to dock it back in">
+          <Users size={14} />
+          <ChevronLeft size={14} className={"dev-fab-arrow" + (open ? " open" : "")} />
+        </button>
+      )}
     </div>
   );
 }
