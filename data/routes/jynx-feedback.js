@@ -179,6 +179,15 @@ router.patch("/admin/jynx-feedback/:id", requireAdmin, asyncRoute(async (req, re
     ? `Jynx feedback ${updated.resolved ? "resolved" : "reopened"} — ${updated.id}`
     : `Jynx feedback edited — ${updated.id}`;
   await persistNote(updated, message);
+  // jynx-mt5qb3ak9rsz: same "status update" notification as
+  // routes/annotations.js's resolve route — see the comment there.
+  if (resolvedProvided && resolved && !found.resolved && found.authorId && found.authorId !== req.devUser?.id) {
+    await addMention(found.authorId, {
+      kind: "status", noteId: found.id, route: found.route, targetLabel: found.targetLabel,
+      mentionedBy: req.devUser?.name || "Admin", mentionedById: req.devUser?.id || null,
+      snippet: "Marked your Jynx feedback as done.",
+    });
+  }
   res.json(updated);
 }));
 
@@ -201,11 +210,21 @@ router.post("/admin/jynx-feedback/:id/reply", requireAdmin, asyncRoute(async (re
     updated = { ...updated, actionStatus: "queued", actionRequestedAt: new Date().toISOString() };
   }
   await persistNote(updated, `reply on ${updated.id}`);
-  for (const u of parseMentionedUsers(req.body.text)) {
+  const mentionedUsers = parseMentionedUsers(req.body.text);
+  for (const u of mentionedUsers) {
     if (u.id === reply.authorId) continue;
     await addMention(u.id, {
       kind: "jynx", noteId: found.id, replyId: reply.id, route: found.route, targetLabel: found.targetLabel,
       mentionedBy: reply.authorName, mentionedById: reply.authorId, snippet: req.body.text.slice(0, 200),
+    });
+  }
+  // jynx-mt5qb3ak9rsz: same "status update" notification as
+  // routes/annotations.js's reply route — see the comment there.
+  if (found.authorId && found.authorId !== reply.authorId && !mentionedUsers.some((u) => u.id === found.authorId)) {
+    await addMention(found.authorId, {
+      kind: "status", noteId: found.id, replyId: reply.id, route: found.route, targetLabel: found.targetLabel,
+      mentionedBy: reply.authorName, mentionedById: reply.authorId,
+      snippet: `Replied to your Jynx feedback: ${req.body.text.slice(0, 180)}`,
     });
   }
   if (jynxTagged) await queueFollowUp(updated, req.body.text, reply.authorName);
