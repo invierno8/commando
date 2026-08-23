@@ -9,13 +9,13 @@
     "dev-toolbar-admin-btn"
   ],
   "comment": "connect [→ dev-toolbar-admin-btn]  to settings, it should be all a big settings page that admins can see more things and manage more then a dev user",
-  "resolved": false,
-  "resolvedAt": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T08:01:36.000Z",
   "resolutionNote": null,
-  "actionStatus": "queued",
+  "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-23T06:11:27.469Z",
-  "actionPrUrl": null,
-  "actionLog": null,
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/38",
+  "actionLog": "This item was filed a few minutes after PR #38 (\"Jynx: CommentsPanel becomes the single comment-management place, admin panel becomes Settings\", merged 2026-08-23T06:00:13Z) already landed on main, and turns out to ask for functionally the same thing in different words — same pattern as jynx-mt5el2qu5jpa/jynx-mt30ld1htt72's follow-up in the previous run. Verified directly against current main, not just by comparing wording: dev-toolbar-admin-btn (DevAuthGate.jsx) already opens DevAdminPanel.jsx, which PR #38 turned into a general \"Settings\" hub with Dev Users / Menu / Logs tabs — the Menu tab already folds in the same icon-size/orientation/order controls the plain dev-toolbar-settings-btn gear exposes to every dev user (JynxMenuSettingsFields, shared between both entry points), so an admin already sees and manages strictly more (roster CRUD, audit-style Logs) than a regular dev user through that same button. No further code change needed; bookkeeping only, pointed at #38.",
   "replies": [],
   "reactions": {
     "👍": [],
