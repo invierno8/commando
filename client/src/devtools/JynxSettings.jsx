@@ -1,16 +1,20 @@
 import React, { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, RotateCcw, Undo2, GripVertical, Sparkles } from "lucide-react";
+import { X, RotateCcw, Undo2, GripVertical } from "lucide-react";
 import { useKeepInViewport } from "./useKeepInViewport.js";
 
-// גבולות ה-slider — "normal" per the work item's ask: 0.8/1.6 (the previous
-// bounds) read as arbitrary with no visual anchor. 0.75x/1.75x centered
-// exactly on 1x (the untouched default) reads as a more legible "half
-// smaller, three-quarters bigger" range, and the min/max preview icons
-// below (rendered at these exact scales) now make the actual bounds visible
-// instead of just numbers on a slider.
-const ICON_SCALE_MIN = 0.75;
-const ICON_SCALE_MAX = 1.75;
+// שלוש רמות בדידות בלבד (jynx-mt5qh4p68xsg: "this is ugly and not user
+// friendly, have it as a 3 way option, small medium large... make them look
+// exactly like the menu items") — מחליף את ה-slider הרציף הקודם (0.75–1.75)
+// ואת שני אייקוני ה-Sparkles שסימנו את הגבולות שלו. "Medium" הוא בדיוק ברירת
+// המחדל הישנה (1×, בלי שינוי), Small/Large הם הקצוות הישנים של אותו slider —
+// כך שמשתמש שכבר בחר קצה קודם ("100%"/"175%") ימשיך לראות בדיוק אותו גודל
+// אייקון, רק עכשיו דרך כפתור בדיד ולא נקודה על סרגל.
+const ICON_SCALE_OPTIONS = [
+  { key: "small", label: "Small", value: 0.75 },
+  { key: "medium", label: "Medium", value: 1 },
+  { key: "large", label: "Large", value: 1.75 },
+];
 
 /* ================================================================== */
 /* LEGO BLOCK — everything about how the Jynx toolbar itself looks/     */
@@ -53,6 +57,7 @@ const ITEM_LABELS = {
 export function JynxMenuSettingsFields({
   orientation, onSetOrientation, order, defaultOrder, availableIds,
   onReorder, onReset, onUndo, canUndo, iconScale, onSetIconScale,
+  roleDocked, onSetRoleDocked,
 }) {
   const [dragId, setDragId] = useState(null);
   // יעד-שחרור נוכחי בזמן גרירה — משמש רק להדגשה ויזואלית (ראו
@@ -84,29 +89,41 @@ export function JynxMenuSettingsFields({
     <>
       <div className="jynx-settings-section">
         <span className="jynx-settings-label">Menu orientation</span>
-        <div className="jynx-settings-orientation-row">
+        <div className="jynx-settings-toggle-row">
           <button type="button" className={orientation === "horizontal" ? "active" : ""} onClick={() => onSetOrientation("horizontal")}>Horizontal</button>
           <button type="button" className={orientation === "vertical" ? "active" : ""} onClick={() => onSetOrientation("vertical")}>Vertical</button>
         </div>
       </div>
 
+      {/* jynx-mt5qe3axvwkl: "when trying to drag the role play icon from the
+          menu the drag just stuck for the entire menu, have it as a toggle in
+          the menu settings" — replaces the fragile native-HTML5
+          drag-out-of-the-menu gesture (still fixed separately, see
+          DevAuthGate.jsx's onPointerDown on that toolbar item) with an
+          explicit, reliable toggle here, same shape as the orientation row
+          right above it. */}
       <div className="jynx-settings-section">
-        <div className="jynx-settings-label-row">
-          <span className="jynx-settings-label">Icon size</span>
-          <span className="jynx-settings-scale-readout">{Math.round(iconScale * 100)}%</span>
+        <span className="jynx-settings-label">Role picker</span>
+        <div className="jynx-settings-toggle-row">
+          <button type="button" className={roleDocked ? "active" : ""} onClick={() => onSetRoleDocked(true)}>Docked</button>
+          <button type="button" className={!roleDocked ? "active" : ""} onClick={() => onSetRoleDocked(false)}>Detached</button>
         </div>
-        <div className="jynx-settings-icon-preview-row">
-          <Sparkles size={14} className="jynx-settings-icon-bound" />
-          <div className="jynx-settings-icon-preview-stage">
-            <Sparkles size={18} style={{ transform: `scale(${iconScale})` }} className="jynx-settings-icon-preview" />
-          </div>
-          <Sparkles size={22} className="jynx-settings-icon-bound" />
+      </div>
+
+      <div className="jynx-settings-section">
+        <span className="jynx-settings-label">Icon size</span>
+        <div className="pill-tabs jynx-settings-size-tabs">
+          {ICON_SCALE_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              type="button"
+              className={"pill-tab" + (iconScale === opt.value ? " active" : "")}
+              onClick={() => onSetIconScale(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
-        <input
-          type="range" min={ICON_SCALE_MIN} max={ICON_SCALE_MAX} step="0.05" value={iconScale}
-          onChange={(e) => onSetIconScale(Number(e.target.value))}
-          className="jynx-settings-slider"
-        />
       </div>
 
       <div className="jynx-settings-section">
@@ -192,21 +209,21 @@ const CSS = `
 }
 .jynx-settings-order-actions button:hover:not(:disabled){ color:var(--jynx); border-color:var(--jynx); }
 .jynx-settings-order-actions button:disabled{ opacity:.35; cursor:not-allowed; }
-.jynx-settings-orientation-row{ display:flex; gap:6px; }
-.jynx-settings-orientation-row button{
+/* שם כללי (לא "orientation") — הפאנל הזה עכשיו משתמש בשורת שני-כפתורים
+   הזו גם לכיוון הסרגל וגם לעגינת בורר-התפקיד (roleDocked), אותו מבנה
+   ויזואלי בדיוק, לא קשור לכיוון בלבד יותר. */
+.jynx-settings-toggle-row{ display:flex; gap:6px; }
+.jynx-settings-toggle-row button{
   flex:1; border:1px solid var(--line); background:var(--panel-raised); color:var(--text-dim); border-radius:8px;
   padding:7px 0; font-size:12px; font-weight:700; cursor:pointer;
 }
-.jynx-settings-orientation-row button.active{ background:var(--jynx); border-color:var(--jynx); color:#fff; }
-.jynx-settings-scale-readout{ font-family:var(--font-mono); font-size:11px; color:var(--jynx); font-weight:700; }
-.jynx-settings-icon-preview-row{ display:flex; align-items:center; justify-content:center; gap:12px; padding:2px 0 4px; }
-.jynx-settings-icon-bound{ color:var(--text-dim); flex:none; }
-.jynx-settings-icon-preview-stage{
-  width:38px; height:38px; border-radius:9px; background:var(--panel-raised); border:1px solid var(--line);
-  display:flex; align-items:center; justify-content:center; flex:none; overflow:hidden;
-}
-.jynx-settings-icon-preview{ color:var(--jynx); transition:transform .08s ease; }
-.jynx-settings-slider{ width:100%; accent-color:var(--jynx); }
+.jynx-settings-toggle-row button.active{ background:var(--jynx); border-color:var(--jynx); color:#fff; }
+/* גודל-פונט/padding מוקטן, בדיוק כמו .member-identity-tabs .pill-tab
+   ב-theme.js — ה-pill-tab הרגיל נבנה למלא-רוחב עמוד, גדול מדי לפופ-אפ הצר
+   הזה (320px). ".pill-tabs"/".pill-tab" עצמם גלובליים (theme.js, טעונים תמיד
+   דרך App.jsx) ולא צריך לשכפל אותם — רק את ה-override הקומפקטי הזה, כאן
+   וגם ב-DevAdminPanel.jsx's duplicate CSS. */
+.jynx-settings-size-tabs .pill-tab{ flex:1; text-align:center; padding:6px 0 !important; font-size:12px !important; }
 .jynx-settings-order-list{ display:flex; flex-direction:column; gap:4px; }
 .jynx-settings-order-item{
   display:flex; align-items:center; gap:7px; background:var(--panel-raised); border:1px solid var(--line);

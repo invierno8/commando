@@ -1,0 +1,33 @@
+{
+  "id": "ann-mt5vb798w5zq",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T13:53:39.452Z",
+  "route": "dashboard",
+  "targetLabel": "Dashboard — widget: תיעדוף דרישות מאושרות",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "זה בדיקה",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
