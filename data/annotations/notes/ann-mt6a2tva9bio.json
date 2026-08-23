@@ -1,0 +1,35 @@
+{
+  "id": "ann-mt6a2tva9bio",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T20:47:03.094Z",
+  "route": "dashboard",
+  "targetLabel": "מדדים כלליים — כלל החטיבה — סורבו",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "מדדים כלליים — כלל החטיבה — סה״כ דרישות"
+  ],
+  "comment": "בבקשה תזיז את זה במקום[→ מדדים כלליים — כלל החטיבה — סה״כ דרישות]",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
