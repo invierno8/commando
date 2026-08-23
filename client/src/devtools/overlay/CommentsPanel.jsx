@@ -7,6 +7,7 @@ import {
 } from "../devApi.js";
 import { useDraggableFab } from "../useDraggableFab.js";
 import DrawingOverlay from "./DrawingOverlay.jsx";
+import { parseMentionQuery, matchMentionCandidates, insertMentionText, renderWithMentions as renderMentionsShared } from "../mentionUtils.jsx";
 
 const ACTION_STATUS_LABEL = { queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed" };
 const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: GitPullRequest, done: CheckCircle2, failed: XCircle };
@@ -16,17 +17,10 @@ const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: G
 // (ראו data/routes/annotations.js ו-data/routes/jynx-feedback.js).
 const REACTION_EMOJI = ["👍", "😄", "🤔", "❤️"];
 
-// מדגיש @שם/@jynx בטקסט תגובה שכבר נשלח — אותו regex בדיוק כמו זה שהשרת
-// מנתח מולו (lib/mentions.js), רק לצורך תצוגה, לא לוגיקה.
+// מדגיש @שם/@jynx בטקסט תגובה שכבר נשלח — ראו mentionUtils.jsx (משותף עכשיו
+// עם DevAnnotationsScreen.jsx/JynxFeedbackScreen.jsx, לא רק כאן).
 function renderWithMentions(text) {
-  const parts = text.split(/(@[\p{L}\p{N}_]+)/gu);
-  return parts.map((part, i) =>
-    part.startsWith("@") ? (
-      <span key={i} className={"comments-mention" + (part.toLowerCase() === "@jynx" ? " comments-mention-jynx" : "")}>{part}</span>
-    ) : (
-      part
-    )
-  );
+  return renderMentionsShared(text, { mentionClassName: "comments-mention", jynxClassName: "comments-mention-jynx" });
 }
 
 /* ================================================================== */
@@ -185,17 +179,13 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     items.forEach((a) => { if (a.authorName) names.add(a.authorName); });
     return [...names];
   }, [items]);
-  const activeMentionQuery = useMemo(() => {
-    const m = replyText.match(/(?:^|\s)@([\p{L}\p{N}_]*)$/u);
-    return m ? m[1] : null;
-  }, [replyText]);
-  const mentionMatches = useMemo(() => {
-    if (activeMentionQuery === null) return [];
-    const q = activeMentionQuery.toLowerCase();
-    return mentionCandidates.filter((n) => n.toLowerCase().replace(/\s+/g, "").startsWith(q)).slice(0, 6);
-  }, [activeMentionQuery, mentionCandidates]);
+  const activeMentionQuery = useMemo(() => parseMentionQuery(replyText), [replyText]);
+  const mentionMatches = useMemo(
+    () => matchMentionCandidates(activeMentionQuery, mentionCandidates),
+    [activeMentionQuery, mentionCandidates]
+  );
   function insertMention(name) {
-    setReplyText((prev) => prev.replace(/(?:^|\s)@([\p{L}\p{N}_]*)$/u, (m) => (m.startsWith(" ") ? " " : "") + "@" + name.replace(/\s+/g, "") + " "));
+    setReplyText((prev) => insertMentionText(prev, name));
   }
 
   function jumpTo(a) {
@@ -649,7 +639,9 @@ const CSS_TEXT = `
 .comments-thread{ display:flex; flex-direction:column; gap:5px; background:var(--bg); border-radius:8px; padding:7px; margin:0 12px 9px; }
 .comments-thread-item{ font-size:11px; color:var(--text); }
 .comments-thread-item b{ color:var(--jynx); }
-.comments-mention{ color:var(--jynx); font-weight:700; }
+/* כחול, לא הסגול-מותג הרגיל של Jynx — בכוונה: QA ביקש שאזכור-שם יובחן
+   ויזואלית משאר ה-UI הסגול, לא רק יהיה מודגש (ראו PR זה). */
+.comments-mention{ color:#2F8FCE; font-weight:700; }
 .comments-mention-jynx{ color:var(--dev); }
 .comments-thread-input-wrap{ position:relative; }
 .comments-mention-dropdown{
