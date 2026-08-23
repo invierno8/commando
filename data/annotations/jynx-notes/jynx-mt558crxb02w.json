@@ -1,0 +1,26 @@
+{
+  "id": "jynx-mt558crxb02w",
+  "authorId": null,
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T01:43:36.621Z",
+  "route": "dashboard",
+  "targetLabel": "comments-sidebar",
+  "secondaryTargets": [
+    "dev-toolbar-admin-btn"
+  ],
+  "comment": "make it a full list of comments, not just this page, and add a toggle for just this page (the page the user is on) or universal comments. that means [→ dev-toolbar-admin-btn] no need to manage comments on here, make all comments managment from the comments tool, jynx dev as well, make [→ dev-toolbar-admin-btn] the new settings tab as an admin you can manage users and see universal logs on thre but the user settings, the menu setting, colors, oriantation, and any needed setting will be there",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
