@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt5f2ow7dqrw",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T06:19:08.551Z",
+  "route": "dashboard",
+  "targetLabel": "comments-sidebar",
+  "secondaryTargets": [],
+  "comment": "add a profetional user friendly filtering options by date last 24h last week etc ... also by keywords, specific elements on screen and the if the hold ctrl and choose an element he will be a filter and show only comments on marked elements and more.. take that logic make it perfect",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-23T06:19:08.551Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
