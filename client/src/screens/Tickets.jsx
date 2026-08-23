@@ -1552,7 +1552,7 @@ const CSS = `
 .overlay{ position:fixed; inset:0; background:rgba(6,8,10,.6); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; z-index:200; padding:24px; animation:overlayIn var(--t-fast) ease; }
 .modal{
   width:440px; max-width:100%; max-height:88vh; overflow-y:auto;
-  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-card); padding:28px;
+  background:var(--brk),var(--panel); border:1px solid var(--line); border-radius:var(--radius-card); padding:28px;
   position:relative; box-shadow:var(--shadow-md); animation:modalIn var(--t-base) ease;
 }
 .drawer-close{ position:absolute; top:16px; left:16px; background:none; border:1px solid transparent; color:var(--text-dim); cursor:pointer; border-radius:var(--radius-md); padding:6px; display:flex; transition:color var(--t-fast) ease, border-color var(--t-fast) ease; }

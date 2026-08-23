@@ -557,7 +557,7 @@ const CSS = `
 }
 .dossier{
   width:900px; max-width:100%; max-height:90vh; overflow-y:auto;
-  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-card); padding:32px 36px 36px;
+  background:var(--brk),var(--panel); border:1px solid var(--line); border-radius:var(--radius-card); padding:32px 36px 36px;
   position:relative; box-shadow:var(--shadow-md); animation:dossierIn var(--t-base) ease;
 }
 .drawer-close{

@@ -1995,7 +1995,7 @@ ${SCOPE_PICKER_CSS}
 
 .person-card-modal{
   width:440px; max-width:100%; max-height:88vh; overflow-y:auto; position:relative;
-  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-card); padding:28px;
+  background:var(--brk),var(--panel); border:1px solid var(--line); border-radius:var(--radius-card); padding:28px;
   box-shadow:var(--shadow-md); animation:modalIn var(--t-base) ease;
 }
 .team-edit-modal{ width:380px; display:flex; flex-direction:column; gap:14px; }

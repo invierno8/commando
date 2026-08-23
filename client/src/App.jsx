@@ -402,6 +402,7 @@ export default function App() {
     <div dir="rtl" className="app-shell">
       <style>{THEME_CSS}</style>
       <div className="app-glow" aria-hidden="true" />
+      <div className="app-radar" aria-hidden="true" />
 
       <aside className={"app-sidebar" + (sidebarOpen ? " expanded" : "")}>
         <div className="sidebar-mark">HGR</div>

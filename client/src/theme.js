@@ -133,6 +133,8 @@ h1,h2,h3{ font-family:var(--font-sans); font-weight:700; letter-spacing:-.015em;
   min-height:100vh;
   display:flex;
   background:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:48px 48px,48px 48px;
   color:var(--text);
   font-family:var(--font-sans);
   font-size:14px;
@@ -142,6 +144,29 @@ h1,h2,h3{ font-family:var(--font-sans); font-weight:700; letter-spacing:-.015em;
   position:fixed; top:0; left:0; right:0; height:280px; pointer-events:none; z-index:0;
   background:radial-gradient(60% 100% at 50% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%);
 }
+/* Radar-sweep grid — the design system's own signature "something is    */
+/* live here" background accent (see its own section 00 wrapper). A     */
+/* colored copy of the same dot-grid, masked to a slowly-growing ring    */
+/* radiating from center, looping forever underneath all real content.   */
+@property --hgr{ syntax:"<percentage>"; inherits:false; initial-value:0%; }
+@keyframes hg-radar{ 0%{ --hgr:0%; opacity:0; } 7%{ opacity:.5; } 65%{ opacity:.22; } 100%{ --hgr:125%; opacity:0; } }
+.app-radar{
+  position:fixed; inset:-10%; z-index:0; pointer-events:none;
+  background-image:linear-gradient(color-mix(in srgb, var(--accent) 60%, transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb, var(--accent) 60%, transparent) 1px,transparent 1px);
+  background-size:48px 48px,48px 48px;
+  animation:hg-radar 8s linear infinite;
+  -webkit-mask-image:radial-gradient(circle at 50% 30%,transparent calc(var(--hgr) - 10%),rgba(0,0,0,.9) var(--hgr),transparent calc(var(--hgr) + 12%));
+  mask-image:radial-gradient(circle at 50% 30%,transparent calc(var(--hgr) - 10%),rgba(0,0,0,.9) var(--hgr),transparent calc(var(--hgr) + 12%));
+}
+@media (prefers-reduced-motion: reduce){ .app-radar{ display:none; } }
+
+/* Corner-bracket accent — see --brk/--brk-hot in the token block above.  */
+/* Applied surgically (max 2 per screen, per the design system's own      */
+/* rule): the item currently selected/open, or a modal — never a whole    */
+/* grid of cards, which reads as noise instead of focus.                  */
+.hg-corners{ background:var(--brk),var(--panel); }
+.hg-corners-raised{ background:var(--brk),var(--panel-raised); }
+.hg-corners-hot{ background:var(--brk-hot),var(--panel-raised); transition:background var(--t-base) var(--ease); }
 
 .app-sidebar{
   position:sticky; top:0; align-self:flex-start; height:100vh; flex:none; z-index:20;
@@ -225,7 +250,7 @@ h1,h2,h3{ font-family:var(--font-sans); font-weight:700; letter-spacing:-.015em;
   border-bottom:1px solid var(--line);
 }
 .app-topbar-title{ display:flex; align-items:center; gap:12px; }
-.app-topbar-title h1{ font-size:19px; font-weight:700; margin:0; }
+.app-topbar-title h1{ font-size:21px; font-weight:800; margin:0; }
 .app-topbar-crumb{ font-size:12px; color:var(--text-dim); font-family:var(--font-mono); }
 
 .app-topbar-mission{ flex:1; min-width:0; display:flex; justify-content:center; padding:0 16px; }
@@ -526,6 +551,30 @@ h1,h2,h3{ font-family:var(--font-sans); font-weight:700; letter-spacing:-.015em;
   border:2px solid var(--line); border-top-color:var(--accent);
   animation:spin .7s linear infinite;
 }
+
+/* hg-loading — the design system's own loading pattern: a spinner+label */
+/* line above a scanline-swept skeleton, standing in for the content     */
+/* about to render. Feeds every screen through the shared Loading.jsx    */
+/* component, so this one block covers all of them at once.              */
+.hg-loading{ max-width:520px; margin:40px auto; padding:0 20px; }
+.hg-loading-head{ display:flex; align-items:center; gap:10px; color:var(--text-dim); font-size:13.5px; margin-bottom:14px; justify-content:center; }
+.hg-loading-spinner{
+  width:16px; height:16px; border-radius:50%; flex:none;
+  border:2px solid var(--line); border-top-color:var(--accent);
+  animation:spin .7s linear infinite;
+}
+.hg-loading-skeleton{
+  position:relative; overflow:hidden; background:var(--brk),var(--panel-raised);
+  padding:16px; display:flex; flex-direction:column; gap:10px;
+}
+.hg-loading-scanline{
+  position:absolute; inset-inline:0; top:0; height:16px; pointer-events:none;
+  background:linear-gradient(180deg,transparent,var(--accent-soft));
+  animation:hg-scanline 3.6s cubic-bezier(.6,0,.3,1) infinite; opacity:.6;
+}
+@keyframes hg-scanline{ 0%{ transform:translateY(-100%); } 100%{ transform:translateY(560%); } }
+.hg-loading-skeleton i{ display:block; height:12px; background:var(--panel-hi); font-style:normal; }
+@media (prefers-reduced-motion: reduce){ .hg-loading-scanline{ animation:none; display:none; } }
 .unit-emblem-img{ border:1px solid var(--line); background:var(--panel); }
 .logo-upload{
   display:flex; align-items:center; gap:12px; background:var(--panel-raised); border:1px dashed var(--line);
