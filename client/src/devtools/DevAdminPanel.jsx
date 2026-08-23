@@ -217,9 +217,13 @@ const CSS = `
 .dev-admin-reauth-error{ color:var(--red); font-size:11.5px; flex-basis:100%; }
 
 .dev-admin-autoresolve-row{
-  display:flex; align-items:center; gap:10px; margin-bottom:12px; padding:8px 10px;
+  display:flex; align-items:center; gap:10px; margin-top:28px; margin-bottom:12px; padding:8px 10px;
   background:var(--panel-raised); border:1px solid var(--line); border-radius:9px;
 }
+/* כשבאנר ה-reauth כבר מוצג מעל השורה הזאת, היא כבר לא הדבר הראשון ממש מתחת
+   ל-.drawer-close הצף (position:absolute, top/left:14px) — אז אין צורך
+   ברווח הנוסף שמונע ממנו לכסות את תחילת ה-"Manual"/"Auto" המודגש. */
+.dev-admin-reauth-banner + .dev-admin-autoresolve-row{ margin-top:12px; }
 .dev-admin-autoresolve-row span{ flex:1; font-size:11.5px; color:var(--text-dim); line-height:1.5; }
 .dev-admin-autoresolve-row span b{ color:var(--text); }
 .dev-admin-autoresolve-toggle{
