@@ -53,6 +53,7 @@ const ITEM_LABELS = {
 export function JynxMenuSettingsFields({
   orientation, onSetOrientation, order, defaultOrder, availableIds,
   onReorder, onReset, onUndo, canUndo, iconScale, onSetIconScale,
+  roleDocked, onSetRoleDocked,
 }) {
   const [dragId, setDragId] = useState(null);
   // יעד-שחרור נוכחי בזמן גרירה — משמש רק להדגשה ויזואלית (ראו
@@ -84,9 +85,24 @@ export function JynxMenuSettingsFields({
     <>
       <div className="jynx-settings-section">
         <span className="jynx-settings-label">Menu orientation</span>
-        <div className="jynx-settings-orientation-row">
+        <div className="jynx-settings-toggle-row">
           <button type="button" className={orientation === "horizontal" ? "active" : ""} onClick={() => onSetOrientation("horizontal")}>Horizontal</button>
           <button type="button" className={orientation === "vertical" ? "active" : ""} onClick={() => onSetOrientation("vertical")}>Vertical</button>
+        </div>
+      </div>
+
+      {/* jynx-mt5qe3axvwkl: "when trying to drag the role play icon from the
+          menu the drag just stuck for the entire menu, have it as a toggle in
+          the menu settings" — replaces the fragile native-HTML5
+          drag-out-of-the-menu gesture (still fixed separately, see
+          DevAuthGate.jsx's onPointerDown on that toolbar item) with an
+          explicit, reliable toggle here, same shape as the orientation row
+          right above it. */}
+      <div className="jynx-settings-section">
+        <span className="jynx-settings-label">Role picker</span>
+        <div className="jynx-settings-toggle-row">
+          <button type="button" className={roleDocked ? "active" : ""} onClick={() => onSetRoleDocked(true)}>Docked</button>
+          <button type="button" className={!roleDocked ? "active" : ""} onClick={() => onSetRoleDocked(false)}>Detached</button>
         </div>
       </div>
 
@@ -192,12 +208,15 @@ const CSS = `
 }
 .jynx-settings-order-actions button:hover:not(:disabled){ color:var(--jynx); border-color:var(--jynx); }
 .jynx-settings-order-actions button:disabled{ opacity:.35; cursor:not-allowed; }
-.jynx-settings-orientation-row{ display:flex; gap:6px; }
-.jynx-settings-orientation-row button{
+/* שם כללי (לא "orientation") — הפאנל הזה עכשיו משתמש בשורת שני-כפתורים
+   הזו גם לכיוון הסרגל וגם לעגינת בורר-התפקיד (roleDocked), אותו מבנה
+   ויזואלי בדיוק, לא קשור לכיוון בלבד יותר. */
+.jynx-settings-toggle-row{ display:flex; gap:6px; }
+.jynx-settings-toggle-row button{
   flex:1; border:1px solid var(--line); background:var(--panel-raised); color:var(--text-dim); border-radius:8px;
   padding:7px 0; font-size:12px; font-weight:700; cursor:pointer;
 }
-.jynx-settings-orientation-row button.active{ background:var(--jynx); border-color:var(--jynx); color:#fff; }
+.jynx-settings-toggle-row button.active{ background:var(--jynx); border-color:var(--jynx); color:#fff; }
 .jynx-settings-scale-readout{ font-family:var(--font-mono); font-size:11px; color:var(--jynx); font-weight:700; }
 .jynx-settings-icon-preview-row{ display:flex; align-items:center; justify-content:center; gap:12px; padding:2px 0 4px; }
 .jynx-settings-icon-bound{ color:var(--text-dim); flex:none; }
