@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt520kgh2cvv",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T00:13:34.481Z",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-icon-btn",
+  "secondaryTargets": [],
+  "comment": "no need for that, please read last jynx comment talking about the settings page and oriatation page in there",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-23T00:13:34.481Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
