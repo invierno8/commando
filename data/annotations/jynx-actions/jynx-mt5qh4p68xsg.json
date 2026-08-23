@@ -1,0 +1,8 @@
+{
+  "id": "jynx-mt5qh4p68xsg",
+  "route": "dashboard",
+  "targetLabel": "jynx-settings-section",
+  "secondaryTargets": [],
+  "comment": "this is ugly and not user friendly, have it as a 3 way option, small medium large and make them look exuctly like the menu items and not those weird icons",
+  "requestedAt": "2026-08-23T11:38:19.230Z"
+}
