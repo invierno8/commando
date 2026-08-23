@@ -234,8 +234,14 @@ function AdminMarkerDot({ label, list, rect, open, onToggle, onAction }) {
 }
 
 const CSS_TEXT = `
+/* z-index קודם היה 99995/99998 — גבוה בהרבה מ-.app-topbar (z:15) ומ-
+   .app-sidebar (z:20), אז ברגע שהאלמנט המסומן גלל מתחת לסרגל-העליון
+   הדביק, הנקודה/ההילה המשיכו לצייר מעליו במקום שהוא יכסה אותן — נראה
+   כמו "מרחף בלגן" מעל הניווט בזמן גלילה. עכשיו מתחת לשניהם, כך שהרקע
+   האטום/מטושטש שלהם באמת מכסה את הסימון ברגע שהוא זז מתחתם, בדיוק כמו
+   כל תוכן-עמוד רגיל. */
 .admin-marker-highlight{
-  position:fixed; pointer-events:none; z-index:99995; border-radius:8px; border:2px solid var(--jynx);
+  position:fixed; pointer-events:none; z-index:11; border-radius:8px; border:2px solid var(--jynx);
   box-shadow:0 0 0 3px color-mix(in srgb, var(--jynx) 28%, transparent),
              0 0 18px color-mix(in srgb, var(--jynx) 50%, transparent);
   transition:top .1s ease, left .1s ease, width .1s ease, height .1s ease;
@@ -245,7 +251,7 @@ const CSS_TEXT = `
   box-shadow:0 0 0 3px color-mix(in srgb, var(--dev) 28%, transparent),
              0 0 18px color-mix(in srgb, var(--dev) 50%, transparent);
 }
-.admin-marker-dot-wrap{ position:fixed; z-index:99998; }
+.admin-marker-dot-wrap{ position:fixed; z-index:12; }
 .admin-marker-dot{
   width:11px; height:11px; border-radius:50%; border:2px solid var(--panel); color:#fff;
   display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700;

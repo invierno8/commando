@@ -199,8 +199,12 @@ const CSS = `
 .jynx-drawing-live, .jynx-drawing-overlay{
   position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:99994;
 }
+/* z-index היה 99999 — הרבה מעל .app-topbar (z:15)/.app-sidebar (z:20),
+   אז הילת-ההובר המשיכה להיצייר מעל הניווט כשהאלמנט המסומן גלל מתחתיו
+   במקום שהוא יכסה אותה (אותה תקלה בדיוק כמו נקודות-המנהל ב-
+   AdminAnnotationMarkers.jsx — ראו שם). עכשיו מתחת לשניהם. */
 .dev-overlay-highlight{
-  position:fixed; pointer-events:none; z-index:99999; border-radius:8px;
+  position:fixed; pointer-events:none; z-index:11; border-radius:8px;
   border:2px solid var(--jynx);
   box-shadow:0 0 0 3px color-mix(in srgb, var(--jynx) 28%, transparent),
              0 0 18px color-mix(in srgb, var(--jynx) 50%, transparent);
