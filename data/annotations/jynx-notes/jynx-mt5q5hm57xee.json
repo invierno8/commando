@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt5q5hm57xee",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T11:29:14.861Z",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-grip",
+  "secondaryTargets": [],
+  "comment": "this is not centered with jynx menu on vertical",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-23T11:29:14.861Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
