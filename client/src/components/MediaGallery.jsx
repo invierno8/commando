@@ -94,11 +94,11 @@ const CSS = `
 .media-gallery-overlay{
   position:fixed; inset:0; background:rgba(4,5,6,.88); backdrop-filter:blur(3px);
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  z-index:400; padding:28px; animation:mediaGalleryIn .15s ease;
+  z-index:400; padding:28px; animation:mediaGalleryIn var(--t-fast) ease;
 }
 .media-gallery-close{
   position:absolute; top:18px; left:18px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14);
-  color:#fff; cursor:pointer; border-radius:9px; padding:8px; display:flex; transition:background .15s ease, border-color .15s ease;
+  color:#fff; cursor:pointer; border-radius:var(--radius-md); padding:8px; display:flex; transition:background var(--t-fast) ease, border-color var(--t-fast) ease;
 }
 .media-gallery-close:hover{ background:rgba(255,255,255,.14); border-color:var(--red); color:var(--red); }
 .media-gallery-counter{
@@ -110,7 +110,7 @@ const CSS = `
 .media-gallery-nav{
   flex:none; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); color:#fff;
   border-radius:50%; width:42px; height:42px; display:flex; align-items:center; justify-content:center;
-  cursor:pointer; transition:background .15s ease, border-color .15s ease;
+  cursor:pointer; transition:background var(--t-fast) ease, border-color var(--t-fast) ease;
 }
 .media-gallery-nav:hover{ background:rgba(255,255,255,.16); border-color:var(--accent); color:var(--accent); }
 
@@ -119,7 +119,7 @@ const CSS = `
   animation:mediaFrameIn .18s ease;
 }
 .media-gallery-media{
-  max-width:100%; max-height:74vh; border-radius:10px; box-shadow:0 20px 60px rgba(0,0,0,.5);
+  max-width:100%; max-height:74vh; border-radius:var(--radius-lg); box-shadow:0 20px 60px rgba(0,0,0,.5);
   border:1px solid rgba(255,255,255,.1); background:#000; object-fit:contain;
 }
 
@@ -131,8 +131,8 @@ const CSS = `
   display:flex; gap:9px; margin-top:18px; max-width:min(1000px, 88vw); overflow-x:auto; padding:2px;
 }
 .media-gallery-thumb{
-  flex:none; width:64px; height:48px; border-radius:7px; overflow:hidden; border:2px solid transparent;
-  background:#000; cursor:pointer; padding:0; position:relative; opacity:.6; transition:opacity .15s ease, border-color .15s ease;
+  flex:none; width:64px; height:48px; border-radius:var(--radius-md); overflow:hidden; border:2px solid transparent;
+  background:#000; cursor:pointer; padding:0; position:relative; opacity:.6; transition:opacity var(--t-fast) ease, border-color var(--t-fast) ease;
 }
 .media-gallery-thumb:hover{ opacity:.9; }
 .media-gallery-thumb.active{ opacity:1; border-color:var(--accent); }
