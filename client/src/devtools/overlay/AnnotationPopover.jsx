@@ -130,7 +130,17 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
   return (
     <div
       ref={sizeRef}
-      className={"dev-overlay-ignore dev-annotate-popover jynx-ui" + (isJynxMeta ? " dev-annotate-popover-jynx" : "")}
+      // ראו jynx-mt5f... (בקשה: "recognize the comment card itself so I can
+      // leave comments on the card"). לפני זה נשא dev-overlay-ignore, שחוסם
+      // גם hover-highlight וגם Ctrl/Cmd+קליק לגמרי (ראו useHoverTarget.js /
+      // DevOverlay.jsx's realElementAtPoint) — נכון לבועת-ההילה/סימוני-הציור
+      // שבאמת אף פעם לא יעד תקין, אבל לא לקופסה הזו, שהיא UI אמיתי של Jynx.
+      // jynx-chrome הופך אותה לבר-הערה בדיוק כמו כל שאר כלי Jynx (הסרגל,
+      // פאנל הניהול...) — כלומר גם מגודר לאותה הרשאה (canJynxChrome), לא
+      // פתוח לכל משתמש-פיתוח. data-devblock נותן לה תווית קריאה במקום ליפול
+      // חזרה על findTarget()'s heuristic הכללי.
+      className={"dev-annotate-popover jynx-ui jynx-chrome" + (isJynxMeta ? " dev-annotate-popover-jynx" : "")}
+      data-devblock="jynx-comment-composer"
       style={{ left: pos.left, bottom: pos.bottom }}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.key === "Escape" && onCancel()}

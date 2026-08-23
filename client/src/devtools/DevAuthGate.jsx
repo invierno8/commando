@@ -566,7 +566,12 @@ const CSS = `
   padding:0; cursor:pointer; transition:color .12s, border-color .12s;
 }
 .dev-toolbar-grip:hover{ color:var(--jynx); border-color:var(--jynx); }
-.jynx-toolbar-item{ position:relative; display:flex; flex:none; }
+/* align-self:center — בלעדיו, ".dev-fab-toolbar.vertical"'s align-items:
+   stretch מותח כל פריט לרוחב המלא של העמודה (הקובע-רוחב האמיתי הוא
+   ".dev-toolbar-devname", הרחב מכולם), אז התג הממוקם ליד הפינה של הקופסה
+   הזו נוחת רחוק מהאייקון עצמו במקום עליו — בדיוק התלונה. עם align-self
+   הפריט מתכווץ לגודל האייקון (30px), והתג יושב עליו ממש. */
+.jynx-toolbar-item{ position:relative; display:flex; flex:none; align-self:center; }
 /* התג עם מספר-המקלדת — בעבר bottom:-3px/right:-3px, מה שגרם לו להיחתך/
    להתחפף עם הפריט הבא כשהסרגל אנכי (הפריטים נערמים אז ה"מטה" של אחד הוא
    כמעט ה"מעלה" של הבא). "top" יציב בשני הכיוונים; קצת יותר גדול/כהה כדי
