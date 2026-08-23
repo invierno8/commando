@@ -13,7 +13,7 @@
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-23T00:07:33.971Z",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/33",
-  "actionLog": "Already implemented by two independent concurrent runs before this one (PR #33 and PR #34, both a detachable role/brigade-picker toolbar item). This run found both already open, made no further changes, and did not open a third PR. Bookkeeping points at #33 (opened first); #34 is a duplicate of the same request, still open as of this writing — a human should reconcile which one merges.",
+  "actionLog": "Already implemented by two independent concurrent runs before this one (PR #33 and PR #34, both a detachable role/brigade-picker toolbar item). This run found both already open, made no further changes, and did not open a third PR. Bookkeeping points at #33 (opened first); #34 is a duplicate of the same request, still open as of this writing — a human should reconcile which one merges. Update: #34 has since been closed as a duplicate — #33 additionally fixes a pointerdown/native-drag conflict (dragging the reattach gesture over the toolbar was getting hijacked by the toolbar's own whole-bar drag tracking) that #34's version didn't handle, so it's the one being kept.",
   "replies": [],
   "reactions": {
     "👍": [],
