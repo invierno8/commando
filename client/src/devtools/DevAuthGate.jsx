@@ -8,6 +8,7 @@ import DevOverlay from "./overlay/DevOverlay.jsx";
 import CommentsPanel from "./overlay/CommentsPanel.jsx";
 import MentionsBell from "./MentionsBell.jsx";
 import JynxThought from "./JynxThought.jsx";
+import JynxFace from "./JynxFace.jsx";
 import { useDraggableFab } from "./useDraggableFab.js";
 import { useKeepInViewport } from "./useKeepInViewport.js";
 
@@ -71,6 +72,9 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  // רק לצורך "פנים" הבועה (JynxFace.jsx) — פוקוס על שדה הסיסמה עצמו מתורגם
+  // ל-mood "typing", בלי לגעת בשום דבר אחר בלוגיקת ההתחברות.
+  const [passwordFocused, setPasswordFocused] = useState(false);
   // idle | thinking | success | error — מחליף את loggingIn הבוליאני הישן.
   // "success" הוא שלב מכוון-בעצמו: לא סוגרים את הפאנל/מציבים devName באותו
   // רגע שה-login מצליח, כי אז המעבר מ"מקליד סיסמה" ל"מחובר" קורה בבזק אחד
@@ -295,6 +299,7 @@ export default function DevAuthGate({ route, devFabProps }) {
         <style>{CSS}</style>
         <JynxThought status="waking" />
         <div className="dev-fab dev-fab-locked jynx-thinking-pulse" title="Jynx is waking up the dev server — this can take up to ~30s on a cold start">
+          <JynxFace mood="thinking" />
           <Loader2 size={13} className="dev-fab-waking-spinner" />
           <span className="jynx-logo">JYNX</span>
         </div>
@@ -326,6 +331,8 @@ export default function DevAuthGate({ route, devFabProps }) {
                 type="password" value={password}
                 onChange={(e) => { setPassword(e.target.value); if (loginPhase === "error") setLoginPhase("idle"); }}
                 onKeyDown={(e) => e.key === "Enter" && login()}
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
                 disabled={loginPhase === "thinking" || loginPhase === "success"}
                 autoFocus
               />
@@ -343,6 +350,7 @@ export default function DevAuthGate({ route, devFabProps }) {
           {...lockedFab.dragHandlers}
           title="Sign in to dev mode — draggable"
         >
+          <JynxFace mood={loginPhase !== "idle" ? loginPhase : (passwordFocused ? "typing" : "idle")} />
           <Lock size={13} />
           <span className="jynx-logo">JYNX</span>
         </button>
@@ -460,6 +468,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       ) : (
         <div className="dev-fab-wrap jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
           <button type="button" ref={toolbarFab.sizeRef} className="dev-fab jynx-breathe" data-jynx-dock-zone="" onClick={toggleToolbarOpen} {...toolbarFab.dragHandlers} title="Expand the Jynx toolbar — draggable (also a drop target for a detached role picker)">
+            <JynxFace mood="idle" />
             <span className="jynx-logo">JYNX</span>
           </button>
         </div>
@@ -503,6 +512,24 @@ const CSS = `
 @keyframes devLoginSpin{ to{ transform:rotate(360deg); } }
 
 .dev-fab-waking-spinner{ animation:devLoginSpin .9s linear infinite; }
+
+/* פנים זעירות בתוך הבועה עצמה (jynx-mt51mv19l46u) — שתי "עיניים" בלבד, לא
+   SVG/נכס חיצוני, יושבות בתוך אותה שורת-flex כמו האייקון/הלוגו הקיימים
+   (ראו .dev-fab בtheme.js). ברירת המחדל (idle) מהבהבת ועוקבת קלות אחרי
+   העכבר (ראו JynxFace.jsx); שאר המצבים משנים צבע/תזוזה כדי להתאים לאותה
+   שפת-צבע שכבר קיימת (ירוק=success, אדום=error) בלי לפתוח פלטה חדשה. */
+.jynx-face{ display:inline-flex; align-items:center; gap:3px; height:8px; }
+.jynx-face-eye{
+  width:3.5px; height:3.5px; border-radius:50%; background:currentColor; flex:none;
+  transition:height .12s ease, transform .12s ease, background .15s ease;
+}
+.jynx-face-blink{ height:1px; }
+.jynx-face-thinking .jynx-face-eye{ animation:jynxFaceDart .8s ease-in-out infinite; }
+@keyframes jynxFaceDart{ 0%,100%{ transform:translateX(-1.5px); } 50%{ transform:translateX(1.5px); } }
+.jynx-face-typing .jynx-face-eye{ height:2.5px; }
+.jynx-face-success .jynx-face-eye{ background:var(--green); transform:scale(1.3); }
+.jynx-face-error .jynx-face-eye{ background:var(--red); animation:jynxFaceShake .3s ease; }
+@keyframes jynxFaceShake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-1.5px); } 75%{ transform:translateX(1.5px); } }
 
 /* "חי" — נשימה עדינה כשאין שום דבר אחר קורה, כדי שהבועה לעולם לא תיראה
    קפואה/מתה גם כשהיא רק יושבת שם וממתינה. */
