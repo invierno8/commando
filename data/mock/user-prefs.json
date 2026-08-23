@@ -16,5 +16,22 @@
       "openRequests",
       "readiness"
     ]
+  },
+  "guest:dashboard-layout:brigade_officer": {
+    "order": [
+      "kpis",
+      "priority",
+      "trend",
+      "responseTime",
+      "categoryAnalytics",
+      "ticketTypes",
+      "procurementCost",
+      "repairLeaderboard",
+      "openRequests",
+      "readiness",
+      "equipment",
+      "activityLog"
+    ],
+    "hidden": []
   }
 }
