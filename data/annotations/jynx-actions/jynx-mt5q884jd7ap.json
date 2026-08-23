@@ -1,0 +1,8 @@
+{
+  "id": "jynx-mt5q884jd7ap",
+  "route": "dashboard",
+  "targetLabel": "dev-fab-toolbar",
+  "secondaryTargets": [],
+  "comment": "the hi admin is ugly in the menu, make it jyst say hi but when clicked open to hi and the username and a logout menu or user settings menue options make it look good beacuse now everything is not centered the x button is way off the logout should be when i click the hi button it opens to hi username and then logout and user settings buttons make it logical and flalwless design",
+  "requestedAt": "2026-08-23T11:31:23.636Z"
+}
