@@ -1,0 +1,8 @@
+{
+  "id": "jynx-mt55hf3yezvk",
+  "route": "dashboard",
+  "targetLabel": "dev-admin-thread-item",
+  "secondaryTargets": [],
+  "comment": "when mentionig make it like in whatsapp with a list to choose from and a fix to the correct user when typing and make the mention blue and a hyper link to user profile",
+  "requestedAt": "2026-08-23T01:50:40.629Z"
+}
