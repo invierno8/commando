@@ -782,11 +782,11 @@ ${SCOPE_PICKER_CSS}
 .dash-widget.dragging{
   cursor:grabbing;
   opacity:.45; transform:scale(.97) rotate(-.6deg); box-shadow:var(--shadow-md);
-  border-color:var(--accent); border-style:dashed;
+  border-color:var(--accent); border-style:dashed; background:var(--brk-hot),var(--panel);
 }
 .dash-widget.drag-over{
   border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
-  transform:scale(1.012);
+  transform:scale(1.012); background:var(--brk-hot),var(--panel);
 }
 .widget-hide-btn{
   background:none; border:1px solid transparent; color:var(--text-dim); border-radius:var(--radius-md); padding:5px;
