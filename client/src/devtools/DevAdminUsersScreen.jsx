@@ -71,6 +71,12 @@ export default function DevAdminUsersScreen() {
       </p>
       {users.length === 0 && <div className="dev-admin-empty">No dev users yet.</div>}
       {users.length > 0 && (
+        <div className="dev-admin-online-summary">
+          <span className="dev-admin-online-dot online" />
+          {users.filter((u) => u.online).length} online now
+        </div>
+      )}
+      {users.length > 0 && (
         <div className="dev-admin-user-list">
           {users.map((u) => (
             <div className="dev-admin-user-row" key={u.id}>
