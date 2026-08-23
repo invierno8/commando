@@ -147,6 +147,7 @@ function tooltipStyle() {
   return {
     contentStyle: { background: TOKENS.panel, border: `1px solid ${TOKENS.line}`, borderRadius: 8, fontFamily: "var(--font-mono)", fontSize: 12, color: TOKENS.text, boxShadow: "var(--shadow-md)" },
     labelStyle: { color: TOKENS.textDim },
+    itemStyle: { color: TOKENS.text },
     cursor: { fill: "var(--panel-raised)" },
   };
 }
