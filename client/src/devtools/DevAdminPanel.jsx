@@ -483,12 +483,12 @@ const CSS = `
 }
 .jynx-settings-order-actions button:hover:not(:disabled){ color:var(--jynx); border-color:var(--jynx); }
 .jynx-settings-order-actions button:disabled{ opacity:.35; cursor:not-allowed; }
-.jynx-settings-orientation-row{ display:flex; gap:6px; }
-.jynx-settings-orientation-row button{
+.jynx-settings-toggle-row{ display:flex; gap:6px; }
+.jynx-settings-toggle-row button{
   flex:1; border:1px solid var(--line); background:var(--panel-raised); color:var(--text-dim); border-radius:8px;
   padding:7px 0; font-size:12px; font-weight:700; cursor:pointer;
 }
-.jynx-settings-orientation-row button.active{ background:var(--jynx); border-color:var(--jynx); color:#fff; }
+.jynx-settings-toggle-row button.active{ background:var(--jynx); border-color:var(--jynx); color:#fff; }
 .jynx-settings-size-tabs .pill-tab{ flex:1; text-align:center; padding:6px 0 !important; font-size:12px !important; }
 .jynx-settings-order-list{ display:flex; flex-direction:column; gap:4px; }
 .jynx-settings-order-item{

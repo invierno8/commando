@@ -447,7 +447,20 @@ export default function DevAuthGate({ route, devFabProps }) {
               draggable={id === "role"}
               onDragStart={id === "role" ? (e) => { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", id); } : undefined}
               onDragEnd={id === "role" ? handleRoleItemDragEnd : undefined}
-              title={id === "role" ? "Drag out of the menu to detach the role/brigade picker" : undefined}
+              // jynx-mt5qe3axvwkl: "the drag just stuck for the entire menu" —
+              // this item's native-HTML5 drag (onDragStart above) and the
+              // whole-toolbar pointer-drag (toolbarFab.dragHandlers on the
+              // container, see useDraggableFab.js) both listen to the same
+              // pointerdown gesture; stopping propagation here keeps a
+              // press-and-drag on this one icon from also arming the
+              // container's own drag state (which native DnD then leaves
+              // stuck mid-gesture, since the browser stops delivering
+              // pointermove/pointerup once native DnD takes over). A plain
+              // click still reaches this item's own onClick normally —
+              // stopPropagation only blocks the event from bubbling up to
+              // the container's onPointerDown, it doesn't cancel it here.
+              onPointerDown={id === "role" ? (e) => e.stopPropagation() : undefined}
+              title={id === "role" ? "Drag out of the menu to detach the role/brigade picker (or use Settings → Role picker)" : undefined}
             >
               {keyNum && <span className="jynx-toolbar-key-badge">{keyNum}</span>}
               {TOOLBAR_ITEM_NODES[id]}
@@ -491,6 +504,8 @@ export default function DevAuthGate({ route, devFabProps }) {
             canUndo: !!undoOrder,
             iconScale,
             onSetIconScale: setIconScale,
+            roleDocked,
+            onSetRoleDocked: (docked) => (docked ? dockRole() : undockRole()),
           }}
         />
       )}
