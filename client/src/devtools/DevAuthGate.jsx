@@ -7,8 +7,7 @@ import DevAdminPanel from "./DevAdminPanel.jsx";
 import DevOverlay from "./overlay/DevOverlay.jsx";
 import CommentsPanel from "./overlay/CommentsPanel.jsx";
 import MentionsBell from "./MentionsBell.jsx";
-import JynxThought from "./JynxThought.jsx";
-import JynxFace from "./JynxFace.jsx";
+import JynxBubbleFace from "./JynxBubbleFace.jsx";
 import UserProfileCard from "./UserProfileCard.jsx";
 import { useOpenUserProfileListener } from "./openUserProfile.js";
 import { useDraggableFab } from "./useDraggableFab.js";
@@ -81,7 +80,7 @@ export default function DevAuthGate({ route, devFabProps }) {
   // "success" הוא שלב מכוון-בעצמו: לא סוגרים את הפאנל/מציבים devName באותו
   // רגע שה-login מצליח, כי אז המעבר מ"מקליד סיסמה" ל"מחובר" קורה בבזק אחד
   // בלי משוב — בדיוק התלונה שהובילה לפיצ'ר הזה. במקום זה משהים כמה מאות
-  // מילישניות עם JynxThought מציג "✨ Welcome" לפני שבאמת מתחברים.
+  // מילישניות עם הבועה עצמה (JynxBubbleFace.jsx) מציגה "Welcome, X!" לפני שבאמת מתחברים.
   const [loginPhase, setLoginPhase] = useState("idle");
   const [pendingWelcomeName, setPendingWelcomeName] = useState(null);
   const [adminOpen, setAdminOpen] = useState(false);
@@ -296,7 +295,7 @@ export default function DevAuthGate({ route, devFabProps }) {
   // "Jynx בועה נעלמת בלי הסבר בזמן ה-cold start" — תיקון: במקום return null
   // (שמשאיר את המשתמש בלי שום סימן שמשהו קורה במשך עד ~30 שניות, ראו ההערה
   // למעלה על fetchDevMe()'s retry loop), מציגים את אותה בועה נעולה עם ספינר
-  // ובועת-מחשבה צפה "💤 Waking up…" (ראו JynxThought.jsx) — אינדיקציה חיה
+  // עם טקסט-סטטוס "Waking up…" בתוך הבועה עצמה (ראו JynxBubbleFace.jsx) — אינדיקציה חיה
   // אמיתית, לא קישוט, ולכן מותרת גם לפי מדיניות האנימציה (ראו theme.js).
   if (checking) {
     return (
@@ -305,11 +304,8 @@ export default function DevAuthGate({ route, devFabProps }) {
         style={{ right: lockedFab.pos.right, bottom: lockedFab.pos.bottom }}
       >
         <style>{CSS}</style>
-        <JynxThought status="waking" />
         <div className="dev-fab dev-fab-locked jynx-thinking-pulse" title="Jynx is waking up the dev server — this can take up to ~30s on a cold start">
-          <JynxFace mood="thinking" />
-          <Loader2 size={13} className="dev-fab-waking-spinner" />
-          <span className="jynx-logo">JYNX</span>
+          <JynxBubbleFace mood="thinking" statusText="Waking up…" icon={<Loader2 size={13} className="dev-fab-waking-spinner" />} />
         </div>
       </div>
     );
@@ -324,12 +320,6 @@ export default function DevAuthGate({ route, devFabProps }) {
         onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget) && loginPhase !== "thinking" && loginPhase !== "success") setLoginOpen(false); }}
       >
         <style>{CSS}</style>
-        {loginOpen && (
-          <JynxThought
-            status={loginPhase !== "idle" ? loginPhase : null}
-            text={loginPhase === "success" ? `Welcome, ${pendingWelcomeName}!` : loginPhase === "error" ? error : undefined}
-          />
-        )}
         {loginOpen && (
           <div ref={loginPanelRef} className="dev-fab-panel dev-only dev-login-panel">
             <span className="dev-only-tag">JYNX — Sign in to dev mode</span>
@@ -358,9 +348,11 @@ export default function DevAuthGate({ route, devFabProps }) {
           {...lockedFab.dragHandlers}
           title="Sign in to dev mode — draggable"
         >
-          <JynxFace mood={loginPhase !== "idle" ? loginPhase : (passwordFocused ? "typing" : "idle")} />
-          <Lock size={13} />
-          <span className="jynx-logo">JYNX</span>
+          <JynxBubbleFace
+            mood={loginPhase !== "idle" ? loginPhase : (passwordFocused ? "typing" : "idle")}
+            statusText={loginPhase === "success" ? `Welcome, ${pendingWelcomeName}!` : loginPhase === "error" ? error : loginPhase === "thinking" ? "Thinking…" : undefined}
+            icon={<Lock size={13} />}
+          />
         </button>
       </div>
     );
@@ -476,8 +468,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       ) : (
         <div className="dev-fab-wrap jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
           <button type="button" ref={toolbarFab.sizeRef} className="dev-fab jynx-breathe" data-jynx-dock-zone="" onClick={toggleToolbarOpen} {...toolbarFab.dragHandlers} title="Expand the Jynx toolbar — draggable (also a drop target for a detached role picker)">
-            <JynxFace mood="idle" />
-            <span className="jynx-logo">JYNX</span>
+            <JynxBubbleFace mood="idle" />
           </button>
         </div>
       )}
@@ -527,7 +518,7 @@ const CSS = `
    (ראו .dev-fab בtheme.js). ברירת המחדל (idle) מהבהבת ועוקבת קלות אחרי
    העכבר (ראו JynxFace.jsx); שאר המצבים משנים צבע/תזוזה כדי להתאים לאותה
    שפת-צבע שכבר קיימת (ירוק=success, אדום=error) בלי לפתוח פלטה חדשה. */
-.jynx-face{ display:inline-flex; align-items:center; gap:3px; height:8px; }
+.jynx-face{ display:inline-flex; align-items:center; gap:3px; height:8px; animation:jynxBubblePartIn .2s ease; }
 .jynx-face-eye{
   width:3.5px; height:3.5px; border-radius:50%; background:currentColor; flex:none;
   transition:height .12s ease, transform .12s ease, background .15s ease;
@@ -555,27 +546,21 @@ const CSS = `
   50% { transform:scale(1.08); box-shadow:0 0 14px 4px color-mix(in srgb, var(--jynx) 45%, transparent); }
 }
 
-/* בועת-מחשבה צפה מעל הבועה/הפאנל — ראו JynxThought.jsx. הזנב (::after)
-   מוצמד לימין כי כל כרום ה-Jynx עוגן-ימין (right/bottom פיזי, לא RTL). */
-.jynx-thought{
-  position:absolute; bottom:100%; right:0; margin-bottom:8px; display:inline-flex; align-items:center; gap:6px;
-  background:var(--panel); border:1px solid var(--jynx); border-radius:14px; padding:6px 12px;
-  font-size:12px; font-weight:700; color:var(--text); white-space:nowrap; box-shadow:var(--shadow-md);
-  animation:jynxThoughtPop .22s cubic-bezier(.34,1.56,.64,1); pointer-events:none; z-index:1;
+/* הפרסונליות עברה לגור בתוך הבועה עצמה (JynxBubbleFace.jsx) — לא עוד
+   בועת-מחשבה צפה מעליה. כניסה עדינה לכל חלק (עיניים/מילת-הלוגו) בכל פעם
+   שהוא מופיע/מתחלף (מחזור idle, או מעבר לטקסט-סטטוס), כדי שהבועה תמיד
+   תיראה כמו משהו זז, לא תמונה קפואה. */
+@keyframes jynxBubblePartIn{ from{ opacity:0; transform:translateY(2px) scale(.85); } to{ opacity:1; transform:translateY(0) scale(1); } }
+/* טקסט-סטטוס (Waking up… / Thinking… / Welcome / הודעת שגיאה) שלוקח את
+   מקום מילת "JYNX" הרגילה בתוך אותה בועה — טקסט קריא רגיל, לא הדרגתיון
+   השקוף של .jynx-logo (שנועד למילה קצרה קבועה, לא למשפט שמשתנה). */
+.jynx-logo-status{
+  background:none; -webkit-background-clip:initial; background-clip:initial; color:var(--jynx);
+  animation:jynxBubblePartIn .2s cubic-bezier(.34,1.56,.64,1);
 }
-.jynx-thought::after{
-  content:""; position:absolute; top:100%; right:16px; width:0; height:0;
-  border:6px solid transparent; border-top-color:var(--jynx);
-}
-@keyframes jynxThoughtPop{ from{ opacity:0; transform:translateY(4px) scale(.85); } to{ opacity:1; transform:translateY(0) scale(1); } }
-.jynx-thought-icon{ font-size:14px; }
-.jynx-thought-thinking .jynx-thought-icon{ display:inline-block; animation:jynxThoughtBounce .6s ease-in-out infinite; }
-@keyframes jynxThoughtBounce{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
-.jynx-thought-success{ border-color:var(--green); }
-.jynx-thought-success::after{ border-top-color:var(--green); }
-.jynx-thought-error{ border-color:var(--red); animation:jynxThoughtPop .22s cubic-bezier(.34,1.56,.64,1), jynxThoughtShake .4s ease .22s; }
-.jynx-thought-error::after{ border-top-color:var(--red); }
-@keyframes jynxThoughtShake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-3px); } 75%{ transform:translateX(3px); } }
+.jynx-logo-status-success{ color:var(--green); }
+.jynx-logo-status-error{ color:var(--red); animation:jynxBubblePartIn .2s cubic-bezier(.34,1.56,.64,1), jynxBubbleShake .4s ease .2s; }
+@keyframes jynxBubbleShake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-2px); } 75%{ transform:translateX(2px); } }
 
 .dev-fab-toolbar{
   position:fixed; z-index:79; display:flex; align-items:center; gap:6px;
