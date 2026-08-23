@@ -4,15 +4,29 @@ import { X, ShieldCheck, LogIn } from "lucide-react";
 import { adminVerify, fetchAdminMe, fetchAnnotationSettings, setAutoResolveOnPrOpened } from "./devApi.js";
 import { setAuthErrorListener } from "../api-client/http.js";
 import DevAdminUsersScreen from "./DevAdminUsersScreen.jsx";
-import DevAnnotationsScreen from "./DevAnnotationsScreen.jsx";
-import JynxFeedbackScreen from "./JynxFeedbackScreen.jsx";
+import DevLogsScreen from "./DevLogsScreen.jsx";
+import { JynxMenuSettingsFields } from "./JynxSettings.jsx";
 
 /* ================================================================== */
 /* גישה למנהל בלבד (את/ה, לא משתמשי-פיתוח רגילים) — סוד יחיד (ADMIN_    */
-/* SECRET), לא חשבון-פר-אדם, בכוונה (ראו plan doc). מציג שתי לשוניות:    */
-/* ניהול משתמשי הפיתוח, וסקירת הערות ה-QA שנאספו מה-overlay.             */
+/* SECRET), לא חשבון-פר-אדם, בכוונה (ראו plan doc).                      */
+/*                                                                        */
+/* Became a general "Settings" hub on 2026-08-23 (work item                */
+/* jynx-mt558crxb02w) — previously this also housed the interactive QA-    */
+/* comment / Jynx-feedback management UI (resolve/edit/delete/reply),      */
+/* duplicating what CommentsPanel.jsx already did per-screen. That's all    */
+/* moved to CommentsPanel now (it grew a "this page / all pages" toggle so   */
+/* it can be the single place comment management happens), so what's left    */
+/* here is: Dev Users (roster CRUD, unchanged), Menu (the toolbar's own      */
+/* orientation/icon-size/reorder controls, folded in from JynxSettings.jsx   */
+/* so an admin already in this panel doesn't have to close it to reach       */
+/* them — the standalone gear-icon entry point stays too, see                */
+/* JynxMenuSettingsFields's own comment for why), and Logs (a read-only,     */
+/* every-screen-at-once audit trail of actionStatus/PR links — the same      */
+/* data the old two tabs showed, minus the now-redundant management          */
+/* controls).                                                                */
 /* ================================================================== */
-export default function DevAdminPanel({ onClose, onVerified }) {
+export default function DevAdminPanel({ onClose, onVerified, menuSettings }) {
   const [checking, setChecking] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const [secret, setSecret] = useState("");
@@ -110,7 +124,7 @@ export default function DevAdminPanel({ onClose, onVerified }) {
           <div className="dev-admin-gate">
             <ShieldCheck size={24} />
             <h3>Admin access</h3>
-            <p>The ADMIN_SECRET is required to manage dev users and review QA comments.</p>
+            <p>The ADMIN_SECRET is required to manage dev users and view the universal activity log.</p>
             <input
               type="password" autoFocus value={secret} placeholder="Admin secret"
               onChange={(e) => setSecret(e.target.value)}
@@ -137,7 +151,7 @@ export default function DevAdminPanel({ onClose, onVerified }) {
                 {reAuthError && <span className="dev-admin-reauth-error">{reAuthError}</span>}
               </div>
             )}
-            {(tab === "annotations" || tab === "jynx") && (
+            {tab === "logs" && (
               <div className="dev-admin-autoresolve-row">
                 <span>
                   <b>{autoResolve ? "Auto" : "Manual"}</b> mark as Done — {autoResolve
@@ -157,12 +171,18 @@ export default function DevAdminPanel({ onClose, onVerified }) {
             )}
             <div className="pill-tabs" style={{ marginBottom: 14 }}>
               <button type="button" className={"pill-tab" + (tab === "users" ? " active" : "")} onClick={() => setTab("users")}>Dev Users</button>
-              <button type="button" className={"pill-tab" + (tab === "annotations" ? " active" : "")} onClick={() => setTab("annotations")}>Comments</button>
-              <button type="button" className={"pill-tab" + (tab === "jynx" ? " active jynx-tab-active" : "")} onClick={() => setTab("jynx")}>🔮 Jynx</button>
+              <button type="button" className={"pill-tab" + (tab === "menu" ? " active" : "")} onClick={() => setTab("menu")}>Menu</button>
+              <button type="button" className={"pill-tab" + (tab === "logs" ? " active jynx-tab-active" : "")} onClick={() => setTab("logs")}>Logs</button>
             </div>
             {tab === "users" && <DevAdminUsersScreen />}
-            {tab === "annotations" && <DevAnnotationsScreen />}
-            {tab === "jynx" && <JynxFeedbackScreen />}
+            {tab === "menu" && (
+              <div className="dev-admin-tab">
+                {menuSettings ? <JynxMenuSettingsFields {...menuSettings} /> : (
+                  <p className="dev-admin-hint">Menu settings aren't available right now — open the ⚙ (gear) icon on the toolbar instead.</p>
+                )}
+              </div>
+            )}
+            {tab === "logs" && <DevLogsScreen />}
           </>
         )}
       </div>
@@ -430,4 +450,35 @@ const CSS = `
   align-self:flex-end; background:var(--panel-raised); border:1px solid var(--line); border-radius:8px;
   padding:6px 14px; font-size:12px; color:var(--text); cursor:pointer;
 }
+
+/* "Menu" tab — same classes JynxSettings.jsx's own <style> defines for
+   JynxMenuSettingsFields, duplicated rather than shared per this codebase's
+   "every screen owns a self-contained <style> block" rule (FORCLAUDE.md) —
+   JynxMenuSettingsFields itself carries no <style> tag, only its two host
+   components (JynxSettings.jsx and this one) do. */
+.jynx-settings-section{ display:flex; flex-direction:column; gap:7px; }
+.jynx-settings-label{ font-size:11px; color:var(--text-dim); font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+.jynx-settings-label-row{ display:flex; align-items:center; justify-content:space-between; }
+.jynx-settings-order-actions{ display:flex; gap:4px; }
+.jynx-settings-order-actions button{
+  width:22px; height:22px; border-radius:6px; border:1px solid var(--line); background:var(--panel-raised);
+  color:var(--text-dim); display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.jynx-settings-order-actions button:hover:not(:disabled){ color:var(--jynx); border-color:var(--jynx); }
+.jynx-settings-order-actions button:disabled{ opacity:.35; cursor:not-allowed; }
+.jynx-settings-orientation-row{ display:flex; gap:6px; }
+.jynx-settings-orientation-row button{
+  flex:1; border:1px solid var(--line); background:var(--panel-raised); color:var(--text-dim); border-radius:8px;
+  padding:7px 0; font-size:12px; font-weight:700; cursor:pointer;
+}
+.jynx-settings-orientation-row button.active{ background:var(--jynx); border-color:var(--jynx); color:#fff; }
+.jynx-settings-slider{ width:100%; accent-color:var(--jynx); }
+.jynx-settings-order-list{ display:flex; flex-direction:column; gap:4px; }
+.jynx-settings-order-item{
+  display:flex; align-items:center; gap:7px; background:var(--panel-raised); border:1px solid var(--line);
+  border-radius:8px; padding:7px 9px; font-size:12px; color:var(--text); cursor:grab;
+}
+.jynx-settings-order-item:active{ cursor:grabbing; }
+.jynx-settings-order-item.dragging{ opacity:.4; }
+.jynx-settings-order-grip{ color:var(--text-dim); flex:none; }
 `;

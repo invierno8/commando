@@ -33,9 +33,11 @@ export async function submitAnnotation(data) {
   return http.post(`/dev/annotations`, data);
 }
 // כל משתמש-פיתוח מחובר (לא רק מנהל) — כל ההערות (כולל שטופלו) על מסך נתון,
-// עבור CommentsPanel.jsx.
+// עבור CommentsPanel.jsx. route הוא אופציונלי — בלעדיו (מצב "All pages")
+// השרת כבר מחזיר הכל בלי סינון (ראו data/routes/annotations.js's
+// `!route || a.route === route`), אז פשוט לא שולחים את הפרמטר.
 export async function fetchDevAnnotations(route) {
-  return http.get(`/dev/annotations?route=${encodeURIComponent(route)}`);
+  return http.get(route ? `/dev/annotations?route=${encodeURIComponent(route)}` : `/dev/annotations`);
 }
 export async function replyToAnnotation(id, text) {
   return http.post(`/dev/annotations/${id}/reply`, { text });

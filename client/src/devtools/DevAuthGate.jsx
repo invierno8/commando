@@ -487,7 +487,25 @@ export default function DevAuthGate({ route, devFabProps }) {
         onDock={dockRole}
         dockAnchorPos={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom + 40 }}
       />
-      {adminOpen && <DevAdminPanel onClose={() => setAdminOpen(false)} onVerified={() => setIsAdmin(true)} />}
+      {adminOpen && (
+        <DevAdminPanel
+          onClose={() => setAdminOpen(false)}
+          onVerified={() => setIsAdmin(true)}
+          menuSettings={{
+            orientation: toolbarOrientation,
+            onSetOrientation: setOrientation,
+            order: toolbarOrder,
+            defaultOrder: DEFAULT_TOOLBAR_ORDER,
+            availableIds: Object.keys(TOOLBAR_ITEM_NODES).filter((id) => TOOLBAR_ITEM_NODES[id]),
+            onReorder: persistToolbarOrder,
+            onReset: resetToolbarOrder,
+            onUndo: undoToolbarOrder,
+            canUndo: !!undoOrder,
+            iconScale,
+            onSetIconScale: setIconScale,
+          }}
+        />
+      )}
       {settingsOpen && (
         <JynxSettings
           onClose={() => setSettingsOpen(false)}
