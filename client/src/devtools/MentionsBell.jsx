@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Bell, X } from "lucide-react";
 import { fetchMentions, markMentionRead } from "./devApi.js";
 import { useKeepInViewport } from "./useKeepInViewport.js";
+import { openUserProfile } from "./openUserProfile.js";
 
 /* ================================================================== */
 /* LEGO BLOCK — "you were @mentioned" bell, lives in the Jynx toolbar     */
@@ -66,7 +67,12 @@ export default function MentionsBell() {
             unread.map((m) => (
               <div key={m.id} className="mentions-bell-item">
                 <div className="mentions-bell-item-head">
-                  <span className="mentions-bell-item-from">{m.mentionedBy}</span>
+                  <span
+                    className="mentions-bell-item-from jynx-author-link" role="button" tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); openUserProfile(m.mentionedById); }}
+                  >
+                    {m.mentionedBy}
+                  </span>
                   <span className="mentions-bell-item-route">{m.route}</span>
                   <button type="button" className="mentions-bell-dismiss" onClick={() => dismiss(m.id)} title="Mark as read">
                     <X size={11} />
@@ -98,7 +104,7 @@ const CSS = `
 .mentions-bell-item{ border-bottom:1px solid var(--line); padding:6px 6px 8px; }
 .mentions-bell-item:last-child{ border-bottom:none; padding-bottom:6px; }
 .mentions-bell-item-head{ display:flex; align-items:center; gap:6px; }
-.mentions-bell-item-from{ font-weight:700; font-size:11.5px; color:var(--jynx); }
+.mentions-bell-item-from{ font-weight:700; font-size:11.5px; color:var(--jynx); cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
 .mentions-bell-item-route{ font-family:var(--font-mono); font-size:9.5px; color:var(--text-dim); text-transform:uppercase; flex:1; }
 .mentions-bell-dismiss{ background:none; border:none; color:var(--text-dim); cursor:pointer; display:flex; flex:none; }
 .mentions-bell-dismiss:hover{ color:var(--jynx); }

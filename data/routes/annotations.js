@@ -234,7 +234,7 @@ router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req,
     if (u.id === req.devUser.id) continue; // אל תתריע למי שמזכיר את עצמו
     await addMention(u.id, {
       kind: "app", noteId: found.id, replyId: reply.id, route: found.route, targetLabel: found.targetLabel,
-      mentionedBy: req.devUser.name, snippet: req.body.text.slice(0, 200),
+      mentionedBy: req.devUser.name, mentionedById: req.devUser.id, snippet: req.body.text.slice(0, 200),
     });
   }
   if (jynxTagged) await queueFollowUp(updated, req.body.text, req.devUser.name);

@@ -33,9 +33,11 @@ export async function submitAnnotation(data) {
   return http.post(`/dev/annotations`, data);
 }
 // כל משתמש-פיתוח מחובר (לא רק מנהל) — כל ההערות (כולל שטופלו) על מסך נתון,
-// עבור CommentsPanel.jsx.
+// עבור CommentsPanel.jsx. route הוא אופציונלי — בלעדיו (מצב "All pages")
+// השרת כבר מחזיר הכל בלי סינון (ראו data/routes/annotations.js's
+// `!route || a.route === route`), אז פשוט לא שולחים את הפרמטר.
 export async function fetchDevAnnotations(route) {
-  return http.get(`/dev/annotations?route=${encodeURIComponent(route)}`);
+  return http.get(route ? `/dev/annotations?route=${encodeURIComponent(route)}` : `/dev/annotations`);
 }
 export async function replyToAnnotation(id, text) {
   return http.post(`/dev/annotations/${id}/reply`, { text });
@@ -148,4 +150,16 @@ export async function fetchAnnotationSettings() {
 }
 export async function setAutoResolveOnPrOpened(autoResolveOnPrOpened) {
   return http.patch(`/admin/annotation-settings`, { autoResolveOnPrOpened });
+}
+
+// {id, name} for every ACTIVE dev user — any logged-in dev user, not just
+// admin (unlike fetchDevUsers() above, which is the admin roster-management
+// list with role/active/online/canJynxComment). Backs @mention autocomplete
+// (the full roster, not just names already seen on screen) and resolving a
+// typed "@Name" back to an id for UserProfileCard.jsx.
+export async function fetchDevUserDirectory() {
+  return http.get(`/dev/users`);
+}
+export async function fetchUserProfile(id) {
+  return http.get(`/dev/users/${id}/profile`);
 }

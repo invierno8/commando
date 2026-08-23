@@ -30,6 +30,7 @@ import annotationsRouter, { hydrateAnnotationsFromGithub } from "./routes/annota
 import jynxFeedbackRouter, { hydrateJynxFeedbackFromGithub } from "./routes/jynx-feedback.js";
 import mentionsRouter from "./routes/mentions.js";
 import annotationSettingsRouter from "./routes/annotation-settings.js";
+import userProfileRouter from "./routes/user-profile.js";
 import { hydrateDevUsersFromGithub } from "./lib/devUsers.js";
 import { hydrateMockDataFromGithub } from "./lib/jsonStore.js";
 import { hydrateAnnotationSettingsFromGithub } from "./lib/annotationSettings.js";
@@ -67,6 +68,7 @@ app.use("/api", annotationsRouter);
 app.use("/api", jynxFeedbackRouter);
 app.use("/api", mentionsRouter);
 app.use("/api", annotationSettingsRouter);
+app.use("/api", userProfileRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
