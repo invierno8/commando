@@ -7,9 +7,9 @@
   "targetLabel": "dev-fab",
   "secondaryTargets": [],
   "comment": "im ok with jynx having the thinking bubble but i mostly ment the jynx bubbly it self inside animation make it have a face or text changing ect ect inside the bubble when defult state is this jynx logo but any other state make it move inside but keep some elements of the dream bubble it does and the massages like hi or welcome etc... like if im writing in a comment and the jynx menu is collaps to the bubble have it react to me typing or sending the comment or choosing on the screen and for the dream bubble and over all jynx design please make if flawless top tier coders design animations reactions and everything take it as far as possible like jynx is a millions dollar company product",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:35:00.000Z",
+  "resolutionNote": "Partially addressed in commit c0b8727: the bubble now has a small animated face (blinking, subtle cursor-tracking, mood tied to waking/thinking/typing/success/error). Scoped down from the full ask — it does not yet react to typing/sending in the comments panel while the toolbar is collapsed to the bubble (that needs state lifted out of CommentsPanel.jsx into DevAuthGate.jsx). Reopen with more specifics if the \"millions dollar product\" bar needs more than this.",
   "actionStatus": "none",
   "actionRequestedAt": null,
   "actionPrUrl": null,
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }

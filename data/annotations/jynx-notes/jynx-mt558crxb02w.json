@@ -12,8 +12,8 @@
   "resolved": false,
   "resolvedAt": null,
   "resolutionNote": null,
-  "actionStatus": "none",
-  "actionRequestedAt": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-23T05:36:00.000Z",
   "actionPrUrl": null,
   "actionLog": null,
   "replies": [],
@@ -24,5 +24,6 @@
     "❤️": [
       "admin"
     ]
-  }
+  },
+  "actionRequestedBy": "Admin"
 }
