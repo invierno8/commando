@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt55hf3yezvk",
+  "authorId": null,
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T01:50:39.550Z",
+  "route": "dashboard",
+  "targetLabel": "dev-admin-thread-item",
+  "secondaryTargets": [],
+  "comment": "when mentionig make it like in whatsapp with a list to choose from and a fix to the correct user when typing and make the mention blue and a hyper link to user profile",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-23T01:50:39.550Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
