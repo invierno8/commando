@@ -12,6 +12,7 @@ import MockDataToggle from "./MockDataToggle.jsx";
 /* DevAuthGate.jsx הוא מי שמחליט מתי לרנדר את הרכיב הזה בכלל.             */
 /* ================================================================== */
 export default function DevFab({
+  docked, onDock, dockAnchorPos,
   open, setOpen,
   role, chooseRole,
   brigades, brigadeId, chooseBrigade,
@@ -21,7 +22,20 @@ export default function DevFab({
   officerUnit, setOfficerUnit,
   isTeamLead,
 }) {
-  const roleFab = useDraggableFab("jynx-role-fab-pos");
+  // כשלא מעוגן (docked===false) ומשתמש שחרר גרירה מעל יעד-עגינה (סרגל ה-Jynx
+  // או בועת ה-Jynx המכווצת, שניהם מסומנים ב-data-jynx-dock-zone ב-
+  // DevAuthGate.jsx) — מעגן בחזרה במקום להישאר בועה עצמאית. בזמן שמעוגן זה
+  // תמיד no-op (הכפתור העצמאי ממילא לא מרונדר, ראו למטה).
+  function handleRoleDragEnd(pos, el) {
+    if (docked || !el) return;
+    const zone = document.querySelector("[data-jynx-dock-zone]");
+    if (!zone) return;
+    const a = el.getBoundingClientRect();
+    const b = zone.getBoundingClientRect();
+    const overlap = a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+    if (overlap) onDock?.();
+  }
+  const roleFab = useDraggableFab("jynx-role-fab-pos", undefined, "right", handleRoleDragEnd);
   function onTriggerClick() {
     if (roleFab.consumeWasDragged()) return;
     setOpen((v) => !v);
@@ -33,10 +47,14 @@ export default function DevFab({
   // הגובה בפועל, גם בלי לגעת בכפתור עצמו.
   const rolePanelRef = useRef(null);
   useKeepInViewport(rolePanelRef, open, 8, [role, memberIdentityMode]);
+  // מעוגן וסגור — כלום לרנדר: הכפתור המפעיל הוא "role" בסרגל עצמו
+  // (DevAuthGate.jsx), לא כפתור עצמאי משלנו כשמעוגן.
+  if (docked && !open) return null;
+  const anchorPos = docked ? dockAnchorPos : roleFab.pos;
   return (
     <div
       className="dev-fab-wrap jynx-chrome jynx-ui"
-      style={{ right: roleFab.pos.right, bottom: roleFab.pos.bottom }}
+      style={{ right: anchorPos.right, bottom: anchorPos.bottom }}
       tabIndex={-1}
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false); }}
     >
@@ -143,10 +161,12 @@ export default function DevFab({
           )}
         </div>
       )}
-      <button type="button" ref={roleFab.sizeRef} className="dev-fab" onClick={onTriggerClick} {...roleFab.dragHandlers} title="Role & brigade picker — draggable">
-        <Users size={14} />
-        <ChevronLeft size={14} className={"dev-fab-arrow" + (open ? " open" : "")} />
-      </button>
+      {!docked && (
+        <button type="button" ref={roleFab.sizeRef} className="dev-fab" onClick={onTriggerClick} {...roleFab.dragHandlers} title="Role & brigade picker — drag onto the Jynx menu to dock it back in">
+          <Users size={14} />
+          <ChevronLeft size={14} className={"dev-fab-arrow" + (open ? " open" : "")} />
+        </button>
+      )}
     </div>
   );
 }

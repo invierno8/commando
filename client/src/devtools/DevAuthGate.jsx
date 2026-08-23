@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, X, Loader2, Target, RotateCcw, Pencil } from "lucide-react";
+import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, X, Loader2, Target, RotateCcw, Pencil, Users } from "lucide-react";
 import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
@@ -14,9 +14,15 @@ import { useKeepInViewport } from "./useKeepInViewport.js";
 // יציאה/קיפול — אלה קבועים בכוונה, ראו ה-JSX). "markers" תמיד נשמר ברשימה
 // המלאה גם למשתמש לא-מנהל, כדי שהשוואת orderChanged תישאר יציבה בלי קשר
 // למי שמחובר כרגע — הסינון לפי isAdmin קורה רק ברינדור, לא כאן.
-const DEFAULT_TOOLBAR_ORDER = ["overlay", "draw", "comments", "markers", "admin", "mentions"];
+const DEFAULT_TOOLBAR_ORDER = ["role", "overlay", "draw", "comments", "markers", "admin", "mentions"];
 const TOOLBAR_ORDER_KEY = "jynx-toolbar-item-order";
 const TOOLBAR_ORIENTATION_KEY = "jynx-toolbar-orientation";
+// האם בורר התפקיד/חטיבה (DevFab.jsx) "מעוגן" בתוך תפריט ה-Jynx (ברירת
+// המחדל, ראו הבקשה המקורית) או "מנותק" — בועה צפה עצמאית משלו כמו שהיה
+// לפני זה. גרירה של פריט ה-role מחוץ לסרגל מנתקת; גרירת הבועה המנותקת
+// בחזרה לתוך הסרגל (או לבועת-Jynx המכווצת) מעגנת מחדש — ראו
+// handleRoleItemDragEnd למטה ו-DevFab.jsx's handleRoleDragEnd.
+const ROLE_DOCKED_KEY = "jynx-role-docked";
 
 function loadToolbarOrder() {
   try {
@@ -69,6 +75,23 @@ export default function DevAuthGate({ route, devFabProps }) {
   );
   const [toolbarOrder, setToolbarOrder] = useState(loadToolbarOrder);
   const orderChanged = JSON.stringify(toolbarOrder) !== JSON.stringify(DEFAULT_TOOLBAR_ORDER);
+  const [roleDocked, setRoleDocked] = useState(
+    () => localStorage.getItem(ROLE_DOCKED_KEY) !== "false"
+  );
+  function dockRole() {
+    setRoleDocked(true);
+    try { localStorage.setItem(ROLE_DOCKED_KEY, "true"); } catch { /* ignore */ }
+  }
+  function undockRole() {
+    setRoleDocked(false);
+    try { localStorage.setItem(ROLE_DOCKED_KEY, "false"); } catch { /* ignore */ }
+  }
+  // dropEffect נשאר "none" רק כשהגרירה שוחררה מחוץ לכל יעד שקורא ל-
+  // preventDefault ב-onDragOver שלו (ראו onDragOver על מכולת הסרגל למטה) —
+  // בדיוק ה"שוחרר מחוץ לתפריט" שמבדיל ניתוק מסידור-מחדש רגיל בתוך הסרגל.
+  function handleRoleItemDragEnd(e) {
+    if (e.dataTransfer.dropEffect === "none") undockRole();
+  }
   // ידוע מראש (בלי לפתוח את פאנל הניהול) כדי ש-DevOverlay יוכל לסמן
   // אוטומטית "פעולה" על הערות שהמנהל עצמו כותב, ולהציג סימוני מנהל קבועים
   // על המסך — גם מיד אחרי רענון דף, כל עוד עוגיית המנהל עדיין תקפה.
@@ -183,6 +206,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       const n = Number(e.key);
       if (!Number.isInteger(n) || n < 1) return;
       const actions = {
+        role: roleDocked ? () => devFabProps.setOpen((v) => !v) : null,
         overlay: () => setOverlayOn((v) => !v),
         draw: () => setDrawMode((v) => !v),
         comments: () => setCommentsOn((v) => !v),
@@ -195,7 +219,7 @@ export default function DevAuthGate({ route, devFabProps }) {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [devName, toolbarOpen, toolbarOrder, isAdmin]);
+  }, [devName, toolbarOpen, toolbarOrder, isAdmin, roleDocked, devFabProps.setOpen]);
 
   async function login() {
     setError("");
@@ -300,6 +324,11 @@ export default function DevAuthGate({ route, devFabProps }) {
   // למעלה. "markers" תמיד ברשימה (גם לא-מנהל) כדי שסדר-השמירה יישאר יציב;
   // מוסר כאן ברינדור בלבד דרך .filter(Boolean).
   const TOOLBAR_ITEM_NODES = {
+    role: roleDocked ? (
+      <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-role-btn" onClick={() => devFabProps.setOpen((v) => !v)} title="Role & brigade simulator — drag this out of the menu to detach it">
+        <Users size={13} />
+      </button>
+    ) : null,
     overlay: (
       <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-overlay-toggle" onClick={() => setOverlayOn((v) => !v)} title={overlayOn ? "Turn off hover overlay" : "Turn on hover overlay"}>
         {overlayOn ? <Eye size={13} /> : <EyeOff size={13} />}
@@ -329,7 +358,7 @@ export default function DevAuthGate({ route, devFabProps }) {
   };
   // "mentions" בכוונה לא כאן — פותח/סוגר dropdown פנימי משלו, אין לו toggle
   // חיצוני חשוף כרגע להפעלה מהמקלדת (ראו useEffect למעלה).
-  const KEYABLE_IDS = ["overlay", "draw", "comments", "markers", "admin"];
+  const KEYABLE_IDS = ["role", "overlay", "draw", "comments", "markers", "admin"];
   let keyableIndex = 0;
 
   return (
@@ -342,6 +371,8 @@ export default function DevAuthGate({ route, devFabProps }) {
           ref={toolbarFab.sizeRef}
           className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "")}
           style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}
+          data-jynx-dock-zone=""
+          onDragOver={(e) => e.preventDefault()}
           {...toolbarFab.dragHandlers}
         >
           <button type="button" className="dev-toolbar-grip" onClick={toggleOrientation} title={`Switch to ${toolbarOrientation === "horizontal" ? "vertical" : "horizontal"} menu (drag anywhere else on the bar to move it)`}>
@@ -359,7 +390,8 @@ export default function DevAuthGate({ route, devFabProps }) {
               onDragStart={(e) => handleItemDragStart(e, id)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => handleItemDrop(e, id)}
-              title={isKeyable ? `Drag to reorder — press ${keyNum} to trigger` : "Drag to reorder"}
+              onDragEnd={id === "role" ? handleRoleItemDragEnd : undefined}
+              title={id === "role" ? "Drag out of the menu to detach the role/brigade picker" : (isKeyable ? `Drag to reorder — press ${keyNum} to trigger` : "Drag to reorder")}
             >
               {keyNum && <span className="jynx-toolbar-key-badge">{keyNum}</span>}
               {TOOLBAR_ITEM_NODES[id]}
@@ -381,12 +413,17 @@ export default function DevAuthGate({ route, devFabProps }) {
         </div>
       ) : (
         <div className="dev-fab-wrap jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
-          <button type="button" ref={toolbarFab.sizeRef} className="dev-fab jynx-breathe" onClick={toggleToolbarOpen} {...toolbarFab.dragHandlers} title="Expand the Jynx toolbar — draggable">
+          <button type="button" ref={toolbarFab.sizeRef} className="dev-fab jynx-breathe" data-jynx-dock-zone="" onClick={toggleToolbarOpen} {...toolbarFab.dragHandlers} title="Expand the Jynx toolbar — draggable (also a drop target for a detached role picker)">
             <span className="jynx-logo">JYNX</span>
           </button>
         </div>
       )}
-      <DevFab {...devFabProps} />
+      <DevFab
+        {...devFabProps}
+        docked={roleDocked}
+        onDock={dockRole}
+        dockAnchorPos={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom + 40 }}
+      />
       {adminOpen && <DevAdminPanel onClose={() => setAdminOpen(false)} onVerified={() => setIsAdmin(true)} />}
     </>
   );
