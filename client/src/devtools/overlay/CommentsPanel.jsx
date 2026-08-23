@@ -743,13 +743,25 @@ const CSS_TEXT = `
 .comments-sidebar-title{ display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--jynx); flex:1; }
 .comments-sidebar-collapse{ background:none; border:none; color:var(--text-dim); cursor:pointer; display:flex; }
 .comments-sidebar-collapse:hover{ color:var(--jynx); }
-.comments-sidebar-filters{ padding:8px 10px 0; display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.comments-mine-toggle{
-  background:none; border:1px solid var(--line); color:var(--text-dim); border-radius:14px; padding:3px 9px;
-  font-size:10.5px; font-weight:700; cursor:pointer;
+.comments-sidebar-filters{ padding:7px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+/* pill-tabs/pill-tab (theme.js) are the shared primitive, sized for
+   full-width page tab rows (padding:9px 18px, font-size:13.5px) — inside
+   this 280px-wide floating sidebar that read as oversized and mismatched
+   next to the panel's own compact controls (.comments-mine-toggle etc.),
+   which is what made this row read as unpolished. Scoped override here
+   rather than touching theme.js itself, per the "duplicate, don't share
+   across files" rule — this panel already owns its CSS_TEXT block. */
+.comments-sidebar-filters .pill-tabs{ gap:5px; }
+.comments-sidebar-filters .pill-tab{
+  padding:4px 11px; font-size:11px; border-radius:8px; border-width:1px;
 }
+.comments-mine-toggle{
+  background:none; border:1px solid var(--line); color:var(--text-dim); border-radius:8px; padding:4px 11px;
+  font-size:11px; font-weight:700; cursor:pointer; transition:border-color .15s ease, color .15s ease, background .15s ease;
+}
+.comments-mine-toggle:hover{ color:var(--text); }
 .comments-mine-toggle.active{ background:var(--jynx); border-color:var(--jynx); color:#fff; }
-.comments-sidebar-scope-row{ padding-top:0; }
+.comments-sidebar-scope-row{ padding-top:0; padding-bottom:8px; border-bottom:1px solid var(--line); }
 .comments-sidebar-item-other-page{ cursor:default; }
 .comments-sidebar-item-other-page:hover{ background:none; }
 .comments-route-badge{
