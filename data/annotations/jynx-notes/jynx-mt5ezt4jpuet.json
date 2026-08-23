@@ -1,0 +1,26 @@
+{
+  "id": "jynx-mt5ezt4jpuet",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T06:16:54.068Z",
+  "route": "dashboard",
+  "targetLabel": "comments-sidebar-filters",
+  "secondaryTargets": [
+    "pill-tabs"
+  ],
+  "comment": "this and [→ pill-tabs] are just ugly and not proffetional intuative or user friendly, make sure all menues are up to standards",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-23T06:16:54.068Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
