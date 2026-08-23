@@ -14,7 +14,15 @@
   "actionRequestedAt": null,
   "actionPrUrl": null,
   "actionLog": null,
-  "replies": [],
+  "replies": [
+    {
+      "id": "rep-mt55f29osygy",
+      "authorId": null,
+      "authorName": "Admin",
+      "text": "@admin",
+      "createdAt": "2026-08-23T01:48:49.596Z"
+    }
+  ],
   "reactions": {
     "👍": [],
     "😄": [],
