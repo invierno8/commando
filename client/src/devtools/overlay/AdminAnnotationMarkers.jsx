@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Zap, Loader2, GitPullRequest, CheckCircle2, XCircle } from "lucide-react";
 import { fetchAnnotations, requestAnnotationAction } from "../devApi.js";
 import { useKeepInViewport } from "../useKeepInViewport.js";
+import { openUserProfile } from "../openUserProfile.js";
 import DrawingOverlay from "./DrawingOverlay.jsx";
 
 /* ================================================================== */
@@ -211,7 +212,12 @@ function AdminMarkerDot({ label, list, rect, open, onToggle, onAction }) {
                   </div>
                   <p className="admin-marker-detail-comment">{a.comment}</p>
                   {a.drawing && <span className="admin-marker-detail-drawing">✏️ has a drawing — hover the dot to see it</span>}
-                  <span className="admin-marker-detail-meta">{a.authorName}</span>
+                  <span
+                    className="admin-marker-detail-meta jynx-author-link" role="button" tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); openUserProfile(a.authorId); }}
+                  >
+                    {a.authorName}
+                  </span>
                   {!hasAction && !a.resolved && (
                     <button type="button" className="admin-marker-action-btn" onClick={() => onAction(a.id)} title="Run the automated agent on this comment">
                       <Zap size={11} /> Action
@@ -290,6 +296,8 @@ const CSS_TEXT = `
 .admin-marker-detail-comment{ margin:0; font-size:12px; color:var(--text); }
 .admin-marker-detail-drawing{ font-size:10.5px; color:var(--jynx); }
 .admin-marker-detail-meta{ font-size:10px; color:var(--text-dim); }
+.jynx-author-link{ cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+.jynx-author-link:hover{ color:var(--jynx); }
 .admin-marker-action-btn{
   align-self:flex-start; display:inline-flex; align-items:center; gap:4px; background:var(--jynx); color:#fff;
   border:none; border-radius:12px; padding:3px 9px; font-size:10.5px; font-weight:700; cursor:pointer;

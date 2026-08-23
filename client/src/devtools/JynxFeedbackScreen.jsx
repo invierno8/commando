@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Download, Loader2, GitPullRequest, CheckCircle2, XCircle, MessageCircle, Undo2, Pencil } from "lucide-react";
 import { fetchJynxFeedback, resolveJynxFeedback, exportJynxFeedbackMarkdown, replyToJynxFeedback, editJynxFeedback } from "./devApi.js";
-import { parseMentionQuery, matchMentionCandidates, insertMentionText, renderWithMentions } from "./mentionUtils.jsx";
+import { parseMentionQuery, matchMentionCandidates, insertMentionText, renderWithMentions, useDevUserDirectory } from "./mentionUtils.jsx";
+import { openUserProfile } from "./openUserProfile.js";
 
 const ACTION_STATUS_LABEL = { queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed" };
 const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: GitPullRequest, done: CheckCircle2, failed: XCircle };
@@ -14,6 +15,7 @@ const ACTION_STATUS_TONE = { queued: "blue", in_progress: "blue", pr_opened: "gr
    רק סקירה (כולל מי כתב מה, בשדה "meta" למטה), עריכת-טקסט, סימון-כטופל
    וייצוא — כל אלה עדיין מנהל-בלבד. */
 export default function JynxFeedbackScreen() {
+  const userDirectory = useDevUserDirectory();
   const [items, setItems] = useState(null);
   const [filter, setFilter] = useState("open");
   const [exported, setExported] = useState(null);
@@ -79,9 +81,10 @@ export default function JynxFeedbackScreen() {
   // מועמדי @mention — ראו ההערה המקבילה ב-DevAnnotationsScreen.jsx.
   const mentionCandidates = useMemo(() => {
     const names = new Set(["jynx"]);
+    userDirectory.forEach((u) => names.add(u.name));
     (items || []).forEach((a) => { if (a.authorName) names.add(a.authorName); });
     return [...names];
-  }, [items]);
+  }, [items, userDirectory]);
   const activeMentionQuery = useMemo(() => parseMentionQuery(replyText), [replyText]);
   const mentionMatches = useMemo(
     () => matchMentionCandidates(activeMentionQuery, mentionCandidates),
@@ -145,7 +148,15 @@ export default function JynxFeedbackScreen() {
                     </div>
                   )}
                   <span className="dev-admin-annotation-meta">
-                    {a.authorName ? `${a.authorName} · ` : ""}{new Date(a.createdAt).toLocaleString("en-US")}
+                    {a.authorName ? (
+                      <>
+                        <span className="jynx-author-link" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openUserProfile(a.authorId); }}>
+                          {a.authorName}
+                        </span>
+                        {" · "}
+                      </>
+                    ) : ""}
+                    {new Date(a.createdAt).toLocaleString("en-US")}
                   </span>
                   {a.actionStatus && a.actionStatus !== "none" && (
                     <span className={`pill pill-${ACTION_STATUS_TONE[a.actionStatus] || "neutral"} dev-admin-action-pill`}>
@@ -175,7 +186,9 @@ export default function JynxFeedbackScreen() {
                     <div className="dev-admin-thread">
                       {replies.map((r) => (
                         <div key={r.id} className="dev-admin-thread-item">
-                          <b>{r.authorName}:</b> {renderWithMentions(r.text, { mentionClassName: "dev-admin-mention", jynxClassName: "dev-admin-mention-jynx" })}
+                          <b className="jynx-author-link" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openUserProfile(r.authorId); }}>
+                            {r.authorName}:
+                          </b> {renderWithMentions(r.text, { mentionClassName: "dev-admin-mention", jynxClassName: "dev-admin-mention-jynx", directory: userDirectory })}
                           <span className="dev-admin-thread-time">{new Date(r.createdAt).toLocaleString("en-US")}</span>
                         </div>
                       ))}

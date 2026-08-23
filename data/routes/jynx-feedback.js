@@ -201,7 +201,7 @@ router.post("/admin/jynx-feedback/:id/reply", requireAdmin, asyncRoute(async (re
     if (u.id === reply.authorId) continue;
     await addMention(u.id, {
       kind: "jynx", noteId: found.id, replyId: reply.id, route: found.route, targetLabel: found.targetLabel,
-      mentionedBy: reply.authorName, snippet: req.body.text.slice(0, 200),
+      mentionedBy: reply.authorName, mentionedById: reply.authorId, snippet: req.body.text.slice(0, 200),
     });
   }
   if (jynxTagged) await queueFollowUp(updated, req.body.text, reply.authorName);

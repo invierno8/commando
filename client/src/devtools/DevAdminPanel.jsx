@@ -313,6 +313,8 @@ const CSS = `
 }
 .dev-admin-attachment-file:hover{ color:var(--jynx); border-color:var(--jynx); }
 .dev-admin-annotation-meta{ font-size:11px; color:var(--text-dim); }
+.jynx-author-link{ cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+.jynx-author-link:hover{ color:var(--jynx); }
 .dev-admin-annotation-actions{ display:flex; flex-direction:column; gap:6px; align-items:center; flex:none; }
 .dev-admin-resolve-btn{
   flex:none; width:28px; height:28px; border-radius:50%; border:1px solid var(--line); background:var(--panel);

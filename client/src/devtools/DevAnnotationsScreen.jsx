@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Check, Download, Zap, Loader2, GitPullRequest, CheckCircle2, XCircle, MessageCircle, Undo2, Archive, ArchiveRestore, Pencil, Save, Trash2, X, Paperclip } from "lucide-react";
 import { fetchAnnotations, resolveAnnotation, archiveAnnotation, editAnnotationComment, deleteAnnotation, exportAnnotationsMarkdown, requestAnnotationAction, replyToAnnotation } from "./devApi.js";
-import { parseMentionQuery, matchMentionCandidates, insertMentionText, renderWithMentions } from "./mentionUtils.jsx";
+import { parseMentionQuery, matchMentionCandidates, insertMentionText, renderWithMentions, useDevUserDirectory } from "./mentionUtils.jsx";
+import { openUserProfile } from "./openUserProfile.js";
 
 const ACTION_STATUS_LABEL = {
   none: null, queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed",
@@ -10,6 +11,7 @@ const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: G
 const ACTION_STATUS_TONE = { queued: "blue", in_progress: "blue", pr_opened: "green", done: "green", failed: "red" };
 
 export default function DevAnnotationsScreen() {
+  const userDirectory = useDevUserDirectory();
   const [items, setItems] = useState(null);
   const [filter, setFilter] = useState("open"); // open | done | all
   const [exported, setExported] = useState(null);
@@ -93,9 +95,10 @@ export default function DevAnnotationsScreen() {
   // אזכורים נפרדת שצריכה להישאר מסונכרנת).
   const mentionCandidates = useMemo(() => {
     const names = new Set(["jynx"]);
+    userDirectory.forEach((u) => names.add(u.name));
     (items || []).forEach((a) => { if (a.authorName) names.add(a.authorName); });
     return [...names];
-  }, [items]);
+  }, [items, userDirectory]);
   const activeMentionQuery = useMemo(() => parseMentionQuery(replyText), [replyText]);
   const mentionMatches = useMemo(
     () => matchMentionCandidates(activeMentionQuery, mentionCandidates),
@@ -170,7 +173,12 @@ export default function DevAnnotationsScreen() {
                       </a>
                     )
                   )}
-                  <span className="dev-admin-annotation-meta">{a.authorName} · {new Date(a.createdAt).toLocaleString("en-US")}</span>
+                  <span className="dev-admin-annotation-meta">
+                    <span className="jynx-author-link" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openUserProfile(a.authorId); }}>
+                      {a.authorName}
+                    </span>
+                    {" · "}{new Date(a.createdAt).toLocaleString("en-US")}
+                  </span>
                   {hasAction && (
                     <span className={`pill pill-${ACTION_STATUS_TONE[a.actionStatus] || "neutral"} dev-admin-action-pill`}>
                       {StatusIcon && <StatusIcon size={11} className={a.actionStatus === "queued" || a.actionStatus === "in_progress" ? "dev-admin-spin" : ""} />}
@@ -208,7 +216,9 @@ export default function DevAnnotationsScreen() {
                     <div className="dev-admin-thread">
                       {replies.map((r) => (
                         <div key={r.id} className="dev-admin-thread-item">
-                          <b>{r.authorName}:</b> {renderWithMentions(r.text, { mentionClassName: "dev-admin-mention", jynxClassName: "dev-admin-mention-jynx" })}
+                          <b className="jynx-author-link" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openUserProfile(r.authorId); }}>
+                            {r.authorName}:
+                          </b> {renderWithMentions(r.text, { mentionClassName: "dev-admin-mention", jynxClassName: "dev-admin-mention-jynx", directory: userDirectory })}
                           <span className="dev-admin-thread-time">{new Date(r.createdAt).toLocaleString("en-US")}</span>
                         </div>
                       ))}
