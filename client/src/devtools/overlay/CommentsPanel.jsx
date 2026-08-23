@@ -83,6 +83,12 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   const [flashId, setFlashId] = useState(null);
   const [openThreadId, setOpenThreadId] = useState(null);
   const [replyText, setReplyText] = useState("");
+  // "Reply as Jynx" (jynx-mt5ev53xof3v) — admin-only toggle so a reply
+  // posted from this box shows up with its own "Jynx" identity instead of
+  // the admin's real dev-user name. Resets to false after every send/thread
+  // switch so it's an explicit per-reply choice, never a sticky mode you
+  // forget is on.
+  const [replyAsJynx, setReplyAsJynx] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
   // "מנהל מטפל בהערה" — resolvingId פותח תיבת-הערת-פתרון (כמו
@@ -275,9 +281,10 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
 
   async function sendReply(a) {
     if (!replyText.trim()) return;
-    if (a.kind === "jynx") await replyToJynxFeedback(a.id, replyText.trim());
-    else await replyToAnnotation(a.id, replyText.trim());
+    if (a.kind === "jynx") await replyToJynxFeedback(a.id, replyText.trim(), replyAsJynx);
+    else await replyToAnnotation(a.id, replyText.trim(), replyAsJynx);
     setReplyText("");
+    setReplyAsJynx(false);
     reload();
   }
 
@@ -643,7 +650,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                     </div>
                     <button
                       type="button" className="comments-thread-toggle"
-                      onClick={(e) => { e.stopPropagation(); setOpenThreadId(openThreadId === a.id ? null : a.id); }}
+                      onClick={(e) => { e.stopPropagation(); setReplyAsJynx(false); setOpenThreadId(openThreadId === a.id ? null : a.id); }}
                     >
                       <MessageCircle size={11} /> {replies.length > 0 ? `${replies.length} repl${replies.length === 1 ? "y" : "ies"}` : "Reply"}
                     </button>
@@ -651,9 +658,13 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                       <div className="comments-thread" onClick={(e) => e.stopPropagation()}>
                         {replies.map((r) => (
                           <div key={r.id} className="comments-thread-item">
-                            <b className="jynx-author-link" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openUserProfile(r.authorId); }}>
-                              {r.authorName}:
-                            </b> {renderWithMentions(r.text, userDirectory)}
+                            {r.isJynx ? (
+                              <b className="comments-jynx-reply-badge"><Sparkles size={10} /> Jynx:</b>
+                            ) : (
+                              <b className="jynx-author-link" role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); openUserProfile(r.authorId); }}>
+                                {r.authorName}:
+                              </b>
+                            )} {renderWithMentions(r.text, userDirectory)}
                           </div>
                         ))}
                         <div className="comments-thread-input-wrap">
@@ -665,6 +676,16 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                                 </button>
                               ))}
                             </div>
+                          )}
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              className={"comments-reply-as-jynx-toggle" + (replyAsJynx ? " active" : "")}
+                              onClick={() => setReplyAsJynx((v) => !v)}
+                              title={replyAsJynx ? "Sending as Jynx — click to reply as yourself instead" : "Reply as Jynx instead of your own admin name"}
+                            >
+                              <Sparkles size={11} /> {replyAsJynx ? "Replying as Jynx" : "Reply as Jynx"}
+                            </button>
                           )}
                           <div className="comments-thread-input">
                             <input
@@ -863,6 +884,16 @@ const CSS_TEXT = `
    ויזואלית משאר ה-UI הסגול, לא רק יהיה מודגש (ראו PR זה). */
 .comments-mention{ color:#2F8FCE; font-weight:700; }
 .comments-mention-jynx{ color:var(--dev); }
+/* תג-זהות ל"תגובה בתור Jynx" (jynx-mt5ev53xof3v) — לא jynx-author-link
+   הרגיל (אין authorId אמיתי מאחוריו, אז לא לחיץ-לפרופיל), אלא badge קבוע
+   עם Sparkles, כדי שיהיה ברור מיד שזו לא הודעת ה-admin האמיתי. */
+.comments-jynx-reply-badge{ display:inline-flex; align-items:center; gap:3px; color:var(--jynx); }
+.comments-reply-as-jynx-toggle{
+  display:inline-flex; align-items:center; gap:4px; background:none; border:1px dashed var(--jynx);
+  color:var(--jynx); border-radius:12px; padding:3px 9px; font-size:10.5px; font-weight:700; cursor:pointer;
+  margin-bottom:5px;
+}
+.comments-reply-as-jynx-toggle.active{ background:var(--jynx); border-style:solid; color:#fff; }
 .comments-thread-input-wrap{ position:relative; }
 .comments-mention-dropdown{
   position:absolute; bottom:100%; left:0; right:0; margin-bottom:4px; background:var(--panel);

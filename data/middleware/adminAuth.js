@@ -10,3 +10,13 @@ export function requireAdmin(req, res, next) {
   if (!isAdmin) return res.status(401).json({ error: "נדרש אימות מנהל" });
   next();
 }
+
+// בדיקה "רכה" — אותה לוגיקה כמו requireAdmin, בלי ה-401. עבור נתיבים
+// שממילא מגודרים ב-requireDevUser (לא requireAdmin) אבל צריכים לדעת אם
+// המשתמש המחובר הוא *גם* מנהל, כדי לאפשר יכולת נוספת מבלי לדרוש session
+// מנהל בשביל שאר הנתיב (למשל תגובה "בשם Jynx" — ראו jynx-mt5ev53xof3v
+// ב-routes/annotations.js).
+export function isAdminRequest(req) {
+  const token = req.headers["x-admin-session"] || req.cookies?.hangar_admin_session;
+  return !!resolveSession(token);
+}

@@ -39,8 +39,11 @@ export async function submitAnnotation(data) {
 export async function fetchDevAnnotations(route) {
   return http.get(route ? `/dev/annotations?route=${encodeURIComponent(route)}` : `/dev/annotations`);
 }
-export async function replyToAnnotation(id, text) {
-  return http.post(`/dev/annotations/${id}/reply`, { text });
+// asJynx: מבוקש רק כשמנהל בוחר "Reply as Jynx" ב-CommentsPanel.jsx — השרת
+// אוכף בעצמו (isAdminRequest) שרק מנהל אמיתי-מחובר יכול לגרום לכך, ראו
+// data/routes/annotations.js.
+export async function replyToAnnotation(id, text, asJynx) {
+  return http.post(`/dev/annotations/${id}/reply`, asJynx ? { text, asJynx: true } : { text });
 }
 // עריכת טקסט הערה על ידי בעל ההערה בלבד (403 מהשרת אם זה לא אתה) — שונה
 // מ-editAnnotationComment (מנהל, למטה): זו עבור CommentsPanel.jsx's
@@ -71,8 +74,8 @@ export async function resolveJynxFeedback(id, resolved, resolutionNote) {
 export async function editJynxFeedback(id, comment) {
   return http.patch(`/admin/jynx-feedback/${id}`, { comment });
 }
-export async function replyToJynxFeedback(id, text) {
-  return http.post(`/admin/jynx-feedback/${id}/reply`, { text });
+export async function replyToJynxFeedback(id, text, asJynx) {
+  return http.post(`/admin/jynx-feedback/${id}/reply`, asJynx ? { text, asJynx: true } : { text });
 }
 export async function reactToJynxFeedback(id, emoji) {
   return http.post(`/admin/jynx-feedback/${id}/react`, { emoji });
