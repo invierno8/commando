@@ -38,5 +38,13 @@
     "passwordHash": "$2a$12$DrxEOhHW4KaosChpPC4GFegh29KW3dTvl..gd5d923KAfLW423xNK",
     "active": true,
     "createdAt": "2026-08-23T13:55:24.228Z"
+  },
+  {
+    "id": "dev-mt5vz2e33m3m",
+    "name": "yoav",
+    "role": "",
+    "passwordHash": "$2a$12$c.8MzlyDheRRSAz2MtBKnetgms1TfXg07QHpWobKYXPVnBOauAHKO",
+    "active": true,
+    "createdAt": "2026-08-23T14:12:15.035Z"
   }
 ]
