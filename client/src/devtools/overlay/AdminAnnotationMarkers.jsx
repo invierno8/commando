@@ -91,6 +91,21 @@ export default function AdminAnnotationMarkers({ isAdmin, active, route, refresh
   const grouped = useMemo(() => {
     void tick; // תלות מכוונת — רק כדי לגרום לחישוב מחדש בטיק
     if (!isAdmin || !active) return [];
+    // הנקודות מנוקזות ל-document.body בז'-אינדקס ענק (ראו CSS_TEXT למטה) כדי
+    // תמיד לצוף מעל תוכן העמוד הרגיל — אבל app-sidebar/app-topbar הם context
+    // עצמאי (position+z-index משלהם) שנקודה שמנוקזת-body תמיד תנצח בז'-אינדקס
+    // גולמי, בלי קשר לערך שלה (ראו ההסבר המלא בהערת ה-PR). כלומר אי-אפשר
+    // "לשבת מתחת לסרגל הניווט" רק עם z-index כאן — הפתרון: פשוט לא לצייר נקודה
+    // שהמיקום המחושב שלה חופף כרגע לסרגל-הצד/הסרגל-העליון, בדיוק כמו שהאלמנט
+    // האמיתי שהיא מצביעה עליו נחתך מאחוריהם בגלילה. jynx-mt5edij0xz1s.
+    const topbar = document.querySelector(".app-topbar")?.getBoundingClientRect();
+    const sidebar = document.querySelector(".app-sidebar")?.getBoundingClientRect();
+    function hiddenByChrome(rect) {
+      const dotTop = rect.top - 8, dotLeft = rect.left + rect.width - 8, dotSize = 19; // תואם .admin-marker-dot-grown, המקרה הגדול ביותר
+      const dotBottom = dotTop + dotSize, dotRight = dotLeft + dotSize;
+      const overlaps = (box) => box && dotTop < box.bottom && dotBottom > box.top && dotLeft < box.right && dotRight > box.left;
+      return overlaps(topbar) || overlaps(sidebar);
+    }
     const byLabel = new Map();
     items.forEach((a) => {
       if (!byLabel.has(a.targetLabel)) byLabel.set(a.targetLabel, []);
@@ -99,7 +114,10 @@ export default function AdminAnnotationMarkers({ isAdmin, active, route, refresh
     const out = [];
     byLabel.forEach((list, label) => {
       const el = document.querySelector(`[data-devblock="${CSS.escape(label)}"]`);
-      if (el) out.push({ label, list, rect: el.getBoundingClientRect() });
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (hiddenByChrome(rect)) return;
+      out.push({ label, list, rect });
     });
     return out;
   }, [items, tick, isAdmin, active]);
@@ -238,8 +256,12 @@ const CSS_TEXT = `
   position:fixed; pointer-events:none; z-index:99995; border-radius:8px; border:2px solid var(--jynx);
   box-shadow:0 0 0 3px color-mix(in srgb, var(--jynx) 28%, transparent),
              0 0 18px color-mix(in srgb, var(--jynx) 50%, transparent);
-  transition:top .1s ease, left .1s ease, width .1s ease, height .1s ease;
 }
+/* אין transition על top/left/width/height בכוונה (הוסר, jynx-mt5edij0xz1s) —
+   בזמן גלילה זה גרם להילה "לגרור" מאחורי המיקום האמיתי של האלמנט במשך עד
+   100ms בכל פריים, כלומר בדיוק ה"לא נדבק לאלמנט" שדווח. הופעה מיידית בלי
+   easing עדיין נראית טבעית כי הרינדור הראשון של ההילה קורה רק ב-hover, לא
+   באמצע תנועה. */
 .admin-marker-highlight-secondary{
   border-color:var(--dev);
   box-shadow:0 0 0 3px color-mix(in srgb, var(--dev) 28%, transparent),
