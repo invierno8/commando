@@ -277,7 +277,7 @@ h1,h2,h3{ font-family:var(--font-sans); font-weight:700; letter-spacing:-.015em;
 .notif-menu{ position:relative; }
 .notif-dropdown{
   position:absolute; top:calc(100% + 8px); left:0; z-index:60; width:360px; max-width:90vw;
-  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg); box-shadow:var(--shadow-md);
+  background:var(--brk),var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg); box-shadow:var(--shadow-md);
   animation:fadeSlideUp var(--t-base) var(--ease); overflow:hidden;
 }
 .notif-dropdown-head{
@@ -435,7 +435,7 @@ h1,h2,h3{ font-family:var(--font-sans); font-weight:700; letter-spacing:-.015em;
 /* ------------------------------------------------------------------ */
 
 .panel-card{
-  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-card);
+  background:var(--brk),var(--panel); border:1px solid var(--line); border-radius:var(--radius-card);
   box-shadow:var(--shadow-sm);
 }
 .panel-card-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:16px 18px 0; }
@@ -606,7 +606,7 @@ h1,h2,h3{ font-family:var(--font-sans); font-weight:700; letter-spacing:-.015em;
 
 .empty-state{
   color:var(--text-dim); font-size:13.5px; text-align:center; padding:40px 20px;
-  background:var(--panel-raised); border:1px dashed var(--line); border-radius:var(--radius-card);
+  background:var(--brk),var(--panel-raised); border:1px dashed var(--line); border-radius:var(--radius-card);
 }
 
 /* Classification-marking photo tile — see PhotoTile.jsx */
