@@ -373,7 +373,7 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
               <span className="req-id">{r.id}</span>
               <span className="req-title">{r.title}</span>
               <span className="req-unit"><UnitEmblem name={r.unit} size={16} showRing={false} image={unitLogos?.[r.unit]} />{r.unit}</span>
-              <span><StatusPill status={r.status} /></span>
+              <span className="req-status"><StatusPill status={r.status} /></span>
             </div>
           ))}
         </div>
@@ -822,7 +822,8 @@ ${SCOPE_PICKER_CSS}
 .req-id{ font-family:var(--font-mono); font-size:12px; color:var(--accent); }
 .req-title{ font-weight:600; }
 .req-unit{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--text-dim); }
-.req-row .pill{ min-width:0; white-space:normal; text-align:center; line-height:1.3; font-size:10px; padding:4px 8px; }
+.req-status{ display:flex; justify-content:center; min-width:0; }
+.req-row .pill{ min-width:0; max-width:100%; white-space:normal; text-align:center; line-height:1.3; font-size:10px; padding:4px 8px; }
 
 .readiness-card-inner{ display:flex; flex-direction:column; height:100%; }
 .readiness-main{ text-align:center; padding:10px 0 14px; border-bottom:1px solid var(--line); margin-bottom:14px; }
