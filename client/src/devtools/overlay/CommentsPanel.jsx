@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Pencil, Paperclip, Zap, Loader2, GitPullRequest, XCircle, Sparkles } from "lucide-react";
+import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Pencil, Paperclip, Zap, Loader2, GitPullRequest, XCircle, Sparkles, RotateCcw } from "lucide-react";
 import {
   fetchDevAnnotations, replyToAnnotation, editMyAnnotation, reactToAnnotation, requestAnnotationAction,
   fetchJynxFeedback, fetchMyJynxFeedback, replyToJynxFeedback, reactToJynxFeedback, submitJynxFeedback,
@@ -222,6 +222,21 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     reload();
   }
 
+  // "Reopen" (jynx-mt3djr6idsg1) — once a comment already has a PR or is
+  // marked done, silently rewriting its text (saveEdit above) leaves the
+  // shipped PR out of sync with nobody told. Reusing the existing @jynx
+  // reply path instead of a plain edit means the agent revisits the
+  // existing PR with the new instructions (see queueFollowUp/isFollowUp in
+  // data/routes/annotations.js) rather than re-implementing from scratch —
+  // exactly the "revisit the text, not the whole thinking process" ask.
+  async function saveReopen(a) {
+    if (!editText.trim()) return;
+    await replyToAnnotation(a.id, `@jynx ${editText.trim()}`);
+    setEditingId(null);
+    setEditText("");
+    reload();
+  }
+
   async function triggerAction(a) {
     await requestAnnotationAction(a.id);
     reload();
@@ -368,6 +383,10 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                 // "app"/undefined) שאתה בעצמך כתבת — לא על משוב Jynx (תור
                 // נפרד, אין לו endpoint עריכה מקביל, וממילא רק מנהל כותב שם).
                 const canEdit = a.kind !== "jynx" && a.authorId === currentDevUserId;
+                // Once a comment has a PR or is marked done, "editing" it
+                // becomes "reopening" it instead (jynx-mt3djr6idsg1) — see
+                // saveReopen() above.
+                const isProcessed = a.resolved || a.actionStatus === "pr_opened";
                 const isEditing = editingId === a.id;
                 return (
                   <div key={a.id} className="comments-sidebar-item-wrap">
@@ -386,10 +405,19 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                       )}
                       {isEditing ? (
                         <div className="comments-edit-box" onClick={(e) => e.stopPropagation()}>
-                          <textarea autoFocus rows={3} value={editText} onChange={(e) => setEditText(e.target.value)} />
+                          <textarea
+                            autoFocus rows={3} value={editText} onChange={(e) => setEditText(e.target.value)}
+                            placeholder={isProcessed ? "What still needs to change? The agent will revisit the existing PR, not start over." : undefined}
+                          />
                           <div className="comments-edit-actions">
                             <button type="button" onClick={() => { setEditingId(null); setEditText(""); }}>Cancel</button>
-                            <button type="button" className="primary" onClick={() => saveEdit(a)} disabled={!editText.trim()}>Save</button>
+                            <button
+                              type="button" className="primary"
+                              onClick={() => (isProcessed ? saveReopen(a) : saveEdit(a))}
+                              disabled={!editText.trim()}
+                            >
+                              {isProcessed ? "Reopen" : "Save"}
+                            </button>
                           </div>
                         </div>
                       ) : (
@@ -397,10 +425,11 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                           {a.comment}
                           {canEdit && (
                             <button
-                              type="button" className="comments-edit-btn" title="Edit your comment"
-                              onClick={(e) => { e.stopPropagation(); setEditingId(a.id); setEditText(a.comment); }}
+                              type="button" className="comments-edit-btn"
+                              title={isProcessed ? "Reopen — describe what still needs to change" : "Edit your comment"}
+                              onClick={(e) => { e.stopPropagation(); setEditingId(a.id); setEditText(isProcessed ? "" : a.comment); }}
                             >
-                              <Pencil size={11} />
+                              {isProcessed ? <RotateCcw size={11} /> : <Pencil size={11} />}
                             </button>
                           )}
                         </p>

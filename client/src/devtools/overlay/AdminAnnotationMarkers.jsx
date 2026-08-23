@@ -111,7 +111,7 @@ export default function AdminAnnotationMarkers({ isAdmin, active, route, refresh
   if (!isAdmin || !active || grouped.length === 0) return null;
 
   return createPortal(
-    <div className="dev-overlay-ignore">
+    <>
       <style>{CSS_TEXT}</style>
       {grouped.map(({ label, list, rect }) => (
         <AdminMarkerDot
@@ -124,7 +124,7 @@ export default function AdminAnnotationMarkers({ isAdmin, active, route, refresh
           onAction={triggerAction}
         />
       ))}
-    </div>,
+    </>,
     document.body
   );
 }
@@ -153,8 +153,11 @@ function AdminMarkerDot({ label, list, rect, open, onToggle, onAction }) {
 
   return (
     <>
+      {/* Ephemeral hover aids only (the outline on the live page, the      */}
+      {/* preview of any attached drawing) — never a valid comment target,  */}
+      {/* same as CommentsPanel.jsx's own highlight rects. */}
       {hovered && (
-        <>
+        <div className="dev-overlay-ignore">
           <div
             className="admin-marker-highlight"
             style={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height }}
@@ -167,10 +170,16 @@ function AdminMarkerDot({ label, list, rect, open, onToggle, onAction }) {
             />
           ))}
           {list.filter((a) => a.drawing).map((a) => <DrawingOverlay key={a.id} drawing={a.drawing} />)}
-        </>
+        </div>
       )}
+      {/* The dot itself + the detail card it opens ARE real Jynx content  */}
+      {/* (jynx-mt51qi86lwy2 asked to be able to leave Jynx feedback on     */}
+      {/* them), so jynx-chrome instead of dev-overlay-ignore — a           */}
+      {/* data-devblock per group so Ctrl/Cmd+click lands on this exact     */}
+      {/* dot/card, not a generic ancestor. */}
       <div
-        className="admin-marker-dot-wrap"
+        className="admin-marker-dot-wrap jynx-chrome jynx-ui"
+        data-devblock={`admin-marker-dot-${label}`}
         style={{ top: rect.top - 8, left: rect.left + rect.width - 8 }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
