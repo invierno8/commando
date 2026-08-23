@@ -14,6 +14,7 @@ export default function DevAnnotationsScreen() {
   const [filter, setFilter] = useState("open"); // open | done | all
   const [exported, setExported] = useState(null);
   const [exportError, setExportError] = useState("");
+  const [exporting, setExporting] = useState(false);
   const [resolvingId, setResolvingId] = useState(null); // מציג שדה "מה תיקנת?" למי
   const [resolveNote, setResolveNote] = useState("");
   const [openThreadId, setOpenThreadId] = useState(null);
@@ -51,6 +52,7 @@ export default function DevAnnotationsScreen() {
   }
   async function exportMd() {
     setExportError("");
+    setExporting(true);
     try {
       setExported(await exportAnnotationsMarkdown());
     } catch (e) {
@@ -58,6 +60,12 @@ export default function DevAnnotationsScreen() {
       // הבטחה לא-מטופלת בשקט — הכפתור "נראה כאילו לא עושה כלום" בלי שום
       // משוב, בדיוק כמו שדווח.
       setExportError(e.message || "Export failed, please try again");
+    } finally {
+      // הבקאנד (Render חינמי) יכול לישון ולקחת עד ~30-50s להתעורר על הבקשה
+      // הראשונה — בלי אינדיקציה חיה כאן, הכפתור נראה "תקוע/לא עושה כלום"
+      // באותו חלון, גם כשההבקשה בסופו של דבר מצליחה. ראו האינדיקציה
+      // המקבילה ב-DevAuthGate.jsx's checking state.
+      setExporting(false);
     }
   }
   async function sendReply(a) {
@@ -122,7 +130,9 @@ export default function DevAnnotationsScreen() {
           <button type="button" className={"pill-tab" + (filter === "all" ? " active" : "")} onClick={() => setFilter("all")}>All ({unarchived.length})</button>
           <button type="button" className={"pill-tab" + (filter === "archived" ? " active" : "")} onClick={() => setFilter("archived")}>Archived ({items.filter((a) => a.archived).length})</button>
         </div>
-        <button type="button" className="dev-admin-export-btn" onClick={exportMd}><Download size={13} /> Export Markdown</button>
+        <button type="button" className="dev-admin-export-btn" onClick={exportMd} disabled={exporting}>
+          {exporting ? <Loader2 size={13} className="dev-admin-spin" /> : <Download size={13} />} {exporting ? "Exporting..." : "Export Markdown"}
+        </button>
       </div>
       {exportError && <div className="dev-admin-error">{exportError}</div>}
       {exported !== null && (

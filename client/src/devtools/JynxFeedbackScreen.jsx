@@ -18,6 +18,7 @@ export default function JynxFeedbackScreen() {
   const [filter, setFilter] = useState("open");
   const [exported, setExported] = useState(null);
   const [exportError, setExportError] = useState("");
+  const [exporting, setExporting] = useState(false);
   const [resolvingId, setResolvingId] = useState(null);
   const [resolveNote, setResolveNote] = useState("");
   const [openThreadId, setOpenThreadId] = useState(null);
@@ -46,12 +47,19 @@ export default function JynxFeedbackScreen() {
   }
   async function exportMd() {
     setExportError("");
+    setExporting(true);
     try {
       setExported(await exportJynxFeedbackMarkdown());
     } catch (e) {
       // ראו הערה מקבילה ב-DevAnnotationsScreen.jsx — בלי catch, כשל (סשן
       // מנהל שפג) היה נבלע בשקט ונראה כאילו הכפתור "לא עושה כלום".
       setExportError(e.message || "Export failed, please try again");
+    } finally {
+      // הבקאנד (Render חינמי) יכול לישון ולקחת עד ~30-50s להתעורר על הבקשה
+      // הראשונה — בלי אינדיקציה חיה כאן, הכפתור נראה "תקוע/לא עושה כלום"
+      // באותו חלון, בדיוק כמו התלונה שהתקבלה, גם כשההבקשה בסופו של דבר
+      // מצליחה. ראו האינדיקציה המקבילה ב-DevAuthGate.jsx's checking state.
+      setExporting(false);
     }
   }
   async function sendReply(a) {
@@ -103,7 +111,9 @@ export default function JynxFeedbackScreen() {
           <button type="button" className={"pill-tab" + (filter === "done" ? " active" : "")} onClick={() => setFilter("done")}>Done ({items.filter((a) => a.resolved).length})</button>
           <button type="button" className={"pill-tab" + (filter === "all" ? " active" : "")} onClick={() => setFilter("all")}>All ({items.length})</button>
         </div>
-        <button type="button" className="dev-admin-export-btn" onClick={exportMd}><Download size={13} /> Export Markdown</button>
+        <button type="button" className="dev-admin-export-btn" onClick={exportMd} disabled={exporting}>
+          {exporting ? <Loader2 size={13} className="dev-admin-spin" /> : <Download size={13} />} {exporting ? "Exporting..." : "Export Markdown"}
+        </button>
       </div>
       {exportError && <div className="dev-admin-error">{exportError}</div>}
       {exported !== null && (
