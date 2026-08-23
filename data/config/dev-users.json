@@ -32,14 +32,6 @@
     "createdAt": "2026-08-21T20:11:16.634Z"
   },
   {
-    "id": "dev-mt5vde59upc3",
-    "name": "almog",
-    "role": "",
-    "passwordHash": "$2a$12$DrxEOhHW4KaosChpPC4GFegh29KW3dTvl..gd5d923KAfLW423xNK",
-    "active": true,
-    "createdAt": "2026-08-23T13:55:24.228Z"
-  },
-  {
     "id": "dev-mt5vz2e33m3m",
     "name": "yoav",
     "role": "",
