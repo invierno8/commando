@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt51tcozutwn",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T00:07:57.827Z",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-grip",
+  "secondaryTargets": [],
+  "comment": "make the dots also bigger",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
