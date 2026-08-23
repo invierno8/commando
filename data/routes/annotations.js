@@ -238,11 +238,24 @@ router.post("/dev/annotations/:id/reply", requireDevUser, asyncRoute(async (req,
     updated = { ...updated, actionStatus: "queued", actionRequestedAt: new Date().toISOString(), actionRequestedBy: req.devUser.name };
   }
   await persistNote(updated, wasResolved ? `reply reopened ${updated.id} — ${req.devUser.name}` : `reply on ${updated.id} — ${req.devUser.name}`);
-  for (const u of parseMentionedUsers(req.body.text)) {
+  const mentionedUsers = parseMentionedUsers(req.body.text);
+  for (const u of mentionedUsers) {
     if (u.id === req.devUser.id) continue; // אל תתריע למי שמזכיר את עצמו
     await addMention(u.id, {
       kind: "app", noteId: found.id, replyId: reply.id, route: found.route, targetLabel: found.targetLabel,
       mentionedBy: req.devUser.name, mentionedById: req.devUser.id, snippet: req.body.text.slice(0, 200),
+    });
+  }
+  // jynx-mt5qb3ak9rsz: "make the mention and status update on a comment
+  // notifications work" — a reply from someone else on YOUR comment should
+  // notify you even without an explicit @mention (which already notifies
+  // above). Skip if the author already got an @mention notification for
+  // this exact reply (mentionedUsers check) to avoid a duplicate ping.
+  if (found.authorId && found.authorId !== req.devUser.id && !mentionedUsers.some((u) => u.id === found.authorId)) {
+    await addMention(found.authorId, {
+      kind: "status", noteId: found.id, replyId: reply.id, route: found.route, targetLabel: found.targetLabel,
+      mentionedBy: req.devUser.name, mentionedById: req.devUser.id,
+      snippet: `Replied to your comment: ${req.body.text.slice(0, 180)}`,
     });
   }
   if (jynxTagged) await queueFollowUp(updated, req.body.text, req.devUser.name);
@@ -319,6 +332,16 @@ router.patch("/admin/annotations/:id", requireAdmin, asyncRoute(async (req, res)
   };
   const verb = hasCommentField ? "edited" : hasArchivedField ? (archived ? "archived" : "unarchived") : (resolved ? "resolved" : "reopened");
   await persistNote(updated, `QA note ${verb} — ${updated.id}`);
+  // jynx-mt5qb3ak9rsz: notify the comment's own author when it's marked
+  // done by someone else — the other half of "status update ...
+  // notifications", alongside the reply notification above.
+  if (hasResolvedField && resolved && !found.resolved && found.authorId && found.authorId !== req.devUser?.id) {
+    await addMention(found.authorId, {
+      kind: "status", noteId: found.id, route: found.route, targetLabel: found.targetLabel,
+      mentionedBy: req.devUser?.name || updated.resolvedBy || "admin", mentionedById: req.devUser?.id || null,
+      snippet: "Marked your comment as done.",
+    });
+  }
   res.json(updated);
 }));
 

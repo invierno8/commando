@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, GripHorizontal, X, Loader2, Target, Pencil, Users } from "lucide-react";
-import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
+import { devLogin, devLogout, fetchDevMe, fetchAdminMe, fetchMentions } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
 import DevOverlay from "./overlay/DevOverlay.jsx";
@@ -82,6 +82,17 @@ export default function DevAuthGate({ route, devFabProps }) {
   // מילישניות עם JynxThought מציג "✨ Welcome" לפני שבאמת מתחברים.
   const [loginPhase, setLoginPhase] = useState("idle");
   const [pendingWelcomeName, setPendingWelcomeName] = useState(null);
+  // jynx-mt5qb3ak9rsz: "when the bubble is collapsed but user is logged in
+  // have the bubble have that circle to it as well" — MentionsBell.jsx
+  // (which already tracks/badges unread notifications) only mounts while
+  // toolbarOpen is true, since it's rendered from TOOLBAR_ITEM_NODES inside
+  // the expanded-toolbar branch below. To also badge the collapsed bubble,
+  // this poll runs independently here (same GET /dev/mentions, same 10s
+  // cadence) rather than refactoring MentionsBell into a prop-driven
+  // component — a second poller hitting one low-traffic endpoint every 10s
+  // is a non-issue for this internal dev tool, and keeps MentionsBell's own
+  // working internals untouched.
+  const [notifUnread, setNotifUnread] = useState(0);
   const [adminOpen, setAdminOpen] = useState(false);
   const [overlayOn, setOverlayOn] = useState(true);
   const [commentsOn, setCommentsOn] = useState(false);
@@ -229,6 +240,19 @@ export default function DevAuthGate({ route, devFabProps }) {
     fetchAdminMe().then((d) => { if (!cancelled) setIsAdmin(!!d?.authenticated); }).catch(() => {});
     return () => { cancelled = true; };
   }, []);
+
+  // ראו ההערה על notifUnread למעלה — פועם כל עוד מחוברים, לא רק כש-toolbarOpen,
+  // כדי שהתג יופיע גם על הבועה המכווצת.
+  useEffect(() => {
+    if (!devName) return;
+    let cancelled = false;
+    function reload() {
+      fetchMentions().then((list) => { if (!cancelled) setNotifUnread(list.filter((m) => !m.read).length); }).catch(() => {});
+    }
+    reload();
+    const t = setInterval(reload, 10000);
+    return () => { cancelled = true; clearInterval(t); };
+  }, [devName]);
 
   // ניווט-מקלדת בסרגל — מספר N מפעיל את הכפתור ה-N-י בסדר הנוכחי (אחרי
   // סידור-מחדש, ראו toolbarOrder), לא לפי מיקום קבוע. לא כולל "mentions"
@@ -464,8 +488,9 @@ export default function DevAuthGate({ route, devFabProps }) {
         </div>
       ) : (
         <div className="dev-fab-wrap jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
-          <button type="button" ref={toolbarFab.sizeRef} className="dev-fab jynx-breathe" data-jynx-dock-zone="" onClick={toggleToolbarOpen} {...toolbarFab.dragHandlers} title="Expand the Jynx toolbar — draggable (also a drop target for a detached role picker)">
+          <button type="button" ref={toolbarFab.sizeRef} className="dev-fab jynx-breathe dev-fab-collapsed" data-jynx-dock-zone="" onClick={toggleToolbarOpen} {...toolbarFab.dragHandlers} title="Expand the Jynx toolbar — draggable (also a drop target for a detached role picker)">
             <JynxBubbleContent mood="idle" />
+            {notifUnread > 0 && <span className="dev-fab-collapsed-badge">{notifUnread > 9 ? "9+" : notifUnread}</span>}
           </button>
         </div>
       )}
@@ -589,6 +614,21 @@ const CSS = `
 .dev-toolbar-icon-btn:hover{ background:color-mix(in srgb, var(--jynx) 10%, var(--panel)); }
 .dev-toolbar-icon-btn.active{ background:var(--jynx); color:#fff; }
 .dev-toolbar-icon-btn svg{ transform:scale(var(--jynx-icon-scale, 1)); }
+
+/* jynx-mt5qb3ak9rsz: "when the bubble is collapsed but user is logged in
+   have the bubble have that circle to it as well" — .dev-fab (theme.js) has
+   no position:relative of its own (it's reused by several unrelated fabs),
+   so this scoped-here class adds it just for the collapsed Jynx bubble,
+   without touching the shared base rule. Same badge look as
+   MentionsBell.jsx's .mentions-bell-badge, duplicated rather than shared
+   per this codebase's "every component owns self-contained CSS" rule (that
+   component isn't even mounted while the toolbar is collapsed). */
+.dev-fab-collapsed{ position:relative; }
+.dev-fab-collapsed-badge{
+  position:absolute; top:-4px; right:-4px; background:var(--red); color:#fff; border-radius:8px;
+  font-size:9px; font-weight:700; line-height:1; padding:2px 4px; min-width:14px; text-align:center;
+  font-family:var(--font-mono);
+}
 .dev-toolbar-devname{
   background:var(--panel); border:1px solid var(--jynx); color:var(--jynx); border-radius:20px;
   padding:6px 12px; font-family:var(--font-mono); font-size:11px; font-weight:700; white-space:nowrap;

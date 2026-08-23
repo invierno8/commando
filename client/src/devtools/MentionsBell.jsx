@@ -5,8 +5,15 @@ import { useKeepInViewport } from "./useKeepInViewport.js";
 import { openUserProfile } from "./openUserProfile.js";
 
 /* ================================================================== */
-/* LEGO BLOCK — "you were @mentioned" bell, lives in the Jynx toolbar     */
-/* next to the other icon buttons (see DevAuthGate.jsx). Polls           */
+/* LEGO BLOCK — notifications bell, lives in the Jynx toolbar next to     */
+/* the other icon buttons (see DevAuthGate.jsx). Started as "you were     */
+/* @mentioned" only; as of jynx-mt5qb3ak9rsz it also carries "status      */
+/* update" notifications (someone replied to, or resolved, YOUR comment   */
+/* without necessarily @mentioning you — see the addMention() calls in    */
+/* data/routes/annotations.js / jynx-feedback.js) — same records, same     */
+/* store (lib/mentions.js), just a `kind` other than "app"/"jynx". This    */
+/* component doesn't branch on `kind` at all; the generic                 */
+/* from/route/snippet layout already reads fine for either. Polls         */
 /* GET /dev/mentions (see data/routes/mentions.js) every 10s — same       */
 /* cadence as DevAdminUsersScreen.jsx's "who's online" poll, since this   */
 /* is a similarly low-urgency background refresh, not the 5s live-comment */
@@ -54,7 +61,7 @@ export default function MentionsBell() {
       <style>{CSS}</style>
       <button
         type="button" className={"dev-toolbar-icon-btn" + (unread.length > 0 ? " active" : "")}
-        onClick={() => setOpen((v) => !v)} title="Mentions"
+        onClick={() => setOpen((v) => !v)} title="Notifications — mentions and status updates on your comments"
       >
         <Bell size={13} />
         {unread.length > 0 && <span className="mentions-bell-badge">{unread.length > 9 ? "9+" : unread.length}</span>}
@@ -62,7 +69,7 @@ export default function MentionsBell() {
       {open && (
         <div ref={dropdownRef} className="mentions-bell-dropdown jynx-ui">
           {unread.length === 0 ? (
-            <div className="mentions-bell-empty">No new mentions.</div>
+            <div className="mentions-bell-empty">No new notifications.</div>
           ) : (
             unread.map((m) => (
               <div key={m.id} className="mentions-bell-item">
