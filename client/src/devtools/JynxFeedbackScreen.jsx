@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Check, Download, Loader2, GitPullRequest, CheckCircle2, XCircle, MessageCircle, Undo2, Pencil } from "lucide-react";
 import { fetchJynxFeedback, resolveJynxFeedback, exportJynxFeedbackMarkdown, replyToJynxFeedback, editJynxFeedback } from "./devApi.js";
+import { parseMentionQuery, matchMentionCandidates, insertMentionText, renderWithMentions } from "./mentionUtils.jsx";
 
 const ACTION_STATUS_LABEL = { queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed" };
 const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: GitPullRequest, done: CheckCircle2, failed: XCircle };
@@ -73,6 +74,21 @@ export default function JynxFeedbackScreen() {
     setEditingId(null);
     setEditText("");
     reload();
+  }
+
+  // מועמדי @mention — ראו ההערה המקבילה ב-DevAnnotationsScreen.jsx.
+  const mentionCandidates = useMemo(() => {
+    const names = new Set(["jynx"]);
+    (items || []).forEach((a) => { if (a.authorName) names.add(a.authorName); });
+    return [...names];
+  }, [items]);
+  const activeMentionQuery = useMemo(() => parseMentionQuery(replyText), [replyText]);
+  const mentionMatches = useMemo(
+    () => matchMentionCandidates(activeMentionQuery, mentionCandidates),
+    [activeMentionQuery, mentionCandidates]
+  );
+  function insertMention(name) {
+    setReplyText((prev) => insertMentionText(prev, name));
   }
 
   if (!items) return <div className="dev-admin-empty">Loading...</div>;
@@ -159,13 +175,28 @@ export default function JynxFeedbackScreen() {
                     <div className="dev-admin-thread">
                       {replies.map((r) => (
                         <div key={r.id} className="dev-admin-thread-item">
-                          <b>{r.authorName}:</b> {r.text}
+                          <b>{r.authorName}:</b> {renderWithMentions(r.text, { mentionClassName: "dev-admin-mention", jynxClassName: "dev-admin-mention-jynx" })}
                           <span className="dev-admin-thread-time">{new Date(r.createdAt).toLocaleString("en-US")}</span>
                         </div>
                       ))}
-                      <div className="dev-admin-thread-input">
-                        <input value={replyText} placeholder="Write a reply..." onChange={(e) => setReplyText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendReply(a)} />
-                        <button type="button" onClick={() => sendReply(a)} disabled={!replyText.trim()}>Send</button>
+                      <div className="dev-admin-thread-input-wrap">
+                        {mentionMatches.length > 0 && (
+                          <div className="dev-admin-mention-dropdown">
+                            {mentionMatches.map((n) => (
+                              <button key={n} type="button" onClick={() => insertMention(n)}>
+                                {n === "jynx" ? "🔮 @jynx — re-open the PR for this" : `@${n}`}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <div className="dev-admin-thread-input">
+                          <input
+                            value={replyText} placeholder="Write a reply... (@name to notify, @jynx to update the PR)"
+                            onChange={(e) => setReplyText(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && sendReply(a)}
+                          />
+                          <button type="button" onClick={() => sendReply(a)} disabled={!replyText.trim()}>Send</button>
+                        </div>
                       </div>
                     </div>
                   )}

@@ -389,6 +389,21 @@ const CSS = `
 .dev-admin-thread-item{ font-size:11.5px; color:var(--text); display:flex; flex-wrap:wrap; gap:6px; align-items:baseline; }
 .dev-admin-thread-item b{ color:var(--jynx); }
 .dev-admin-thread-time{ font-size:10px; color:var(--text-dim); margin-inline-start:auto; }
+/* אזכור @שם/@jynx בתגובה — כחול (לא הסגול-מותג של Jynx) כדי שיובחן ויזואלית,
+   ראו mentionUtils.jsx (משותף עם CommentsPanel.jsx). */
+.dev-admin-mention{ color:#2F8FCE; font-weight:700; }
+.dev-admin-mention-jynx{ color:var(--dev); }
+.dev-admin-thread-input-wrap{ position:relative; }
+.dev-admin-mention-dropdown{
+  position:absolute; bottom:100%; left:0; right:0; margin-bottom:4px; background:var(--panel);
+  border:1px solid var(--jynx); border-radius:8px; padding:4px; display:flex; flex-direction:column; gap:2px;
+  box-shadow:var(--shadow-md); z-index:1; max-height:140px; overflow-y:auto;
+}
+.dev-admin-mention-dropdown button{
+  background:none; border:none; text-align:left; padding:5px 7px; border-radius:5px; font-size:11.5px;
+  color:var(--text); cursor:pointer;
+}
+.dev-admin-mention-dropdown button:hover{ background:color-mix(in srgb, var(--jynx) 12%, transparent); color:var(--jynx); }
 .dev-admin-thread-input{ display:flex; gap:6px; }
 .dev-admin-thread-input input{
   flex:1; background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:6px 9px;

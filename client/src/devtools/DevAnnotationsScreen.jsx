@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Check, Download, Zap, Loader2, GitPullRequest, CheckCircle2, XCircle, MessageCircle, Undo2, Archive, ArchiveRestore, Pencil, Save, Trash2, X, Paperclip } from "lucide-react";
 import { fetchAnnotations, resolveAnnotation, archiveAnnotation, editAnnotationComment, deleteAnnotation, exportAnnotationsMarkdown, requestAnnotationAction, replyToAnnotation } from "./devApi.js";
+import { parseMentionQuery, matchMentionCandidates, insertMentionText, renderWithMentions } from "./mentionUtils.jsx";
 
 const ACTION_STATUS_LABEL = {
   none: null, queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed",
@@ -85,6 +86,23 @@ export default function DevAnnotationsScreen() {
     await deleteAnnotation(a.id);
     setDeletingId(null);
     reload();
+  }
+
+  // מועמדי @mention — מחברי ההערות הידועים בתור הזה, פלוס "jynx" השמור.
+  // אותה פילוסופיה כמו CommentsPanel.jsx (הטקסט הוא מקור האמת, אין רשימת
+  // אזכורים נפרדת שצריכה להישאר מסונכרנת).
+  const mentionCandidates = useMemo(() => {
+    const names = new Set(["jynx"]);
+    (items || []).forEach((a) => { if (a.authorName) names.add(a.authorName); });
+    return [...names];
+  }, [items]);
+  const activeMentionQuery = useMemo(() => parseMentionQuery(replyText), [replyText]);
+  const mentionMatches = useMemo(
+    () => matchMentionCandidates(activeMentionQuery, mentionCandidates),
+    [activeMentionQuery, mentionCandidates]
+  );
+  function insertMention(name) {
+    setReplyText((prev) => insertMentionText(prev, name));
   }
 
   if (!items) return <div className="dev-admin-empty">Loading...</div>;
@@ -190,17 +208,28 @@ export default function DevAnnotationsScreen() {
                     <div className="dev-admin-thread">
                       {replies.map((r) => (
                         <div key={r.id} className="dev-admin-thread-item">
-                          <b>{r.authorName}:</b> {r.text}
+                          <b>{r.authorName}:</b> {renderWithMentions(r.text, { mentionClassName: "dev-admin-mention", jynxClassName: "dev-admin-mention-jynx" })}
                           <span className="dev-admin-thread-time">{new Date(r.createdAt).toLocaleString("en-US")}</span>
                         </div>
                       ))}
-                      <div className="dev-admin-thread-input">
-                        <input
-                          value={replyText} placeholder="Write a reply..."
-                          onChange={(e) => setReplyText(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && sendReply(a)}
-                        />
-                        <button type="button" onClick={() => sendReply(a)} disabled={!replyText.trim()}>Send</button>
+                      <div className="dev-admin-thread-input-wrap">
+                        {mentionMatches.length > 0 && (
+                          <div className="dev-admin-mention-dropdown">
+                            {mentionMatches.map((n) => (
+                              <button key={n} type="button" onClick={() => insertMention(n)}>
+                                {n === "jynx" ? "🔮 @jynx — re-open the PR for this" : `@${n}`}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <div className="dev-admin-thread-input">
+                          <input
+                            value={replyText} placeholder="Write a reply... (@name to notify, @jynx to update the PR)"
+                            onChange={(e) => setReplyText(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && sendReply(a)}
+                          />
+                          <button type="button" onClick={() => sendReply(a)} disabled={!replyText.trim()}>Send</button>
+                        </div>
                       </div>
                     </div>
                   )}
