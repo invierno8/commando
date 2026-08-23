@@ -10,6 +10,7 @@ import { useDraggableFab } from "../useDraggableFab.js";
 import DrawingOverlay from "./DrawingOverlay.jsx";
 import { parseMentionQuery, matchMentionCandidates, insertMentionText, renderWithMentions as renderMentionsShared, useDevUserDirectory } from "../mentionUtils.jsx";
 import { openUserProfile } from "../openUserProfile.js";
+import { getStickyChromeRects, isCoveredBySticky } from "./stickyChromeBounds.js";
 
 const ACTION_STATUS_LABEL = { queued: "Queued", in_progress: "In progress", pr_opened: "PR opened", done: "Done", failed: "Failed" };
 const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: GitPullRequest, done: CheckCircle2, failed: XCircle };
@@ -156,9 +157,20 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, route, scope, isAdmin, canJynxComment]);
 
+  // rAF-throttled — ראו ההערה המקבילה ב-AdminAnnotationMarkers.jsx
+  // (jynx-mt5edij0xz1s): setTick() גולמי לכל אירוע scroll טבעי הצטבר מהר
+  // יותר משה-render יכול לעמוד בו ברשימת-תגובות ארוכה, מה שגרם לנקודות
+  // להיראות "מפגרות" אחרי האלמנט שלהן בגלילה מהירה.
   useEffect(() => {
     if (!active) return;
-    function onLayoutChange() { setTick((t) => t + 1); }
+    let rafId = null;
+    function onLayoutChange() {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        setTick((t) => t + 1);
+      });
+    }
     window.addEventListener("scroll", onLayoutChange, true);
     window.addEventListener("resize", onLayoutChange);
     const id = setInterval(onLayoutChange, 1500);
@@ -166,6 +178,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
       window.removeEventListener("scroll", onLayoutChange, true);
       window.removeEventListener("resize", onLayoutChange);
       clearInterval(id);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, [active]);
 
@@ -181,9 +194,15 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
       byLabel.get(a.targetLabel).push(a);
     });
     const out = [];
+    // ראו stickyChromeBounds.js — אלמנט שגלל מתחת לניווט הדביק לא אמור
+    // להשאיר נקודה צפה מעליו (jynx-mt5edij0xz1s).
+    const stickyRects = getStickyChromeRects();
     byLabel.forEach((list, label) => {
       const el = document.querySelector(`[data-devblock="${CSS.escape(label)}"]`);
-      if (el) out.push({ label, list, rect: el.getBoundingClientRect() });
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (isCoveredBySticky(rect, stickyRects)) return;
+      out.push({ label, list, rect });
     });
     return out;
   }, [items, tick, route]);

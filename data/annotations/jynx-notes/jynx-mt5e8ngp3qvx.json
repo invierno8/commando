@@ -7,10 +7,10 @@
   "targetLabel": "dev-fab",
   "secondaryTargets": [],
   "comment": "no more dreaming thinking bubble, have the eyes and the jynx bubble the main curecter with animation loadings and more, also give it sometimes only the eyes, some times only jynx logo sometimes bote, always animations or text in the bubble etc etc perfect its personality, but no more of the chat/dreaming bubble above it with the waking u thinking etc.. all animeted in the jynx bubble personality",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
-  "actionStatus": "queued",
+  "resolved": true,
+  "resolvedAt": "2026-08-23T06:15:00.000Z",
+  "resolutionNote": "Fixed directly: removed JynxThought.jsx (the floating callout above the bubble) entirely. New JynxBubbleContent.jsx puts all animation/text inside the bubble pill itself -- idle cycles between face-only/logo-only/both/a wave every 4s, and waking/thinking/typing/success/error each get a fixed face+text pairing shown inline (e.g. the wrong-password error now reads directly in the bubble instead of a callout above it).",
+  "actionStatus": "done",
   "actionRequestedAt": "2026-08-23T05:55:47.017Z",
   "actionPrUrl": null,
   "actionLog": null,
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }
