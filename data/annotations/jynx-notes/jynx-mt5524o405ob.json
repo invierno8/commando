@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt5524o405ob",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T01:38:46.180Z",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-draw-toggle",
+  "secondaryTargets": [],
+  "comment": "anble multi step drwings, right now if i draw a line and let go that the drawing no way to make an arrow etc etc make it able to draw anythung and a comment on it no limits, also when opening drawing tool is on open a 4 color pallete to choose from the jynx collors i do love the deaful purple and everything else about it, great build ! great feture.",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-23T01:38:46.180Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
