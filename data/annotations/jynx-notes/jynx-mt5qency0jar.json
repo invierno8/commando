@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt5qency0jar",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T11:36:22.210Z",
+  "route": "dashboard",
+  "targetLabel": "dev-admin-tab",
+  "secondaryTargets": [],
+  "comment": "add a online icon next to online now users",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-23T11:36:22.210Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
