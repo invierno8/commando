@@ -1,1 +1,30 @@
-{}
+{
+  "brg-golani": [
+    {
+      "id": "ntf-1787481609658-vvev3",
+      "read": false,
+      "ts": 1787481609658,
+      "kind": "ticket",
+      "ticketId": "REQ-2101",
+      "ticketTitle": "חוסר בכוונות יום",
+      "unit": "גדוד 12",
+      "requestedBy": "רב״ט עידו שני",
+      "collaborators": [],
+      "type": "approved",
+      "message": "\"חוסר בכוונות יום\" אושרה על ידי קצין אמל״ח יחידה (הדגמה) והועברה לתיעדוף החטיבה"
+    },
+    {
+      "id": "ntf-1787481609656-4pb94",
+      "read": false,
+      "ts": 1787481609656,
+      "kind": "ticket",
+      "ticketId": "REQ-2101",
+      "ticketTitle": "חוסר בכוונות יום",
+      "unit": "גדוד 12",
+      "requestedBy": "רב״ט עידו שני",
+      "collaborators": [],
+      "type": "approved",
+      "message": "\"חוסר בכוונות יום\" אושרה על ידי קצין אמל״ח יחידה (הדגמה) והועברה לתיעדוף החטיבה"
+    }
+  ]
+}
