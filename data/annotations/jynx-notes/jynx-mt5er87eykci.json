@@ -1,0 +1,26 @@
+{
+  "id": "jynx-mt5er87eykci",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T06:10:13.706Z",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-settings-btn",
+  "secondaryTargets": [
+    "dev-toolbar-admin-btn"
+  ],
+  "comment": "connect [→ dev-toolbar-admin-btn]  to settings, it should be all a big settings page that admins can see more things and manage more then a dev user",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-23T06:10:13.706Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}

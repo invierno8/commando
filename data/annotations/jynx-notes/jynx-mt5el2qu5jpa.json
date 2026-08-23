@@ -1,0 +1,25 @@
+{
+  "id": "jynx-mt5el2qu5jpa",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T06:05:26.694Z",
+  "route": "dashboard",
+  "targetLabel": "comments-sidebar",
+  "secondaryTargets": [],
+  "comment": "this needs to be the main comment center to manage all comments, have a toggle button for \"only on this page\" or \"universal\" to show comments on ly on the page youre at or on all site wise, when clicking on any comment it will jume to the element of the comment.",
+  "resolved": true,
+  "resolvedAt": "2026-08-23T06:05:26.694Z",
+  "resolvedBy": "auto (PR opened)",
+  "resolutionNote": null,
+  "actionStatus": "pr_opened",
+  "actionRequestedAt": "2026-08-23T06:05:26.694Z",
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/38",
+  "actionLog": "This request — make comments-sidebar the main comment-management center, with a This-page/Universal toggle, and click-to-jump-to-element — is functionally identical to an earlier-queued work item (jynx-mt558crxb02w: \"make it a full list of comments, not just this page, and add a toggle for just this page... or universal comments\"), which was already implemented and merged as PR #38 (\"CommentsPanel becomes the single comment-management place, Admin panel becomes Settings\") a few minutes before this comment was filed. Verified directly against current main: client/src/devtools/overlay/CommentsPanel.jsx already has the exact This-page/All-pages scope toggle asked for (setScope(\"page\"|\"all\")), already supports resolve/reopen/reply/edit for both comment queues from one place, and already jumps to a comment's on-page element when clicked (with a route badge for cross-page items in All-pages mode, since those have no element on the current page to jump to). No new code change was needed — pointing actionPrUrl at #38, the PR that actually implements this.",
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}

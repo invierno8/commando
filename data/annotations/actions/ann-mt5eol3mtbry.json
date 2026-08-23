@@ -1,0 +1,11 @@
+{
+  "id": "ann-mt5eol3mtbry",
+  "route": "dashboard",
+  "targetLabel": "jynx-settings-panel",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "make it more user friendly, the dragging can be better,  in the icon size have an example icon on the page that grows or gets smaller and have a normal min and max size make it interactive and more user friendly please",
+  "authorName": "Admin",
+  "requestedAt": "2026-08-23T06:08:11.471Z",
+  "requestedBy": "Admin"
+}

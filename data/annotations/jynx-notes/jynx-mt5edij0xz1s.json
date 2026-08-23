@@ -9,7 +9,8 @@
   "comment": "make the dots aligned and stick to the element when scrolling and fix a common problem that some jynx overlayes are above the nav bar in z index so its just all over the place when scrolling, like the dots. or hover effects etc...",
   "resolved": true,
   "resolvedAt": "2026-08-23T06:15:00.000Z",
-  "resolutionNote": "Fixed directly: (1) dots lagging during fast scroll -- the scroll listener did an unthrottled setState per native scroll event; now collapsed to at most one recompute per animation frame (AdminAnnotationMarkers.jsx and CommentsPanel.jsx). (2) dots floating over the sticky topbar/sidebar for elements scrolled underneath them -- new shared stickyChromeBounds.js hides a dot whenever its target rect overlaps .app-topbar/.app-sidebar, since the target itself is visually hidden there too.",
+  "resolvedBy": "Admin",
+  "resolutionNote": "Fixed directly (commit 31d2711): (1) dots lagging during fast scroll -- the scroll listener did an unthrottled setState per native scroll event; now collapsed to at most one recompute per animation frame (AdminAnnotationMarkers.jsx and CommentsPanel.jsx). (2) dots floating over the sticky topbar/sidebar for elements scrolled underneath them -- new shared stickyChromeBounds.js hides a dot whenever its target rect overlaps .app-topbar/.app-sidebar, since the target itself is visually hidden there too. A concurrent run independently produced the same fix as PR #42 -- closed as a duplicate of this direct commit rather than merging both.",
   "actionStatus": "done",
   "actionRequestedAt": "2026-08-23T05:59:33.900Z",
   "actionPrUrl": null,
@@ -20,6 +21,5 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  },
-  "resolvedBy": "Admin"
+  }
 }

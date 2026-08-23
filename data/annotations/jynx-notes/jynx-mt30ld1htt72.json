@@ -8,15 +8,22 @@
   "resolved": true,
   "resolvedAt": "2026-08-23T05:20:00.000Z",
   "actionStatus": "pr_opened",
-  "actionRequestedAt": "2026-08-21T13:58:13.061Z",
-  "actionPrUrl": "https://github.com/invierno8/commando/pull/12",
-  "actionLog": "A concurrent routine run raced on this same item and produced three PRs; #12 is the one that correctly and completely covers this request — it lets you edit a Jynx-feedback comment's own text (via the admin's Jynx tab) and adds a grantable \"Jynx commenter\" permission tier so an admin can let a regular dev user leave Jynx-meta feedback too, while keeping viewing/resolving/exporting the full Jynx queue admin-only exactly as asked. #9 attempted the same permission tier but accidentally also exposed the full admin feedback queue to any Jynx commenter (not just their own entries) and was closed in #12's favor. #7 (still open, separate PR) adds edit-your-own-text for regular QA-annotation comments — a related but distinct feature, not this note's own edit capability.",
+  "actionRequestedAt": "2026-08-23T06:03:36.925Z",
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/38",
+  "actionLog": "Follow-up round (2026-08-23): the follow-up text asked to make the comment menu item/page the main overall comments-and-logs center, and the admin menu item the settings page for menu items etc. This is, functionally word-for-word, the same information-architecture change already implemented and merged in PR #38 (\"CommentsPanel becomes the single comment-management place, Admin panel becomes Settings\"), which was written for a separate, earlier-queued work item (jynx-mt558crxb02w) asking the same thing in different words. #38 merged at 2026-08-23T06:00:13Z, a few minutes before this follow-up was filed at 06:03:37Z — the admin likely hadn't seen it land yet. Verified directly against current main: CommentsPanel.jsx (client/src/devtools/overlay/CommentsPanel.jsx) is now the single place to view/resolve/reopen/reply/edit comments across both the QA-annotation and Jynx-feedback queues, with a This-page/All-pages scope toggle and click-to-jump; DevAdminPanel.jsx is now a Settings hub with Dev Users / Menu / Logs tabs (Logs being read-only). No further code change was needed for this follow-up — re-pointing actionPrUrl from #12 (the prior round's PR, covering edit-in-place text + the Jynx-commenter tier) to #38 since #38 is what actually implements what was just asked for. History preserved above.\n\nEarlier round: A concurrent routine run raced on this same item and produced three PRs; #12 is the one that correctly and completely covers the original request — it lets you edit a Jynx-feedback comment's own text (via the admin's Jynx tab) and adds a grantable \"Jynx commenter\" permission tier so an admin can let a regular dev user leave Jynx-meta feedback too, while keeping viewing/resolving/exporting the full Jynx queue admin-only exactly as asked. #9 attempted the same permission tier but accidentally also exposed the full admin feedback queue to any Jynx commenter (not just their own entries) and was closed in #12's favor. #7 (still open, separate PR) adds edit-your-own-text for regular QA-annotation comments — a related but distinct feature, not this note's own edit capability.",
   "replies": [
     {
       "id": "rep-mt31n8y41fu0",
       "authorName": "Admin",
       "text": "Partial progress: every dev user now has their own comments view (the sidebar, with an Open/Done split and a Just me filter), can jump to a comment's location, and can reply to any comment thread. Editing your own comment text, and the separate 'jynx commenter' permission tier for regular dev users, are still open.",
       "createdAt": "2026-08-21T14:27:40.684Z"
+    },
+    {
+      "id": "rep-mt5eiq1pm4fz",
+      "authorId": null,
+      "authorName": "Admin",
+      "text": "@jynx comment turned out bad, please make it so the comment menu item and the page it opens are the main overall comments center all managment and logs of comments will be on here, make the admin menu item page the settings page for the menu items etc etc",
+      "createdAt": "2026-08-23T06:03:36.925Z"
     }
   ],
   "resolvedBy": "Admin",

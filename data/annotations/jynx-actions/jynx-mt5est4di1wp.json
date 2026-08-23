@@ -1,0 +1,10 @@
+{
+  "id": "jynx-mt5est4di1wp",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-settings-btn",
+  "secondaryTargets": [
+    "dev-toolbar-admin-btn"
+  ],
+  "comment": "connect [→ dev-toolbar-admin-btn]  to settings, it should be all a big settings page that admins can see more things and manage more then a dev user",
+  "requestedAt": "2026-08-23T06:11:28.498Z"
+}
