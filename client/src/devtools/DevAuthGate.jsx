@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, GripHorizontal, X, Loader2, Target, Pencil, Users } from "lucide-react";
+import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, GripHorizontal, X, Loader2, Target, Pencil, Users, UserCog } from "lucide-react";
 import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
@@ -85,6 +85,22 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [adminOpen, setAdminOpen] = useState(false);
   const [overlayOn, setOverlayOn] = useState(true);
   const [commentsOn, setCommentsOn] = useState(false);
+  // תפריט "Hi" (jynx-mt5q884jd7ap) — מחליף את הצמד הישן span-שם-קבוע +
+  // כפתור-logout נפרד בכפתור-toggle יחיד בגודל אייקון רגיל (כמו כל שאר
+  // .dev-toolbar-icon-btn בשורה, במקום הכדור הרחב שהיה שם), עם dropdown
+  // שנפתח/נסגר בדיוק כמו MentionsBell.jsx (ref + click-outside).
+  const [hiMenuOpen, setHiMenuOpen] = useState(false);
+  const hiMenuRef = useRef(null);
+  const hiDropdownRef = useRef(null);
+  useKeepInViewport(hiDropdownRef, hiMenuOpen, 8, []);
+  useEffect(() => {
+    if (!hiMenuOpen) return;
+    function onDocClick(e) {
+      if (!hiMenuRef.current?.contains(e.target)) setHiMenuOpen(false);
+    }
+    window.addEventListener("click", onDocClick, true);
+    return () => window.removeEventListener("click", onDocClick, true);
+  }, [hiMenuOpen]);
   // סימוני-מנהל הקבועים על העמוד (AdminAnnotationMarkers.jsx) — נפרד בכוונה
   // מ-overlayOn (שרק שולט על הילת-hover, לא על הנקודות הקבועות). דלוק
   // כברירת מחדל, אבל למי שמוצא אותם מפריעים על מסך עמוס יש עכשיו כפתור
@@ -454,10 +470,28 @@ export default function DevAuthGate({ route, devFabProps }) {
             </div>
             );
           })}
-          <span className="dev-toolbar-devname">Hi, {devName}</span>
-          <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-logout-btn" onClick={logout} title="Log out of Jynx">
-            <LogOut size={13} />
-          </button>
+          <div ref={hiMenuRef} className="dev-toolbar-hi-wrap">
+            <button
+              type="button" className={"dev-toolbar-icon-btn dev-toolbar-hi-btn" + (hiMenuOpen ? " active" : "")}
+              data-devblock="dev-toolbar-hi-btn" onClick={() => setHiMenuOpen((v) => !v)} title="Account"
+            >
+              Hi
+            </button>
+            {hiMenuOpen && (
+              <div ref={hiDropdownRef} className="dev-toolbar-hi-dropdown jynx-ui">
+                <div className="dev-toolbar-hi-name">Hi, {devName}</div>
+                <button
+                  type="button" className="dev-toolbar-hi-item"
+                  onClick={() => { setHiMenuOpen(false); setProfileUserId(devUserId); }}
+                >
+                  <UserCog size={13} /> User settings
+                </button>
+                <button type="button" className="dev-toolbar-hi-item" onClick={() => { setHiMenuOpen(false); logout(); }}>
+                  <LogOut size={13} /> Log out
+                </button>
+              </div>
+            )}
+          </div>
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-collapse-btn" onClick={toggleToolbarOpen} title="Collapse to the Jynx bubble">
             <X size={13} />
           </button>
@@ -556,7 +590,6 @@ const CSS = `
 }
 .dev-fab-toolbar:active{ cursor:grabbing; }
 .dev-fab-toolbar.vertical{ flex-direction:column; align-items:stretch; }
-.dev-fab-toolbar.vertical .dev-toolbar-devname{ text-align:center; max-width:96px; }
 /* הידית עצמה עכשיו כפתור אמיתי (מחליף אופקי/אנכי) — לא רק "אזור-גרירה
    שיושב שם", אז צריך רמז ברור שהיא לחיצה: קצת יותר גדולה מכל שאר האייקונים
    ותוחם עדין (border) כדי לא "להיבלע" בתוך פס-הכלים כמו לפני. */
@@ -589,11 +622,30 @@ const CSS = `
 .dev-toolbar-icon-btn:hover{ background:color-mix(in srgb, var(--jynx) 10%, var(--panel)); }
 .dev-toolbar-icon-btn.active{ background:var(--jynx); color:#fff; }
 .dev-toolbar-icon-btn svg{ transform:scale(var(--jynx-icon-scale, 1)); }
-.dev-toolbar-devname{
-  background:var(--panel); border:1px solid var(--jynx); color:var(--jynx); border-radius:20px;
-  padding:6px 12px; font-family:var(--font-mono); font-size:11px; font-weight:700; white-space:nowrap;
-  overflow:hidden; text-overflow:ellipsis;
+/* תפריט "Hi" (jynx-mt5q884jd7ap) — מחליף את .dev-toolbar-devname הישן (כדור
+   רחב-משתנה שהיה הפריט הרחב ביותר בשורה, וקבע דרכו את רוחב הסרגל בפריסה
+   אנכית — align-items:stretch לעיל אז מתח כל הפריטים האחרים לרוחבו, מה
+   שבפועל היה שורש התלונה "לא ממורכז"/"ה-X רחוק"). עכשיו זה כפתור-אייקון
+   רגיל, באותו גודל בדיוק כמו כל שאר .dev-toolbar-icon-btn בשורה.
+   position:relative כדי שה-dropdown ימוקם ביחס אליו, בדיוק כמו
+   .mentions-bell-wrap ב-MentionsBell.jsx. */
+.dev-toolbar-hi-wrap{ position:relative; }
+.dev-toolbar-hi-btn{ width:auto; padding:0 10px; font-family:var(--font-mono); font-size:11px; font-weight:700; white-space:nowrap; }
+.dev-toolbar-hi-dropdown{
+  position:absolute; top:36px; right:0; width:180px; background:var(--panel); border:1px solid var(--jynx);
+  border-radius:10px; padding:6px; display:flex; flex-direction:column; gap:2px; box-shadow:var(--shadow-md);
+  animation:devAnnotateIn .12s ease; z-index:1;
 }
+.dev-toolbar-hi-name{
+  font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--jynx); padding:4px 8px 6px;
+  border-bottom:1px solid var(--line); margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.dev-toolbar-hi-item{
+  display:flex; align-items:center; gap:8px; background:none; border:none; color:var(--text); cursor:pointer;
+  padding:7px 8px; border-radius:6px; font-size:12px; font-family:var(--font-sans); text-align:left;
+}
+.dev-toolbar-hi-item:hover{ background:color-mix(in srgb, var(--jynx) 10%, var(--panel)); color:var(--jynx); }
+.dev-toolbar-hi-item svg{ flex:none; }
 
 .jynx-draw-palette{
   position:fixed; z-index:79; display:flex; align-items:center; gap:6px; padding:6px;
