@@ -562,7 +562,7 @@ const CSS = `
    ותוחם עדין (border) כדי לא "להיבלע" בתוך פס-הכלים כמו לפני. */
 .dev-toolbar-grip{
   display:flex; align-items:center; justify-content:center; width:22px; height:30px; color:var(--text-dim);
-  flex:none; background:none; border:1px dashed color-mix(in srgb, var(--jynx) 40%, transparent); border-radius:6px;
+  flex:none; align-self:center; background:none; border:1px dashed color-mix(in srgb, var(--jynx) 40%, transparent); border-radius:6px;
   padding:0; cursor:pointer; transition:color .12s, border-color .12s;
 }
 .dev-toolbar-grip:hover{ color:var(--jynx); border-color:var(--jynx); }
