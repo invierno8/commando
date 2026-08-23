@@ -489,7 +489,7 @@ const CSS = `
   padding:7px 0; font-size:12px; font-weight:700; cursor:pointer;
 }
 .jynx-settings-toggle-row button.active{ background:var(--jynx); border-color:var(--jynx); color:#fff; }
-.jynx-settings-slider{ width:100%; accent-color:var(--jynx); }
+.jynx-settings-size-tabs .pill-tab{ flex:1; text-align:center; padding:6px 0 !important; font-size:12px !important; }
 .jynx-settings-order-list{ display:flex; flex-direction:column; gap:4px; }
 .jynx-settings-order-item{
   display:flex; align-items:center; gap:7px; background:var(--panel-raised); border:1px solid var(--line);
