@@ -217,7 +217,7 @@ const CSS = `
 .dev-admin-reauth-error{ color:var(--red); font-size:11.5px; flex-basis:100%; }
 
 .dev-admin-autoresolve-row{
-  display:flex; align-items:center; gap:10px; margin-bottom:12px; padding:8px 10px;
+  display:flex; align-items:center; gap:10px; margin-top:30px; margin-bottom:12px; padding:8px 10px;
   background:var(--panel-raised); border:1px solid var(--line); border-radius:9px;
 }
 .dev-admin-autoresolve-row span{ flex:1; font-size:11.5px; color:var(--text-dim); line-height:1.5; }
