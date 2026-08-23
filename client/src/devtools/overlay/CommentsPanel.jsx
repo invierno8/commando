@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Pencil, Paperclip, Zap, Loader2, GitPullRequest, XCircle, Sparkles, RotateCcw } from "lucide-react";
+import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, MessageCircle, Pencil, Paperclip, Zap, Loader2, GitPullRequest, XCircle, Sparkles, RotateCcw, Check, Undo2, Trash2 } from "lucide-react";
 import {
   fetchDevAnnotations, replyToAnnotation, editMyAnnotation, reactToAnnotation, requestAnnotationAction,
   fetchJynxFeedback, fetchMyJynxFeedback, replyToJynxFeedback, reactToJynxFeedback, submitJynxFeedback,
+  resolveAnnotation, resolveJynxFeedback, deleteAnnotation,
 } from "../devApi.js";
 import { useDraggableFab } from "../useDraggableFab.js";
 import DrawingOverlay from "./DrawingOverlay.jsx";
@@ -17,23 +18,34 @@ const ACTION_STATUS_ICON = { queued: Loader2, in_progress: Loader2, pr_opened: G
 // (ראו data/routes/annotations.js ו-data/routes/jynx-feedback.js).
 const REACTION_EMOJI = ["👍", "😄", "🤔", "❤️"];
 
-// מדגיש @שם/@jynx בטקסט תגובה שכבר נשלח — ראו mentionUtils.jsx (משותף עכשיו
-// עם DevAnnotationsScreen.jsx/JynxFeedbackScreen.jsx, לא רק כאן).
+// מדגיש @שם/@jynx בטקסט תגובה שכבר נשלח — ראו mentionUtils.jsx. עד
+// 2026-08-23 היה משותף גם עם DevAnnotationsScreen.jsx/JynxFeedbackScreen.jsx
+// (שרשורי-תגובה בפאנל הניהול) — שני אלה נמחקו כשניהול ההערות עבר כולו לכאן
+// (ראו הבלוק למעלה), אז זה כרגע היחיד שמשתמש בפונקציה המשותפת הזו, אבל
+// mentionUtils.jsx עצמו נשאר מודול משותף בכוונה למקרה שדבר-מה יזדקק לזה שוב.
 function renderWithMentions(text) {
   return renderMentionsShared(text, { mentionClassName: "comments-mention", jynxClassName: "comments-mention-jynx" });
 }
 
 /* ================================================================== */
 /* LEGO BLOCK — "who commented on what, here" for EVERY dev user (not    */
-/* admin-only, unlike AdminAnnotationMarkers.jsx which is the action-    */
-/* management view). Three synced pieces sharing one fetch:              */
+/* admin-only, unlike AdminAnnotationMarkers.jsx which is the always-on   */
+/* status-dot overlay, a separate thing). Sharing one fetch:              */
 /*  1. Small dots on commented elements — hover an element's dot to      */
 /*     reveal the comment(s) on it (hidden by default, so it doesn't      */
 /*     clutter the page like admin's always-expanded markers).           */
-/*  2. A draggable, collapsible side list of comments on the current      */
-/*     route — Open/Done tabs, "just mine" toggle. Hovering a row         */
-/*     outlines the matching page element in the Jynx brand color;        */
-/*     clicking a row scrolls to and flashes it (jump-to-location).       */
+/*  2. A draggable, collapsible side list of comments — Open/Done tabs,   */
+/*     "just mine" toggle, and (added 2026-08-23, work item                */
+/*     jynx-mt558crxb02w) a "This page / All pages" scope toggle: "This    */
+/*     page" is the original route-filtered behavior, "All pages" drops    */
+/*     the route filter entirely and shows every route's comment (each     */
+/*     tagged with its own route so you can tell them apart) — this is     */
+/*     what makes this panel a genuine single place to see every open       */
+/*     comment, not just this screen's. Hovering a row outlines the         */
+/*     matching page element in the Jynx brand color; clicking a row        */
+/*     scrolls to and flashes it — both are necessarily a no-op for a       */
+/*     cross-route item in "All pages" mode (its element isn't in this      */
+/*     page's DOM at all), guarded in jumpTo()/rectFor() below.             */
 /*  3. Reply threads per comment — any dev user can add a follow-up,      */
 /*     so a resolved comment's author can react to the fix (or anyone     */
 /*     can ask a clarifying question before it's resolved).               */
@@ -41,16 +53,26 @@ function renderWithMentions(text) {
 /*     (authorId === currentDevUserId), swapping the text for a textarea   */
 /*     + Save/Cancel, calling editMyAnnotation() then reload(). Server-    */
 /*     side enforced too (PATCH /dev/annotations/:id 403s for anyone       */
-/*     else's comment) — this is just where the UI for it lives. Distinct  */
-/*     from the admin's own edit-any-comment control in                    */
-/*     DevAnnotationsScreen.jsx (PATCH /admin/annotations/:id) — that one  */
-/*     needs admin rights, this one needs nothing but being the author.    */
+/*     else's comment) — this is just where the UI for it lives.           */
+/*  5. Admin management (added 2026-08-23, same work item as #2) —         */
+/*     resolve/reopen and delete, for whichever admin is looking at this    */
+/*     panel. This used to live only in DevAdminPanel.jsx's now-removed     */
+/*     "Comments"/"Jynx" tabs (DevAnnotationsScreen.jsx/                    */
+/*     JynxFeedbackScreen.jsx, deleted this same change) — moved here so    */
+/*     an admin manages a comment right where they're already looking at    */
+/*     it instead of re-finding it in a separate admin-only list. Delete    */
+/*     is app-annotations-only: there's no DELETE endpoint for Jynx         */
+/*     feedback (data/routes/jynx-feedback.js never grew one), so a Jynx-   */
+/*     kind item only gets resolve/reopen here, same as before.             */
 /* ================================================================== */
 
 export default function CommentsPanel({ active, route, currentDevUserId, isAdmin, canJynxComment }) {
   const [items, setItems] = useState([]);
   const [statusFilter, setStatusFilter] = useState("open"); // open | done
   const [mineOnly, setMineOnly] = useState(false);
+  // "This page" (default — route-filtered, the original behavior) vs "All
+  // pages" (no route filter at all) — see the LEGO BLOCK comment above.
+  const [scope, setScope] = useState("page"); // page | all
   const [hoveredListId, setHoveredListId] = useState(null);
   const [hoveredDotLabel, setHoveredDotLabel] = useState(null);
   const [flashId, setFlashId] = useState(null);
@@ -58,6 +80,12 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   const [replyText, setReplyText] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState("");
+  // "מנהל מטפל בהערה" — resolvingId פותח תיבת-הערת-פתרון (כמו
+  // DevAnnotationsScreen.jsx לשעבר), deletingId פותח אישור-מחיקה מוטמע (רק
+  // ל-kind:"app", ראו LEGO BLOCK #5 למעלה).
+  const [resolvingId, setResolvingId] = useState(null);
+  const [resolveNote, setResolveNote] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
   const [collapsed, setCollapsed] = useState(false);
   const [tick, setTick] = useState(0);
   // "+ Feedback about Jynx" — הרכבה מינימלית inline, לא שימוש חוזר
@@ -97,14 +125,17 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     // "comments randomly disappear" from the user's side. null means "this
     // branch failed, keep whatever it last successfully had" instead of
     // "this branch is now empty" — see the setItems merge below.
-    const appPromise = fetchDevAnnotations(route).then((d) => d.map((a) => ({ ...a, kind: "app" }))).catch(() => null);
+    // scope "all" משמיט את פרמטר ה-route לגמרי (fetchDevAnnotations תומכת
+    // בזה — השרת כבר מחזיר הכל בלי route, ראו devApi.js) / את סינון ה-route
+    // הקליינטי על משוב Jynx (שממילא תמיד מגיע לא-מסונן מהשרת).
+    const appPromise = fetchDevAnnotations(scope === "all" ? null : route).then((d) => d.map((a) => ({ ...a, kind: "app" }))).catch(() => null);
     // Jynx commenter שאינו מנהל: לא יכול לקרוא את התור המלא
     // (GET /admin/jynx-feedback נשאר admin-only בכוונה), אבל צריך לראות את
     // מה שהוא עצמו כתב — ראו GET /dev/jynx-feedback/mine.
     const jynxPromise = isAdmin
-      ? fetchJynxFeedback().then((d) => d.filter((a) => a.route === route).map((a) => ({ ...a, kind: "jynx", authorName: a.authorName || "Admin" }))).catch(() => null)
+      ? fetchJynxFeedback().then((d) => d.filter((a) => scope === "all" || a.route === route).map((a) => ({ ...a, kind: "jynx", authorName: a.authorName || "Admin" }))).catch(() => null)
       : canJynxComment
-      ? fetchMyJynxFeedback().then((d) => d.filter((a) => a.route === route).map((a) => ({ ...a, kind: "jynx", authorName: a.authorName || "Admin" }))).catch(() => null)
+      ? fetchMyJynxFeedback().then((d) => d.filter((a) => scope === "all" || a.route === route).map((a) => ({ ...a, kind: "jynx", authorName: a.authorName || "Admin" }))).catch(() => null)
       : Promise.resolve([]);
     Promise.all([appPromise, jynxPromise]).then(([app, jynx]) => {
       setItems((prev) => [
@@ -119,7 +150,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     const t = setInterval(reload, 5000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, route, isAdmin, canJynxComment]);
+  }, [active, route, scope, isAdmin, canJynxComment]);
 
   useEffect(() => {
     if (!active) return;
@@ -137,7 +168,10 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   const grouped = useMemo(() => {
     void tick;
     const byLabel = new Map();
-    items.filter((a) => !a.resolved).forEach((a) => {
+    // "All pages" יכול להביא הערות ממסכים אחרים — לא אמורות לקבל נקודה על
+    // *העמוד הזה* (data-devblock שלהן, אם בכלל קיים כאן, שייך למשהו אחר
+    // לגמרי), אז מסננים גם לפי route כאן, לא רק resolved.
+    items.filter((a) => !a.resolved && (!a.route || a.route === route)).forEach((a) => {
       if (!a.targetLabel) return;
       if (!byLabel.has(a.targetLabel)) byLabel.set(a.targetLabel, []);
       byLabel.get(a.targetLabel).push(a);
@@ -148,10 +182,14 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
       if (el) out.push({ label, list, rect: el.getBoundingClientRect() });
     });
     return out;
-  }, [items, tick]);
+  }, [items, tick, route]);
 
+  // מחזיר null גם אם ה-targetLabel קיים אבל ההערה שייכת למסך אחר (מצב "All
+  // pages") — אין לה אלמנט אמיתי על העמוד הנוכחי, גם אם באיזשהו צירוף מקרים
+  // יש data-devblock עם אותה תווית (תוויות לא מובטחות ייחודיות בין מסכים).
   function rectFor(a) {
     if (!a?.targetLabel) return null;
+    if (a.route && a.route !== route) return null;
     const el = document.querySelector(`[data-devblock="${CSS.escape(a.targetLabel)}"]`);
     return el ? { el, rect: el.getBoundingClientRect() } : null;
   }
@@ -171,6 +209,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     void tick;
     const a = items.find((x) => x.id === hoveredListId);
     if (!a?.secondaryTargets?.length) return [];
+    if (a.route && a.route !== route) return [];
     return a.secondaryTargets
       .map((label) => document.querySelector(`[data-devblock="${CSS.escape(label)}"]`))
       .filter(Boolean)
@@ -199,6 +238,10 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   }
 
   function jumpTo(a) {
+    // מצב "All pages": פריט ממסך אחר — אין לו אלמנט אמיתי כאן, לקפוץ אליו
+    // לא אומר כלום (rectFor כבר מחזיר null עבורו, אבל בודקים גם כאן במפורש
+    // כדי לא לסמוך רק על תופעת-לוואי).
+    if (a?.route && a.route !== route) return;
     const found = rectFor(a);
     if (!found) return;
     found.el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -239,6 +282,29 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
 
   async function triggerAction(a) {
     await requestAnnotationAction(a.id);
+    reload();
+  }
+
+  // ניהול ע"י מנהל — ראו LEGO BLOCK #5 למעלה. resolveAnnotation/
+  // resolveJynxFeedback שתיהן כבר קיימות ב-devApi.js (היו משמשות רק את
+  // DevAnnotationsScreen.jsx/JynxFeedbackScreen.jsx, שנמחקו).
+  async function confirmResolve(a) {
+    if (a.kind === "jynx") await resolveJynxFeedback(a.id, true, resolveNote.trim() || null);
+    else await resolveAnnotation(a.id, true, "Admin", resolveNote.trim() || null);
+    setResolvingId(null);
+    setResolveNote("");
+    reload();
+  }
+  async function reopenComment(a) {
+    if (a.kind === "jynx") await resolveJynxFeedback(a.id, false);
+    else await resolveAnnotation(a.id, false);
+    reload();
+  }
+  // מחיקה — רק kind:"app" (אין DELETE ל-jynx-feedback, ראו data/routes/
+  // jynx-feedback.js).
+  async function confirmDelete(a) {
+    await deleteAnnotation(a.id);
+    setDeletingId(null);
     reload();
   }
 
@@ -375,7 +441,13 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
               </div>
               <button type="button" className={"comments-mine-toggle" + (mineOnly ? " active" : "")} onClick={() => setMineOnly((v) => !v)}>Just me</button>
             </div>
-            {shown.length === 0 && <div className="comments-sidebar-empty">No {statusFilter} comments on this screen.</div>}
+            <div className="comments-sidebar-filters comments-sidebar-scope-row">
+              <div className="pill-tabs">
+                <button type="button" className={"pill-tab" + (scope === "page" ? " active" : "")} onClick={() => setScope("page")}>This page</button>
+                <button type="button" className={"pill-tab" + (scope === "all" ? " active" : "")} onClick={() => setScope("all")}>All pages</button>
+              </div>
+            </div>
+            {shown.length === 0 && <div className="comments-sidebar-empty">No {statusFilter} comments {scope === "all" ? "anywhere" : "on this screen"}.</div>}
             <div className="comments-sidebar-list">
               {shown.map((a) => {
                 const replies = a.replies || [];
@@ -388,17 +460,23 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                 // saveReopen() above.
                 const isProcessed = a.resolved || a.actionStatus === "pr_opened";
                 const isEditing = editingId === a.id;
+                // "All pages" בלבד: פריט ממסך אחר — אין לו אלמנט על העמוד
+                // הזה, אז hover/קליק-לקפיצה לא עושים כלום (ראו rectFor/
+                // jumpTo למעלה) — מסמנים את זה ויזואלית עם תווית ה-route
+                // ו-cursor רגיל במקום pointer, לא שקט לגמרי.
+                const otherPage = scope === "all" && a.route && a.route !== route;
                 return (
                   <div key={a.id} className="comments-sidebar-item-wrap">
                     <div
-                      className="comments-sidebar-item"
-                      onMouseEnter={() => setHoveredListId(a.id)}
+                      className={"comments-sidebar-item" + (otherPage ? " comments-sidebar-item-other-page" : "")}
+                      onMouseEnter={() => !otherPage && setHoveredListId(a.id)}
                       onMouseLeave={() => setHoveredListId((h) => (h === a.id ? null : h))}
                       onClick={() => !isEditing && jumpTo(a)}
                     >
-                      {(a.targetLabel || a.kind === "jynx") && (
+                      {(a.targetLabel || a.kind === "jynx" || otherPage) && (
                         <span className="comments-sidebar-item-target">
                           {a.kind === "jynx" && <span className="comments-jynx-badge">🔮 Jynx</span>}
+                          {otherPage && <span className="comments-route-badge">{a.route}</span>}
                           {a.targetLabel}
                           {a.resolved && <span className="comments-done-badge"><CheckCircle2 size={10} /> Done</span>}
                         </span>
@@ -470,6 +548,47 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                         <button type="button" className="comments-action-btn" onClick={(e) => { e.stopPropagation(); triggerAction(a); }} title="Run the automated agent on this comment">
                           <Zap size={11} /> Action
                         </button>
+                      )}
+                      {/* ניהול-מנהל — ראו LEGO BLOCK #5 למעלה: זה מה שהחליף את
+                          DevAdminPanel.jsx's "Comments"/"Jynx" tabs שנמחקו. */}
+                      {isAdmin && resolvingId === a.id && (
+                        <div className="comments-edit-box" onClick={(e) => e.stopPropagation()}>
+                          <textarea
+                            autoFocus rows={2} placeholder="What did you fix? (optional, notifies the author)"
+                            value={resolveNote} onChange={(e) => setResolveNote(e.target.value)}
+                          />
+                          <div className="comments-edit-actions">
+                            <button type="button" onClick={() => { setResolvingId(null); setResolveNote(""); }}>Cancel</button>
+                            <button type="button" className="primary" onClick={() => confirmResolve(a)}>Mark done</button>
+                          </div>
+                        </div>
+                      )}
+                      {isAdmin && deletingId === a.id && (
+                        <div className="comments-delete-confirm" onClick={(e) => e.stopPropagation()}>
+                          <span>Delete this comment permanently?</span>
+                          <div className="comments-delete-confirm-actions">
+                            <button type="button" onClick={() => setDeletingId(null)}>Cancel</button>
+                            <button type="button" className="danger" onClick={() => confirmDelete(a)}>Delete</button>
+                          </div>
+                        </div>
+                      )}
+                      {isAdmin && resolvingId !== a.id && deletingId !== a.id && (
+                        <div className="comments-admin-actions" onClick={(e) => e.stopPropagation()}>
+                          {a.resolved ? (
+                            <button type="button" className="comments-admin-btn" onClick={() => reopenComment(a)} title="Reopen">
+                              <Undo2 size={12} />
+                            </button>
+                          ) : (
+                            <button type="button" className="comments-admin-btn" onClick={() => { setResolvingId(a.id); setResolveNote(""); }} title="Mark as resolved">
+                              <Check size={12} />
+                            </button>
+                          )}
+                          {a.kind === "app" && (
+                            <button type="button" className="comments-admin-btn comments-admin-btn-danger" onClick={() => setDeletingId(a.id)} title="Delete permanently">
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                     <div className="comments-reaction-row" onClick={(e) => e.stopPropagation()}>
@@ -613,6 +732,13 @@ const CSS_TEXT = `
   font-size:10.5px; font-weight:700; cursor:pointer;
 }
 .comments-mine-toggle.active{ background:var(--jynx); border-color:var(--jynx); color:#fff; }
+.comments-sidebar-scope-row{ padding-top:0; }
+.comments-sidebar-item-other-page{ cursor:default; }
+.comments-sidebar-item-other-page:hover{ background:none; }
+.comments-route-badge{
+  font-family:var(--font-mono); background:color-mix(in srgb, var(--jynx) 14%, transparent); color:var(--jynx);
+  border-radius:6px; padding:1px 6px; text-transform:uppercase;
+}
 .comments-sidebar-empty{ padding:16px 12px; font-size:12px; color:var(--text-dim); text-align:center; }
 .comments-sidebar-list{ overflow-y:auto; display:flex; flex-direction:column; }
 .comments-sidebar-item-wrap{ border-bottom:1px solid var(--line); padding:2px 0; }
@@ -670,6 +796,23 @@ const CSS_TEXT = `
   border-radius:12px; padding:3px 9px; font-size:10.5px; font-weight:700; cursor:pointer; margin:4px 0;
 }
 .comments-action-btn:hover{ filter:brightness(1.08); }
+.comments-admin-actions{ display:flex; gap:5px; margin:4px 0; }
+.comments-admin-btn{
+  width:22px; height:22px; border-radius:50%; border:1px solid var(--line); background:var(--panel);
+  color:var(--text-dim); cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.comments-admin-btn:hover{ color:var(--jynx); border-color:var(--jynx); }
+.comments-admin-btn-danger:hover{ background:var(--red); border-color:var(--red); color:#fff; }
+.comments-delete-confirm{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:4px 0; font-size:11px; color:var(--red);
+  background:color-mix(in srgb, var(--red) 10%, transparent); border:1px solid var(--red); border-radius:7px; padding:6px 9px;
+}
+.comments-delete-confirm-actions{ display:flex; gap:6px; margin-inline-start:auto; }
+.comments-delete-confirm-actions button{
+  border:none; border-radius:7px; padding:4px 9px; font-size:11px; font-weight:700; cursor:pointer;
+  background:var(--panel-raised); color:var(--text-dim);
+}
+.comments-delete-confirm-actions button.danger{ background:var(--red); color:#fff; }
 .comments-thread-toggle{
   display:inline-flex; align-items:center; gap:4px; background:none; border:none; color:var(--text-dim);
   font-size:10.5px; cursor:pointer; padding:2px 12px 8px;

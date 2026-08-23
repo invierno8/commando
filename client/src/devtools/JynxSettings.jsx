@@ -30,12 +30,21 @@ const ITEM_LABELS = {
   mentions: "Mentions",
 };
 
-export default function JynxSettings({
-  onClose, orientation, onSetOrientation, order, defaultOrder, availableIds,
+// Extracted so the exact same fields (orientation / icon size / drag-to-
+// reorder) can be embedded both in this component's own popup (opened from
+// the always-available toolbar gear icon, any dev user, no admin secret
+// needed — see the file-level note above) AND as a plain tab inside
+// DevAdminPanel.jsx's Settings hub (added 2026-08-23, per the "menu setting,
+// colors, orientation... will be there [in Settings]" work item) — an admin
+// browsing that panel gets it inline instead of having to close it and hunt
+// for the separate gear icon. Deliberately NOT removing the standalone gear
+// button/popup when adding the admin-panel copy: gating this behind
+// ADMIN_SECRET would undo the "not admin-only" decision documented above,
+// which was a direct fix for a real complaint, not an oversight.
+export function JynxMenuSettingsFields({
+  orientation, onSetOrientation, order, defaultOrder, availableIds,
   onReorder, onReset, onUndo, canUndo, iconScale, onSetIconScale,
 }) {
-  const panelRef = useRef(null);
-  useKeepInViewport(panelRef, true, 8);
   const [dragId, setDragId] = useState(null);
 
   const orderChanged = JSON.stringify(order) !== JSON.stringify(defaultOrder);
@@ -54,6 +63,63 @@ export default function JynxSettings({
     setDragId(null);
   }
 
+  return (
+    <>
+      <div className="jynx-settings-section">
+        <span className="jynx-settings-label">Menu orientation</span>
+        <div className="jynx-settings-orientation-row">
+          <button type="button" className={orientation === "horizontal" ? "active" : ""} onClick={() => onSetOrientation("horizontal")}>Horizontal</button>
+          <button type="button" className={orientation === "vertical" ? "active" : ""} onClick={() => onSetOrientation("vertical")}>Vertical</button>
+        </div>
+      </div>
+
+      <div className="jynx-settings-section">
+        <span className="jynx-settings-label">Icon size</span>
+        <input
+          type="range" min="0.8" max="1.6" step="0.1" value={iconScale}
+          onChange={(e) => onSetIconScale(Number(e.target.value))}
+          className="jynx-settings-slider"
+        />
+      </div>
+
+      <div className="jynx-settings-section">
+        <div className="jynx-settings-label-row">
+          <span className="jynx-settings-label">Menu order — drag to rearrange</span>
+          <div className="jynx-settings-order-actions">
+            <button type="button" onClick={onUndo} disabled={!canUndo} title="Undo last reorder">
+              <Undo2 size={12} />
+            </button>
+            <button type="button" onClick={onReset} disabled={!orderChanged} title="Reset to default order">
+              <RotateCcw size={12} />
+            </button>
+          </div>
+        </div>
+        <div className="jynx-settings-order-list">
+          {visibleOrder.map((id) => (
+            <div
+              key={id}
+              className={"jynx-settings-order-item" + (dragId === id ? " dragging" : "")}
+              draggable
+              onDragStart={() => setDragId(id)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => handleDrop(id)}
+              onDragEnd={() => setDragId(null)}
+            >
+              <GripVertical size={12} className="jynx-settings-order-grip" />
+              {ITEM_LABELS[id] || id}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default function JynxSettings(props) {
+  const { onClose } = props;
+  const panelRef = useRef(null);
+  useKeepInViewport(panelRef, true, 8);
+
   return createPortal(
     <div className="jynx-settings-overlay" onClick={onClose}>
       <style>{CSS}</style>
@@ -62,53 +128,7 @@ export default function JynxSettings({
           <span>🔮 Jynx Settings</span>
           <button type="button" className="jynx-settings-close" onClick={onClose}><X size={14} /></button>
         </div>
-
-        <div className="jynx-settings-section">
-          <span className="jynx-settings-label">Menu orientation</span>
-          <div className="jynx-settings-orientation-row">
-            <button type="button" className={orientation === "horizontal" ? "active" : ""} onClick={() => onSetOrientation("horizontal")}>Horizontal</button>
-            <button type="button" className={orientation === "vertical" ? "active" : ""} onClick={() => onSetOrientation("vertical")}>Vertical</button>
-          </div>
-        </div>
-
-        <div className="jynx-settings-section">
-          <span className="jynx-settings-label">Icon size</span>
-          <input
-            type="range" min="0.8" max="1.6" step="0.1" value={iconScale}
-            onChange={(e) => onSetIconScale(Number(e.target.value))}
-            className="jynx-settings-slider"
-          />
-        </div>
-
-        <div className="jynx-settings-section">
-          <div className="jynx-settings-label-row">
-            <span className="jynx-settings-label">Menu order — drag to rearrange</span>
-            <div className="jynx-settings-order-actions">
-              <button type="button" onClick={onUndo} disabled={!canUndo} title="Undo last reorder">
-                <Undo2 size={12} />
-              </button>
-              <button type="button" onClick={onReset} disabled={!orderChanged} title="Reset to default order">
-                <RotateCcw size={12} />
-              </button>
-            </div>
-          </div>
-          <div className="jynx-settings-order-list">
-            {visibleOrder.map((id) => (
-              <div
-                key={id}
-                className={"jynx-settings-order-item" + (dragId === id ? " dragging" : "")}
-                draggable
-                onDragStart={() => setDragId(id)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => handleDrop(id)}
-                onDragEnd={() => setDragId(null)}
-              >
-                <GripVertical size={12} className="jynx-settings-order-grip" />
-                {ITEM_LABELS[id] || id}
-              </div>
-            ))}
-          </div>
-        </div>
+        <JynxMenuSettingsFields {...props} />
       </div>
     </div>,
     document.body
