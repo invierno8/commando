@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt5qb3ak9rsz",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T11:33:36.236Z",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-icon-btn",
+  "secondaryTargets": [],
+  "comment": "make the mention and status update on a comment notifications work and notifications will be shown by a red circle with the icon or the number of notifications in it it should look just like the keyboard numbers near the icons just jyxy red and when the bubble is collapsed but user is logged in have the bubble have that circlr to it as well smal red with a notification number",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-23T11:33:36.236Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
