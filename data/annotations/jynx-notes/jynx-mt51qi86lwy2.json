@@ -7,9 +7,9 @@
   "targetLabel": "dev-toolbar-markers-toggle",
   "secondaryTargets": [],
   "comment": "make the dots on the screen also jynxed anabled, so when i hover it i can give them and the cards that open if clicked a comment",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:30:00.000Z",
+  "resolutionNote": "Fixed in commit 92194f8: the admin marker dot and its detail card are no longer wrapped in dev-overlay-ignore — they are real jynx-chrome content now, so Ctrl/Cmd+click works on them (only the ephemeral hover-highlight rectangles stay overlay-ignored).",
   "actionStatus": "none",
   "actionRequestedAt": null,
   "actionPrUrl": null,
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }

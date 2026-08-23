@@ -7,9 +7,9 @@
   "targetLabel": "pill-tabs",
   "secondaryTargets": [],
   "comment": "there is no way to select wha unit or brigade youre aligned to as a demo user..",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:30:00.000Z",
+  "resolutionNote": "Stale — DevFab.jsx already has a full brigade picker (pill-tabs of brigades) plus a unit selector for member/officer personas; this predates or was already covered by an earlier merged PR (#16).",
   "actionStatus": "none",
   "actionRequestedAt": null,
   "actionPrUrl": null,
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }

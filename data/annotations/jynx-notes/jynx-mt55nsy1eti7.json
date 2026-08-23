@@ -7,9 +7,9 @@
   "targetLabel": "dev-toolbar-icon-btn",
   "secondaryTargets": [],
   "comment": "make sure mentions and mentions logic works",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:30:00.000Z",
+  "resolutionNote": "Verified end-to-end with two throwaway dev users on a local server: @name mentions are parsed from reply text, notify the mentioned user, and show up unread via GET /dev/mentions. No bug found.",
   "actionStatus": "none",
   "actionRequestedAt": null,
   "actionPrUrl": null,
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }

@@ -7,9 +7,9 @@
   "targetLabel": "dev-admin-edit-btn",
   "secondaryTargets": [],
   "comment": "when a comment is done or in pr state change editing to reopen beacuse editiing the comment should change the whole process sometimes, same for re opening it make a system to rego over it with the reopened comment or edited comment when edited comment should just have it revisit the text and no the whole thinking process same for reopened.",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:30:00.000Z",
+  "resolutionNote": "Fixed in commit 92194f8: on a comment that already has a PR (actionStatus pr_opened) or is marked done, the edit pencil becomes a Reopen button that queues a follow-up on the existing PR (via the same @jynx-reply mechanism) instead of silently rewriting the text. Verified end-to-end locally.",
   "actionStatus": "none",
   "actionRequestedAt": null,
   "actionPrUrl": null,
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }
