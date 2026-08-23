@@ -110,6 +110,7 @@ export default function DevAnnotationsScreen() {
 
   if (!items) return <div className="dev-admin-empty">Loading...</div>;
   const unarchived = items.filter((a) => !a.archived);
+  const openCount = unarchived.filter((a) => !a.resolved).length;
   const shown =
     filter === "open" ? unarchived.filter((a) => !a.resolved)
     : filter === "done" ? unarchived.filter((a) => a.resolved)
@@ -120,12 +121,15 @@ export default function DevAnnotationsScreen() {
     <div className="dev-admin-tab">
       <div className="dev-admin-annotations-head">
         <div className="pill-tabs">
-          <button type="button" className={"pill-tab" + (filter === "open" ? " active" : "")} onClick={() => setFilter("open")}>Open ({unarchived.filter((a) => !a.resolved).length})</button>
+          <button type="button" className={"pill-tab" + (filter === "open" ? " active" : "")} onClick={() => setFilter("open")}>Open ({openCount})</button>
           <button type="button" className={"pill-tab" + (filter === "done" ? " active" : "")} onClick={() => setFilter("done")}>Done ({unarchived.filter((a) => a.resolved).length})</button>
           <button type="button" className={"pill-tab" + (filter === "all" ? " active" : "")} onClick={() => setFilter("all")}>All ({unarchived.length})</button>
           <button type="button" className={"pill-tab" + (filter === "archived" ? " active" : "")} onClick={() => setFilter("archived")}>Archived ({items.filter((a) => a.archived).length})</button>
         </div>
-        <button type="button" className="dev-admin-export-btn" onClick={exportMd}><Download size={13} /> Export Markdown</button>
+        {/* Export always exports open items only (a work-queue snapshot), regardless of
+            which filter tab is being viewed — the count makes that scope explicit so it
+            doesn't look unrelated/broken when clicked while viewing Done/All/Archived. */}
+        <button type="button" className="dev-admin-export-btn" onClick={exportMd} title="Exports open comments only, regardless of the tab you're viewing"><Download size={13} /> Export Markdown ({openCount} open)</button>
       </div>
       {exportError && <div className="dev-admin-error">{exportError}</div>}
       {exported !== null && (

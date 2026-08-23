@@ -95,6 +95,7 @@ export default function JynxFeedbackScreen() {
   }
 
   if (!items) return <div className="dev-admin-empty">Loading...</div>;
+  const openCount = items.filter((a) => !a.resolved).length;
   const shown = filter === "open" ? items.filter((a) => !a.resolved) : filter === "done" ? items.filter((a) => a.resolved) : items;
 
   return (
@@ -102,11 +103,14 @@ export default function JynxFeedbackScreen() {
       <p className="dev-admin-hint">🔮 Feedback about Jynx itself (the FAB, toolbar, admin panel) — a completely separate queue from the app's QA queue, for improving the dev tool over time.</p>
       <div className="dev-admin-annotations-head">
         <div className="pill-tabs">
-          <button type="button" className={"pill-tab" + (filter === "open" ? " active" : "")} onClick={() => setFilter("open")}>Open ({items.filter((a) => !a.resolved).length})</button>
+          <button type="button" className={"pill-tab" + (filter === "open" ? " active" : "")} onClick={() => setFilter("open")}>Open ({openCount})</button>
           <button type="button" className={"pill-tab" + (filter === "done" ? " active" : "")} onClick={() => setFilter("done")}>Done ({items.filter((a) => a.resolved).length})</button>
           <button type="button" className={"pill-tab" + (filter === "all" ? " active" : "")} onClick={() => setFilter("all")}>All ({items.length})</button>
         </div>
-        <button type="button" className="dev-admin-export-btn" onClick={exportMd}><Download size={13} /> Export Markdown</button>
+        {/* Export always exports open items only (a work-queue snapshot), regardless of
+            which filter tab is being viewed — the count makes that scope explicit so it
+            doesn't look unrelated/broken when clicked while viewing Done/All. */}
+        <button type="button" className="dev-admin-export-btn" onClick={exportMd} title="Exports open feedback only, regardless of the tab you're viewing"><Download size={13} /> Export Markdown ({openCount} open)</button>
       </div>
       {exportError && <div className="dev-admin-error">{exportError}</div>}
       {exported !== null && (
