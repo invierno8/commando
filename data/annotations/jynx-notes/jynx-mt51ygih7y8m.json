@@ -7,9 +7,9 @@
   "targetLabel": "dev-fab-toolbar",
   "secondaryTargets": [],
   "comment": "drag and drom is fucked in the jynx menu, make it more intuative and interactive and user friendly also add a size menu option that when clicked opens a scle line that changes the menu icons size, and for the dragging instead of having the menu items draggable have a jynx setings menu option for managing all setings for the menu and jynx in general from there but have a place for oriantaion that there the current menu arrangment is showed and can be grag and drop to re arange or change positions of icons, with a reset option and a one step back arrow",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:22:00.000Z",
+  "resolutionNote": "Fixed in commit 58a1665: reordering moved off the live toolbar (which fought the whole-toolbar drag gesture) into a new JynxSettings.jsx popup, with an icon-size slider, drag-to-reorder list, reset, and single-step undo — exactly the architecture requested in this comment.",
   "actionStatus": "none",
   "actionRequestedAt": null,
   "actionPrUrl": null,
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }

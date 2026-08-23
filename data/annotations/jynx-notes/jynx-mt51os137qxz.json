@@ -7,9 +7,9 @@
   "targetLabel": "dev-toolbar-grip",
   "secondaryTargets": [],
   "comment": "make the dots horisantal when in vertical mode and vertical when in horisontal and make it hint its clickable to change mods",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:22:00.000Z",
+  "resolutionNote": "Fixed in commit 58a1665: the orientation grip swaps between GripVertical/GripHorizontal icons based on current orientation, with a dashed-border hint and clearer tooltip that it is clickable.",
   "actionStatus": "none",
   "actionRequestedAt": null,
   "actionPrUrl": null,
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }

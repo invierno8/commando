@@ -5,8 +5,8 @@
   "targetLabel": "dev-toolbar-icon-btn",
   "secondaryTargets": [],
   "comment": "הרשימה צריכי להיות נגררת ואוציה לצמצם אותה או להרחיב אותה, כאשר אני שם את העכבר בהובר מעל תגובה מסויימת, שהאלמנט שעליו היא נכתבה יעשה אפקט בורדר בצבע jynx ככה שכבר בהובר על תגובה מסויימת אני רואה על מה התגובה נכתבה וגם האלמנט המשני שיסומן בצבע אחר אבל. ושיהיה אפשר ללחוץ על תגובה ולקפוץ אליה ישירות עם פרטים נוספים בלחיצה ואופציה לתת תת תגובה אם התגובה לא שלי יש לי אופציה להגיב באימוגי או בתת תגובה או שאלה שיופיע ליוזר שכתב את התגובה ולהתחיל לנהל דיסקשיין על תגובה .. תרחיב את הכוון וההגיון, זה כלי עבודה שיתופית מורחב ובנוסף בעריכה של jynx עם גינקס לא ניתן לתת תגובה בתוך רשימת התגובות",
-  "resolved": false,
-  "resolvedAt": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:20:00.000Z",
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T14:11:22.768Z",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/8",
@@ -18,5 +18,7 @@
       "text": "Good progress: the comments list is now draggable and collapsible, hovering a list row highlights its element on the page, clicking jumps to it with a flash effect, and replies/threaded discussion are live (this reply is a live demo of it). Still open: highlighting the secondary linked element in a different color during hover, a details view on click, emoji reactions, and being able to leave a Jynx-meta comment from inside the comments list itself.",
       "createdAt": "2026-08-21T14:27:41.856Z"
     }
-  ]
+  ],
+  "resolvedBy": "Admin",
+  "resolutionNote": "Bookkeeping cleanup: PR already merged (https://github.com/invierno8/commando/pull/8) but note was never marked resolved."
 }

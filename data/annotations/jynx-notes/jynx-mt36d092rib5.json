@@ -5,9 +5,9 @@
   "targetLabel": "dev-toolbar-icon-btn",
   "secondaryTargets": [],
   "comment": "כאשר אני כותב תגובה כל לחיצה הופכת להיות עוד אלמנט מקושר תעשה שכדי להוסיף אלמנט נוסף הדיוק כמו שזה עכשיו אבל הלחיצה חייבת להיות עם ctrl מוחזק כדי לא להפריע ללחיצה על כפתורים וכו..",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:20:00.000Z",
+  "resolutionNote": "Bookkeeping cleanup: PR already merged (https://github.com/invierno8/commando/pull/15) but note was never marked resolved.",
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T16:39:40.934Z",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/15",
@@ -18,5 +18,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }

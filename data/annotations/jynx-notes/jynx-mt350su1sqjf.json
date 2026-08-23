@@ -5,12 +5,13 @@
   "targetLabel": "dev-fab-toolbar",
   "secondaryTargets": [],
   "comment": "make this draggble and be able to close to jynx main bubble, also make evry card related to jynx draggble and not just dots to the side byt keep the dots",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:20:00.000Z",
+  "resolutionNote": "Bookkeeping cleanup: PR already merged (https://github.com/invierno8/commando/pull/11) but note was never marked resolved.",
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T16:02:11.833Z",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/11",
   "actionLog": null,
-  "replies": []
+  "replies": [],
+  "resolvedBy": "Admin"
 }

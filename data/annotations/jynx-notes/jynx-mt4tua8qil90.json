@@ -7,9 +7,9 @@
   "targetLabel": "pill-tabs",
   "secondaryTargets": [],
   "comment": "please change the text from \"qa comment\" to just comments in general nothing qa about it... jynx is like the new jira workflow, make and adress it as such",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:20:00.000Z",
+  "resolutionNote": "Bookkeeping cleanup: PR already merged (https://github.com/invierno8/commando/pull/20) but note was never marked resolved.",
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-22T20:24:44.378Z",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/20",
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }

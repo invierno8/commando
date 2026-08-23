@@ -7,9 +7,9 @@
   "targetLabel": "dev-fab-toolbar",
   "secondaryTargets": [],
   "comment": "when i click on it to be vertical the numbers for the keyboart dont go along also the entire design now is ugly of the numbers make them darker and think about the design",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:22:00.000Z",
+  "resolutionNote": "Fixed in the toolbar redesign commit 58a1665: keyboard-shortcut badges repositioned (top-right, stable in both orientations) and made bigger/higher-contrast.",
   "actionStatus": "none",
   "actionRequestedAt": null,
   "actionPrUrl": null,
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }

@@ -7,9 +7,9 @@
   "targetLabel": "dev-admin-thread-toggle",
   "secondaryTargets": [],
   "comment": "regarding that @mentions, if ferther action is reqested ina reply on a done comment move it back to open, and leave a one time suggestion in done saying it was reopened",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:20:00.000Z",
+  "resolutionNote": "Bookkeeping cleanup: PR already merged (https://github.com/invierno8/commando/pull/24) but note was never marked resolved.",
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-22T22:21:38.365Z",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/24",
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }

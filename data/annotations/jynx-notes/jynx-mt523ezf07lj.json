@@ -7,9 +7,9 @@
   "targetLabel": "comments-sidebar",
   "secondaryTargets": [],
   "comment": "some times randomly all comments disapear from the comment bar",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:22:00.000Z",
+  "resolutionNote": "Fixed in commit 58a1665: CommentsPanel.reload() now preserves each branch's previous items on a transient fetch failure instead of clearing them to an empty list, which was the source of the random disappear-then-reappear behavior.",
   "actionStatus": "none",
   "actionRequestedAt": null,
   "actionPrUrl": null,
@@ -28,5 +28,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }

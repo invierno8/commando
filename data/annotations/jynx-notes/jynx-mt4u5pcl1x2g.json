@@ -7,9 +7,9 @@
   "targetLabel": "dev-fab-toolbar",
   "secondaryTargets": [],
   "comment": "hey, when first logging in it takes some time so please myke the jynx bubble have animations like loading thinking and more make it more intuative and interactive",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:20:00.000Z",
+  "resolutionNote": "Bookkeeping cleanup: PR already merged (https://github.com/invierno8/commando/pull/21) but note was never marked resolved.",
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-22T20:33:37.173Z",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/21",
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }

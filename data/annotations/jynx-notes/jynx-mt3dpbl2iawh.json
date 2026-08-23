@@ -7,9 +7,9 @@
   "targetLabel": "dev-toolbar-icon-btn",
   "secondaryTargets": [],
   "comment": "i still cant drag from any where on the comment list that opens and i can review it with jynx... almost any card that opens from the jynx menu wont let me comment on the items in it or hover it or anything theres a reason for jynx dev users...",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:20:00.000Z",
+  "resolutionNote": "Bookkeeping cleanup: PR already merged (https://github.com/invierno8/commando/pull/19) but note was never marked resolved.",
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T20:05:12.807Z",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/19",
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }

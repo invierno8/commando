@@ -5,10 +5,12 @@
   "targetLabel": "dev-fab-toolbar",
   "secondaryTargets": [],
   "comment": "צריך אופציה לצמצם את ההגדרות לבועה של jynx כמו בהתחלה ולהרחיב אותה ולקבל את הפרטים האלו ואת כל הכפתורים והבורר אנשים, ושהכל יהיה נגרר וריאקטיבי בנוסף כאשר יוזר שם סיסמא בין הנקודה שבא הוא לחץ התחבר עד לזה שהוא באמת התחבר לוקח זמן, תוסיף שם לואדיניג אנימיישן או משהו",
-  "resolved": false,
-  "resolvedAt": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:20:00.000Z",
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T14:07:05.954Z",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/3",
-  "actionLog": null
+  "actionLog": null,
+  "resolvedBy": "Admin",
+  "resolutionNote": "Bookkeeping cleanup: PR already merged (https://github.com/invierno8/commando/pull/3) but note was never marked resolved."
 }

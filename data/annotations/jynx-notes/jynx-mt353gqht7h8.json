@@ -5,12 +5,13 @@
   "targetLabel": "dev-toolbar-icon-btn",
   "secondaryTargets": [],
   "comment": "make the comment card that opens also jyxy commented optional beacuse right now the comments and the comments card that opens is not posible to leave jyxy instructions",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:20:00.000Z",
+  "resolutionNote": "Bookkeeping cleanup: PR already merged (https://github.com/invierno8/commando/pull/13) but note was never marked resolved.",
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T16:04:16.121Z",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/13",
   "actionLog": null,
-  "replies": []
+  "replies": [],
+  "resolvedBy": "Admin"
 }

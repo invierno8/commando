@@ -7,9 +7,9 @@
   "targetLabel": "dev-fab-toolbar",
   "secondaryTargets": [],
   "comment": "when in vertical mode the hi admin thing is too long, make it work designes with and make the over all vertical or horizontal button expirience better...",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:22:00.000Z",
+  "resolutionNote": "Fixed in commit 58a1665: \"Hi, {name}\" now truncates with ellipsis in vertical mode; orientation toggle is now its own hinted grip button plus a full Settings panel (JynxSettings.jsx).",
   "actionStatus": "none",
   "actionRequestedAt": null,
   "actionPrUrl": null,
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }

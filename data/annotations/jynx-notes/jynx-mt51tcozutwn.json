@@ -7,9 +7,9 @@
   "targetLabel": "dev-toolbar-grip",
   "secondaryTargets": [],
   "comment": "make the dots also bigger",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolutionNote": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:22:00.000Z",
+  "resolutionNote": "Fixed in commit 58a1665: the orientation grip icon and its button are now larger (13->15px icon, 16->22px wide button).",
   "actionStatus": "none",
   "actionRequestedAt": null,
   "actionPrUrl": null,
@@ -20,5 +20,6 @@
     "😄": [],
     "🤔": [],
     "❤️": []
-  }
+  },
+  "resolvedBy": "Admin"
 }
