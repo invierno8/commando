@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, GripHorizontal, X, Loader2, Target, Pencil, Users } from "lucide-react";
+import { Lock, Settings2, Eye, EyeOff, MessageSquare, GripVertical, GripHorizontal, X, Loader2, Target, Pencil, Users } from "lucide-react";
 import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
+import DevGreetingMenu from "./DevGreetingMenu.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
 import DevOverlay from "./overlay/DevOverlay.jsx";
 import CommentsPanel from "./overlay/CommentsPanel.jsx";
@@ -454,10 +455,7 @@ export default function DevAuthGate({ route, devFabProps }) {
             </div>
             );
           })}
-          <span className="dev-toolbar-devname">Hi, {devName}</span>
-          <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-logout-btn" onClick={logout} title="Log out of Jynx">
-            <LogOut size={13} />
-          </button>
+          <DevGreetingMenu devName={devName} onOpenSettings={() => setAdminOpen(true)} onLogout={logout} />
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-collapse-btn" onClick={toggleToolbarOpen} title="Collapse to the Jynx bubble">
             <X size={13} />
           </button>
@@ -556,7 +554,6 @@ const CSS = `
 }
 .dev-fab-toolbar:active{ cursor:grabbing; }
 .dev-fab-toolbar.vertical{ flex-direction:column; align-items:stretch; }
-.dev-fab-toolbar.vertical .dev-toolbar-devname{ text-align:center; max-width:96px; }
 /* הידית עצמה עכשיו כפתור אמיתי (מחליף אופקי/אנכי) — לא רק "אזור-גרירה
    שיושב שם", אז צריך רמז ברור שהיא לחיצה: קצת יותר גדולה מכל שאר האייקונים
    ותוחם עדין (border) כדי לא "להיבלע" בתוך פס-הכלים כמו לפני. */
@@ -567,10 +564,10 @@ const CSS = `
 }
 .dev-toolbar-grip:hover{ color:var(--jynx); border-color:var(--jynx); }
 /* align-self:center — בלעדיו, ".dev-fab-toolbar.vertical"'s align-items:
-   stretch מותח כל פריט לרוחב המלא של העמודה (הקובע-רוחב האמיתי הוא
-   ".dev-toolbar-devname", הרחב מכולם), אז התג הממוקם ליד הפינה של הקופסה
-   הזו נוחת רחוק מהאייקון עצמו במקום עליו — בדיוק התלונה. עם align-self
-   הפריט מתכווץ לגודל האייקון (30px), והתג יושב עליו ממש. */
+   stretch מותח כל פריט לרוחב המלא של העמודה, אז תג/תוכן פנימי-לא-ממורכז
+   נוחת רחוק מהאייקון עצמו במקום עליו. עם align-self הפריט מתכווץ לגודל
+   האייקון (30px), והתג יושב עליו ממש. (DevGreetingMenu.jsx's own
+   .dev-greeting-wrap needs, and has, the identical fix — see there.) */
 .jynx-toolbar-item{ position:relative; display:flex; flex:none; align-self:center; }
 /* התג עם מספר-המקלדת — בעבר bottom:-3px/right:-3px, מה שגרם לו להיחתך/
    להתחפף עם הפריט הבא כשהסרגל אנכי (הפריטים נערמים אז ה"מטה" של אחד הוא
@@ -589,11 +586,6 @@ const CSS = `
 .dev-toolbar-icon-btn:hover{ background:color-mix(in srgb, var(--jynx) 10%, var(--panel)); }
 .dev-toolbar-icon-btn.active{ background:var(--jynx); color:#fff; }
 .dev-toolbar-icon-btn svg{ transform:scale(var(--jynx-icon-scale, 1)); }
-.dev-toolbar-devname{
-  background:var(--panel); border:1px solid var(--jynx); color:var(--jynx); border-radius:20px;
-  padding:6px 12px; font-family:var(--font-mono); font-size:11px; font-weight:700; white-space:nowrap;
-  overflow:hidden; text-overflow:ellipsis;
-}
 
 .jynx-draw-palette{
   position:fixed; z-index:79; display:flex; align-items:center; gap:6px; padding:6px;
