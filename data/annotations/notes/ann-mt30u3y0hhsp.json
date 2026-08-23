@@ -8,9 +8,9 @@
   "targetSelector": null,
   "secondaryTargets": [],
   "comment": "מנהל מערכת לא אמור לראות קטלוג או דרישות דפציפיות, שום מידע ספציפי, צריך להיות לו ניהול של החטיבות ומשתמשים ראשוניים כמו שקיים עכשיו, ודשבורד עם נתונים כלליים ולא ספציפים. לא גישה לראות מה הקצין אמלח או היחידה רואות או המידע שלהם חוץ מדברים בסיסיים",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolvedBy": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:40:00.000Z",
+  "resolvedBy": "Admin",
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T14:05:01.176Z",
   "actionRequestedBy": "מנהל",
@@ -24,5 +24,6 @@
       "text": "Partial progress: fixed the Tickets nav item, which had no role restriction at all (System Admin could see it, unlike Catalog which was already correctly restricted). The dashboard still shows the same widgets/specificity for System Admin as for brigade officers — that part is still open, needs a real look at DevDashboard.jsx role-based widget scoping.",
       "createdAt": "2026-08-21T14:27:55.336Z"
     }
-  ]
+  ],
+  "resolutionNote": "Bookkeeping cleanup: PR already merged (https://github.com/invierno8/commando/pull/2) but note was never marked resolved."
 }

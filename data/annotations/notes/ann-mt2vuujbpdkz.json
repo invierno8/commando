@@ -8,12 +8,13 @@
   "targetSelector": null,
   "secondaryTargets": [],
   "comment": "בוא נעשה בבקשה, שכאשר אני מוסיף קישור לאלמנט נוסף הוא יופיע פה בתוך המשפט זאת אומרת שכאן אם אני כותב משפפט כמו :תעביר את זה לכאן- (אז כאז יהיה טאג של האלמנט נוסף שאני בוחר כחלק מהמשפט) ושאם אני עם חלון תגובה פתוח כמו עכשיו אז כל אלמנט שאבחר יכנס כאלמנט נוסף והצבע של הבורדר אוברליי יהיה עכשיו כחול כי זה אלמנט נוסף  בנוסף שיהיה אפשר לגרור את חלון התגובות וכששמים את העכבר על תגובה יהיה בורדר מסביב לאלמנט שהתגובה היא שלו (הראשון המקורי שנבחר וגם שיופיע בכחול האלמנט הנוסף שנבחר)",
-  "resolved": false,
-  "resolvedAt": null,
-  "resolvedBy": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T05:40:00.000Z",
+  "resolvedBy": "Admin",
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-21T11:45:37.559Z",
   "actionRequestedBy": "מנהל",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/5",
-  "actionLog": "PR adds the blue secondary-target highlight (both while picking and on comment-row hover) and makes the annotation popup draggable. Inline in-sentence tagging of the secondary target was judged out of scope (the existing chip list already shows it) — see the PR description."
+  "actionLog": "PR adds the blue secondary-target highlight (both while picking and on comment-row hover) and makes the annotation popup draggable. Inline in-sentence tagging of the secondary target was judged out of scope (the existing chip list already shows it) — see the PR description.",
+  "resolutionNote": "Bookkeeping cleanup: PR already merged (https://github.com/invierno8/commando/pull/5) but note was never marked resolved."
 }
