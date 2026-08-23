@@ -116,6 +116,11 @@ export const THEME_CSS = `
   --green:#3ECF8E; --yellow:#E0A73E; --red:#E2574C; --dev:#D98B32; --jynx:#9B82FF;
   --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow-md:0 16px 34px rgba(0,0,0,.55);
 }
+/* .pill-tab is shared verbatim with Jynx's own filter tabs — it used a      */
+/* literal 9px radius before .pill-tab switched to the new --radius-lg      */
+/* token below, so pin the exact old shape here instead of touching the     */
+/* token globally (which other, non-shared Jynx surfaces don't consume).    */
+.jynx-chrome .pill-tab, .jynx-ui .pill-tab{ border-radius:9px; }
 
 *{ box-sizing:border-box; }
 html, body{ margin:0; background:var(--bg); }
@@ -464,7 +469,7 @@ h1,h2,h3{ font-family:var(--font-sans); font-weight:700; letter-spacing:-.015em;
 
 .pill-tabs{ display:flex; gap:8px; flex-wrap:wrap; }
 .pill-tab{
-  background:transparent; border:1px solid var(--line); color:var(--text-dim); border-radius:9px;
+  background:transparent; border:1px solid var(--line); color:var(--text-dim); border-radius:var(--radius-lg);
   padding:9px 18px; font-family:var(--font-sans); font-weight:700; font-size:13.5px; cursor:pointer;
   transition:border-color .15s ease, color .15s ease, background .15s ease;
 }
