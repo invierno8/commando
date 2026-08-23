@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt5qh4p68xsg",
+  "authorId": null,
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T11:38:17.994Z",
+  "route": "dashboard",
+  "targetLabel": "jynx-settings-section",
+  "secondaryTargets": [],
+  "comment": "this is ugly and not user friendly, have it as a 3 way option, small medium large and make them look exuctly like the menu items and not those weird icons",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-23T11:38:17.994Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
