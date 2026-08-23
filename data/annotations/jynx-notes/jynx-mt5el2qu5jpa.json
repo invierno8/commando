@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt5el2qu5jpa",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T06:05:26.694Z",
+  "route": "dashboard",
+  "targetLabel": "comments-sidebar",
+  "secondaryTargets": [],
+  "comment": "this needs to be the main comment center to manage all comments, have a toggle button for \"only on this page\" or \"universal\" to show comments on ly on the page youre at or on all site wise, when clicking on any comment it will jume to the element of the comment.",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-23T06:05:26.694Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
