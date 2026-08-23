@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt5255m89crm",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T00:17:08.528Z",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-admin-btn",
+  "secondaryTargets": [],
+  "comment": "make it more of a general pop up window to view all data and mange that when jynx admin open it they also see admin fitures,,,",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
