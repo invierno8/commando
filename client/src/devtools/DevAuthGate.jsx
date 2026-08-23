@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, X, Loader2, Target, RotateCcw, Pencil, Users } from "lucide-react";
+import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, GripHorizontal, X, Loader2, Target, Pencil, Users, SlidersHorizontal } from "lucide-react";
+import JynxSettings from "./JynxSettings.jsx";
 import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
@@ -12,11 +13,13 @@ import { useKeepInViewport } from "./useKeepInViewport.js";
 
 // סדר ברירת המחדל של כפתורי-הפעולה בסרגל (לא כולל את הידית/שם-המשתמש/
 // יציאה/קיפול — אלה קבועים בכוונה, ראו ה-JSX). "markers" תמיד נשמר ברשימה
-// המלאה גם למשתמש לא-מנהל, כדי שהשוואת orderChanged תישאר יציבה בלי קשר
-// למי שמחובר כרגע — הסינון לפי isAdmin קורה רק ברינדור, לא כאן.
+// המלאה גם למשתמש לא-מנהל, כדי שסדר-השמירה יישאר יציב בלי קשר למי שמחובר
+// כרגע — הסינון לפי isAdmin קורה רק ברינדור, לא כאן. השוואת orderChanged
+// (האם הסדר שונה מברירת המחדל) עברה כולה ל-JynxSettings.jsx.
 const DEFAULT_TOOLBAR_ORDER = ["role", "overlay", "draw", "comments", "markers", "admin", "mentions"];
 const TOOLBAR_ORDER_KEY = "jynx-toolbar-item-order";
 const TOOLBAR_ORIENTATION_KEY = "jynx-toolbar-orientation";
+const TOOLBAR_ICON_SCALE_KEY = "jynx-toolbar-icon-scale";
 // האם בורר התפקיד/חטיבה (DevFab.jsx) "מעוגן" בתוך תפריט ה-Jynx (ברירת
 // המחדל, ראו הבקשה המקורית) או "מנותק" — בועה צפה עצמאית משלו כמו שהיה
 // לפני זה. גרירה של פריט ה-role מחוץ לסרגל מנתקת; גרירת הבועה המנותקת
@@ -97,7 +100,13 @@ export default function DevAuthGate({ route, devFabProps }) {
     () => (localStorage.getItem(TOOLBAR_ORIENTATION_KEY) === "vertical" ? "vertical" : "horizontal")
   );
   const [toolbarOrder, setToolbarOrder] = useState(loadToolbarOrder);
-  const orderChanged = JSON.stringify(toolbarOrder) !== JSON.stringify(DEFAULT_TOOLBAR_ORDER);
+  // תמונת-מצב יחידה, לא מחסנית-undo מלאה — "צעד אחד אחורה" בכוונה (ראו
+  // הבקשה המקורית), לא undo/redo כללי.
+  const [undoOrder, setUndoOrder] = useState(null);
+  const [iconScale, setIconScaleState] = useState(
+    () => Number(localStorage.getItem(TOOLBAR_ICON_SCALE_KEY)) || 1
+  );
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [roleDocked, setRoleDocked] = useState(
     () => localStorage.getItem(ROLE_DOCKED_KEY) !== "false"
   );
@@ -145,43 +154,40 @@ export default function DevAuthGate({ route, devFabProps }) {
     if (toolbarFab.consumeWasDragged()) return;
     setToolbarOpen((v) => !v);
   }
-  // הידית (⋮) עצמה עכשיו גם כפתור — קליק "נקי" (לא גרירה) עליה מחליף
-  // אופקי/אנכי. אותה בדיקת consumeWasDragged בדיוק כמו שאר הכפתורים בסרגל
-  // הזה, כי הידית עדיין חלק מהאזור שגורר את כל הסרגל.
+  // הידית (⋮/⋯, ראו TOOLBAR_ITEM_NODES) עצמה עכשיו גם כפתור — קליק "נקי" (לא
+  // גרירה) עליה מחליף אופקי/אנכי. אותה בדיקת consumeWasDragged בדיוק כמו שאר
+  // הכפתורים בסרגל הזה, כי הידית עדיין חלק מהאזור שגורר את כל הסרגל.
   function toggleOrientation() {
     if (toolbarFab.consumeWasDragged()) return;
-    setToolbarOrientation((o) => {
-      const next = o === "horizontal" ? "vertical" : "horizontal";
-      try { localStorage.setItem(TOOLBAR_ORIENTATION_KEY, next); } catch { /* ignore */ }
-      return next;
-    });
+    setOrientation(toolbarOrientation === "horizontal" ? "vertical" : "horizontal");
   }
-  // גרירה-לסידור-מחדש עם native HTML5 drag-and-drop (draggable/onDragStart/
-  // onDrop) — לא pointer-based כמו useDraggableFab.js, כי זו "החלף מקום
-  // ברשימה", לא "הזז חופשי ב-2D"; ה-DnD המובנה של הדפדפן פשוט מתאים יותר
-  // למשימה הזאת ספציפית.
+  function setOrientation(next) {
+    setToolbarOrientation(next);
+    try { localStorage.setItem(TOOLBAR_ORIENTATION_KEY, next); } catch { /* ignore */ }
+  }
+  function setIconScale(next) {
+    setIconScaleState(next);
+    try { localStorage.setItem(TOOLBAR_ICON_SCALE_KEY, String(next)); } catch { /* ignore */ }
+  }
+  // סידור-מחדש עבר כולו ל-JynxSettings.jsx (ראו שם) — לא עוד draggable חי
+  // על פריטי הסרגל עצמם. הסיבה: פריט-בסרגל וה-container שמסביבו (שהוא עצמו
+  // גריר-להזזה, ראו useDraggableFab.js) חלקו את אותה מחוות-עכבר — ניסיון
+  // לגרור פריט כדי לסדר מחדש לפעמים גם הזיז את כל הסרגל, "drag and drop
+  // fucked" בלשון התלונה שהתקבלה. הפאנל החדש לא גריר-כמכלול, אז שום דבר שם
+  // לא מתחרה עם שום דבר אחר.
   function persistToolbarOrder(next) {
+    setUndoOrder(toolbarOrder);
     setToolbarOrder(next);
     try { localStorage.setItem(TOOLBAR_ORDER_KEY, JSON.stringify(next)); } catch { /* ignore */ }
   }
-  function handleItemDragStart(e, id) {
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", id);
-  }
-  function handleItemDrop(e, targetId) {
-    e.preventDefault();
-    const draggedId = e.dataTransfer.getData("text/plain");
-    if (!draggedId || draggedId === targetId) return;
-    const next = [...toolbarOrder];
-    const from = next.indexOf(draggedId);
-    const to = next.indexOf(targetId);
-    if (from === -1 || to === -1) return;
-    next.splice(from, 1);
-    next.splice(to, 0, draggedId);
-    persistToolbarOrder(next);
-  }
   function resetToolbarOrder() {
     persistToolbarOrder(DEFAULT_TOOLBAR_ORDER);
+  }
+  function undoToolbarOrder() {
+    if (!undoOrder) return;
+    setToolbarOrder(undoOrder);
+    try { localStorage.setItem(TOOLBAR_ORDER_KEY, JSON.stringify(undoOrder)); } catch { /* ignore */ }
+    setUndoOrder(null);
   }
 
   // הבקאנד (Render, שכבה חינמית) יכול "לישון" אחרי חוסר פעילות ולקחת עד
@@ -414,13 +420,13 @@ export default function DevAuthGate({ route, devFabProps }) {
         <div
           ref={toolbarFab.sizeRef}
           className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "")}
-          style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}
+          style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom, "--jynx-icon-scale": iconScale }}
           data-jynx-dock-zone=""
           onDragOver={(e) => e.preventDefault()}
           {...toolbarFab.dragHandlers}
         >
-          <button type="button" className="dev-toolbar-grip" onClick={toggleOrientation} title={`Switch to ${toolbarOrientation === "horizontal" ? "vertical" : "horizontal"} menu (drag anywhere else on the bar to move it)`}>
-            <GripVertical size={13} />
+          <button type="button" className="dev-toolbar-grip" onClick={toggleOrientation} title={`Switch to ${toolbarOrientation === "horizontal" ? "vertical" : "horizontal"} menu (click here — drag anywhere else on the bar to move it)`}>
+            {toolbarOrientation === "vertical" ? <GripHorizontal size={15} /> : <GripVertical size={15} />}
           </button>
           {toolbarOrder.map((id) => {
             if (!TOOLBAR_ITEM_NODES[id]) return null;
@@ -430,23 +436,19 @@ export default function DevAuthGate({ route, devFabProps }) {
             <div
               key={id}
               className="jynx-toolbar-item"
-              draggable
-              onDragStart={(e) => handleItemDragStart(e, id)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => handleItemDrop(e, id)}
+              draggable={id === "role"}
+              onDragStart={id === "role" ? (e) => { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", id); } : undefined}
               onDragEnd={id === "role" ? handleRoleItemDragEnd : undefined}
-              title={id === "role" ? "Drag out of the menu to detach the role/brigade picker" : (isKeyable ? `Drag to reorder — press ${keyNum} to trigger` : "Drag to reorder")}
+              title={id === "role" ? "Drag out of the menu to detach the role/brigade picker" : undefined}
             >
               {keyNum && <span className="jynx-toolbar-key-badge">{keyNum}</span>}
               {TOOLBAR_ITEM_NODES[id]}
             </div>
             );
           })}
-          {orderChanged && (
-            <button type="button" className="dev-toolbar-icon-btn dev-toolbar-reset-btn" onClick={resetToolbarOrder} title="Reset menu item order">
-              <RotateCcw size={11} />
-            </button>
-          )}
+          <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-settings-btn" onClick={() => setSettingsOpen(true)} title="Jynx settings — orientation, icon size, menu order">
+            <SlidersHorizontal size={13} />
+          </button>
           <span className="dev-toolbar-devname">Hi, {devName}</span>
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-logout-btn" onClick={logout} title="Log out of Jynx">
             <LogOut size={13} />
@@ -469,6 +471,22 @@ export default function DevAuthGate({ route, devFabProps }) {
         dockAnchorPos={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom + 40 }}
       />
       {adminOpen && <DevAdminPanel onClose={() => setAdminOpen(false)} onVerified={() => setIsAdmin(true)} />}
+      {settingsOpen && (
+        <JynxSettings
+          onClose={() => setSettingsOpen(false)}
+          orientation={toolbarOrientation}
+          onSetOrientation={setOrientation}
+          order={toolbarOrder}
+          defaultOrder={DEFAULT_TOOLBAR_ORDER}
+          availableIds={Object.keys(TOOLBAR_ITEM_NODES).filter((id) => TOOLBAR_ITEM_NODES[id])}
+          onReorder={persistToolbarOrder}
+          onReset={resetToolbarOrder}
+          onUndo={undoToolbarOrder}
+          canUndo={!!undoOrder}
+          iconScale={iconScale}
+          onSetIconScale={setIconScale}
+        />
+      )}
     </>
   );
 }
@@ -529,31 +547,38 @@ const CSS = `
 }
 .dev-fab-toolbar:active{ cursor:grabbing; }
 .dev-fab-toolbar.vertical{ flex-direction:column; align-items:stretch; }
-.dev-fab-toolbar.vertical .dev-toolbar-devname{ text-align:center; }
+.dev-fab-toolbar.vertical .dev-toolbar-devname{ text-align:center; max-width:96px; }
+/* הידית עצמה עכשיו כפתור אמיתי (מחליף אופקי/אנכי) — לא רק "אזור-גרירה
+   שיושב שם", אז צריך רמז ברור שהיא לחיצה: קצת יותר גדולה מכל שאר האייקונים
+   ותוחם עדין (border) כדי לא "להיבלע" בתוך פס-הכלים כמו לפני. */
 .dev-toolbar-grip{
-  display:flex; align-items:center; justify-content:center; width:16px; height:30px; color:var(--text-dim);
-  flex:none; background:none; border:none; padding:0; cursor:grab;
+  display:flex; align-items:center; justify-content:center; width:22px; height:30px; color:var(--text-dim);
+  flex:none; background:none; border:1px dashed color-mix(in srgb, var(--jynx) 40%, transparent); border-radius:6px;
+  padding:0; cursor:pointer; transition:color .12s, border-color .12s;
 }
-.dev-toolbar-grip:hover{ color:var(--jynx); }
-/* פריט-בסרגל הניתן לגרירה-לסידור-מחדש — קצת שקוף בזמן שהוא עצמו נגרר, כדי
-   שיהיה ברור חזותית מה זז. */
-.jynx-toolbar-item{ position:relative; display:flex; flex:none; cursor:grab; }
+.dev-toolbar-grip:hover{ color:var(--jynx); border-color:var(--jynx); }
+.jynx-toolbar-item{ position:relative; display:flex; flex:none; }
+/* התג עם מספר-המקלדת — בעבר bottom:-3px/right:-3px, מה שגרם לו להיחתך/
+   להתחפף עם הפריט הבא כשהסרגל אנכי (הפריטים נערמים אז ה"מטה" של אחד הוא
+   כמעט ה"מעלה" של הבא). "top" יציב בשני הכיוונים; קצת יותר גדול/כהה כדי
+   שיהיה קריא על רקע גם בהיר וגם כהה. */
 .jynx-toolbar-key-badge{
-  position:absolute; bottom:-3px; right:-3px; background:var(--jynx); color:#fff; border-radius:6px;
-  font-size:8px; font-weight:700; line-height:1; padding:1px 3px; pointer-events:none; font-family:var(--font-mono);
+  position:absolute; top:-4px; right:-4px; background:var(--jynx); color:#fff; border-radius:7px;
+  font-size:9px; font-weight:800; line-height:1; padding:2px 4px; pointer-events:none; font-family:var(--font-mono);
+  border:1px solid var(--panel); box-shadow:0 1px 2px rgba(0,0,0,.35); z-index:1;
 }
-.jynx-toolbar-item:active{ cursor:grabbing; }
-.dev-toolbar-reset-btn{ color:var(--text-dim); border-color:var(--line); }
-.dev-toolbar-reset-btn:hover{ color:var(--jynx); border-color:var(--jynx); }
 .dev-toolbar-icon-btn{
-  width:30px; height:30px; border-radius:8px; border:1px solid var(--jynx); background:var(--panel);
-  color:var(--jynx); display:flex; align-items:center; justify-content:center; cursor:pointer;
+  width:calc(30px * var(--jynx-icon-scale, 1)); height:calc(30px * var(--jynx-icon-scale, 1)); border-radius:8px;
+  border:1px solid var(--jynx); background:var(--panel); color:var(--jynx); display:flex; align-items:center;
+  justify-content:center; cursor:pointer;
 }
 .dev-toolbar-icon-btn:hover{ background:color-mix(in srgb, var(--jynx) 10%, var(--panel)); }
 .dev-toolbar-icon-btn.active{ background:var(--jynx); color:#fff; }
+.dev-toolbar-icon-btn svg{ transform:scale(var(--jynx-icon-scale, 1)); }
 .dev-toolbar-devname{
   background:var(--panel); border:1px solid var(--jynx); color:var(--jynx); border-radius:20px;
   padding:6px 12px; font-family:var(--font-mono); font-size:11px; font-weight:700; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
 }
 
 .jynx-draw-palette{

@@ -79,7 +79,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   // רואה אותה בכלל כאן, כי היא לא באה מ-/dev/annotations. מסומנת kind:"jynx"
   // להבחנה.
   function reload() {
-    // .catch(() => []) on EACH branch independently — not just one shared
+    // .catch(() => null) on EACH branch independently — not just one shared
     // catch on the combined Promise.all — because the dev-session token
     // (Bearer, used by fetchDevAnnotations) and the admin-session token
     // (X-Admin-Session, used by fetchJynxFeedback) are two separate,
@@ -89,19 +89,29 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     // *entire* reload — setItems() never ran again, so this panel would
     // freeze on whatever it last successfully loaded (while DevAdminPanel,
     // which fetches independently, kept working) until a hard page reload.
-    // Now a stale/expired session on one branch just yields an empty list
-    // for that branch on this poll, and self-heals on the next 5s poll
-    // once the session issue is resolved, instead of freezing forever.
-    const appPromise = fetchDevAnnotations(route).then((d) => d.map((a) => ({ ...a, kind: "app" }))).catch(() => []);
+    //
+    // null (not []) on failure is deliberate too, and fixes a real follow-up
+    // bug reported after the first fix landed: catching to an empty array
+    // meant a single transient network blip on either branch made ALL
+    // comments of that kind visibly vanish for one 5s poll, then reappear —
+    // "comments randomly disappear" from the user's side. null means "this
+    // branch failed, keep whatever it last successfully had" instead of
+    // "this branch is now empty" — see the setItems merge below.
+    const appPromise = fetchDevAnnotations(route).then((d) => d.map((a) => ({ ...a, kind: "app" }))).catch(() => null);
     // Jynx commenter שאינו מנהל: לא יכול לקרוא את התור המלא
     // (GET /admin/jynx-feedback נשאר admin-only בכוונה), אבל צריך לראות את
     // מה שהוא עצמו כתב — ראו GET /dev/jynx-feedback/mine.
     const jynxPromise = isAdmin
-      ? fetchJynxFeedback().then((d) => d.filter((a) => a.route === route).map((a) => ({ ...a, kind: "jynx", authorName: a.authorName || "Admin" }))).catch(() => [])
+      ? fetchJynxFeedback().then((d) => d.filter((a) => a.route === route).map((a) => ({ ...a, kind: "jynx", authorName: a.authorName || "Admin" }))).catch(() => null)
       : canJynxComment
-      ? fetchMyJynxFeedback().then((d) => d.filter((a) => a.route === route).map((a) => ({ ...a, kind: "jynx", authorName: a.authorName || "Admin" }))).catch(() => [])
+      ? fetchMyJynxFeedback().then((d) => d.filter((a) => a.route === route).map((a) => ({ ...a, kind: "jynx", authorName: a.authorName || "Admin" }))).catch(() => null)
       : Promise.resolve([]);
-    Promise.all([appPromise, jynxPromise]).then(([app, jynx]) => setItems([...app, ...jynx]));
+    Promise.all([appPromise, jynxPromise]).then(([app, jynx]) => {
+      setItems((prev) => [
+        ...(app ?? prev.filter((a) => a.kind !== "jynx")),
+        ...(jynx ?? prev.filter((a) => a.kind === "jynx")),
+      ]);
+    });
   }
   useEffect(() => {
     if (!active) return;
