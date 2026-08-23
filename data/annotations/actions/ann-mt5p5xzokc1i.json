@@ -1,0 +1,11 @@
+{
+  "id": "ann-mt5p5xzokc1i",
+  "route": "dashboard",
+  "targetLabel": "env-strip",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "i want to make a static text editor for jynx make ita text type comment, for static text elements in a site, the ones that are not api or data driven like here in ENV strip, make me choose if its a text type comment and if so it will all be session based and not an agent per cpmment on it, make it logical dynamic and smart, so i can go through the site changing text witout the headech of doing it from code. make it specificlly for me admin user and no one else.",
+  "authorName": "Admin",
+  "requestedAt": "2026-08-23T11:01:37.647Z",
+  "requestedBy": "Admin"
+}

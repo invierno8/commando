@@ -1,0 +1,11 @@
+{
+  "id": "ann-mt5oqsmnh537",
+  "route": "dashboard",
+  "targetLabel": "Dashboard — widget: מוכנות מערכת",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "the numbers still get out of the element down below",
+  "authorName": "Admin",
+  "requestedAt": "2026-08-23T10:49:50.652Z",
+  "requestedBy": "Admin"
+}

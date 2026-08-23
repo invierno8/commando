@@ -1,0 +1,33 @@
+{
+  "id": "ann-mt5opshw5fsg",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T10:49:02.852Z",
+  "route": "dashboard",
+  "targetLabel": "Dashboard — widget: בקשות פתוחות",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "the status is too big and toches the line to the right",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": true,
+  "resolvedAt": "2026-08-23T10:53:19.000Z",
+  "resolvedBy": "auto (PR opened)",
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "pr_opened",
+  "actionRequestedAt": "2026-08-23T10:49:02.852Z",
+  "actionRequestedBy": "Admin",
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/49",
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
