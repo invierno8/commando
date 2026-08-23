@@ -515,7 +515,7 @@ const CSS = `
   display:flex; flex-direction:column; gap:10px; align-items:center;
   transition:border-color var(--t-fast) ease, box-shadow var(--t-fast) ease, transform var(--t-fast) ease;
 }
-.prod-card:hover{ border-color:var(--accent); box-shadow:var(--shadow-sm); transform:translateY(-2px); background:var(--brk-hot),var(--panel); }
+.prod-card:hover{ border-color:var(--accent); box-shadow:var(--shadow-sm); transform:translateY(-2px); }
 .prod-card:hover .photo-tile{ border-color:var(--accent); }
 .prod-card-wrap.pending .prod-card{ border-color:var(--yellow); }
 .prod-card-wrap.rejected .prod-card{ border-color:var(--line); opacity:.75; }

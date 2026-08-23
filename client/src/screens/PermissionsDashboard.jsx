@@ -1954,10 +1954,10 @@ ${SCOPE_PICKER_CSS}
 /* גרירה ושחרור — כרטיס נגרר דוהה מעט, יעד תקף מודגש בירוק בזמן ריחוף מעליו. */
 .org-node-drag-handle{ color:var(--text-dim); flex:none; cursor:grab; }
 .org-node-card[draggable="true"]{ cursor:grab; }
-.org-node-card-dragging{ opacity:.4; }
+.org-node-card-dragging{ opacity:.4; background:var(--brk-hot),var(--panel); }
 .org-node-card-drop-active{
   border-color:var(--green) !important; box-shadow:0 0 0 3px color-mix(in srgb, var(--green) 22%, transparent);
-  background:color-mix(in srgb, var(--green) 10%, var(--panel));
+  background:var(--brk-hot),color-mix(in srgb, var(--green) 10%, var(--panel));
 }
 .org-node-you .org-node-card{ border-color:var(--accent); background:color-mix(in srgb, var(--accent) 6%, var(--panel)); }
 .org-node-person-icon{
