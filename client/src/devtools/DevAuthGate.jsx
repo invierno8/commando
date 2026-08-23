@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, GripHorizontal, X, Loader2, Target, Pencil, Users, SlidersHorizontal } from "lucide-react";
-import JynxSettings from "./JynxSettings.jsx";
+import { Lock, Settings2, Eye, EyeOff, LogOut, MessageSquare, GripVertical, GripHorizontal, X, Loader2, Target, Pencil, Users } from "lucide-react";
 import { devLogin, devLogout, fetchDevMe, fetchAdminMe } from "./devApi.js";
 import DevFab from "./DevFab.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
@@ -111,7 +110,6 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [iconScale, setIconScaleState] = useState(
     () => Number(localStorage.getItem(TOOLBAR_ICON_SCALE_KEY)) || 1
   );
-  const [settingsOpen, setSettingsOpen] = useState(false);
   // כרטיס פרופיל-משתמש (UserProfileCard.jsx) — נפתח מכל מקום (אזכור/שם-
   // מחבר) דרך אירוע DOM גלובלי, ראו openUserProfile.js. השומע חייב להיות
   // כאן, לפני כל return מוקדם (checking/!devName), כי חוקי-Hooks אוסרים
@@ -390,7 +388,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       </button>
     ) : null,
     admin: (
-      <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-admin-btn" onClick={() => setAdminOpen(true)} title="Admin (admin only)">
+      <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-admin-btn" onClick={() => setAdminOpen(true)} title="Settings — admins see and manage more here">
         <Settings2 size={13} />
       </button>
     ),
@@ -456,9 +454,6 @@ export default function DevAuthGate({ route, devFabProps }) {
             </div>
             );
           })}
-          <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-settings-btn" onClick={() => setSettingsOpen(true)} title="Jynx settings — orientation, icon size, menu order">
-            <SlidersHorizontal size={13} />
-          </button>
           <span className="dev-toolbar-devname">Hi, {devName}</span>
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-logout-btn" onClick={logout} title="Log out of Jynx">
             <LogOut size={13} />
@@ -497,22 +492,6 @@ export default function DevAuthGate({ route, devFabProps }) {
             iconScale,
             onSetIconScale: setIconScale,
           }}
-        />
-      )}
-      {settingsOpen && (
-        <JynxSettings
-          onClose={() => setSettingsOpen(false)}
-          orientation={toolbarOrientation}
-          onSetOrientation={setOrientation}
-          order={toolbarOrder}
-          defaultOrder={DEFAULT_TOOLBAR_ORDER}
-          availableIds={Object.keys(TOOLBAR_ITEM_NODES).filter((id) => TOOLBAR_ITEM_NODES[id])}
-          onReorder={persistToolbarOrder}
-          onReset={resetToolbarOrder}
-          onUndo={undoToolbarOrder}
-          canUndo={!!undoOrder}
-          iconScale={iconScale}
-          onSetIconScale={setIconScale}
         />
       )}
       {profileUserId && <UserProfileCard userId={profileUserId} onClose={() => setProfileUserId(null)} />}
