@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt5qe3axvwkl",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-23T11:35:56.217Z",
+  "route": "dashboard",
+  "targetLabel": "dev-toolbar-role-btn",
+  "secondaryTargets": [],
+  "comment": "when tryin to drag the role play icon from the menu the drag just stuck for the entire menu, have it as a toggle in the menu settings oriatation and fix the dragging",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-23T11:35:56.217Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
