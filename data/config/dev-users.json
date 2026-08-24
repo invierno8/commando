@@ -3,7 +3,7 @@
     "id": "dev-mt2xeb7iwm5q",
     "name": "גלעד",
     "role": "אתה הראש אתה אשם",
-    "passwordHash": "$2a$12$0IyJAwOoYKnTX0CUQEfGXOe7jkntiGVKCyDLIbRqAG0Ucr8P2lIrS",
+    "passwordHash": "$2a$12$Vw9vOYLtAVbTT.ix0b3B/uY.nBqpHJBINqW1Kq9YM3Q.FsvzU9Ivi",
     "active": true,
     "createdAt": "2026-08-21T12:28:47.542Z"
   },
@@ -14,5 +14,13 @@
     "passwordHash": "$2a$12$.h.xJ/VTYvtVAQqN6WnPT.2gHPslH7UsBsMk5TmZI1X5KZ0DL4Sbe",
     "active": true,
     "createdAt": "2026-08-21T12:29:07.740Z"
+  },
+  {
+    "id": "dev-mt7rx6k3ju6s",
+    "name": "Vova",
+    "role": "",
+    "passwordHash": "$2a$12$3w9i8EYuy31nx8nSxF01ROG5C80UCTZCZbMTjgeQwQaltcSD1i74S",
+    "active": true,
+    "createdAt": "2026-08-24T21:54:21.236Z"
   }
 ]
