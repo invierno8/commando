@@ -37,7 +37,7 @@
   },
   "7182021:ticket": {
     "data": {
-      "type": "repair",
+      "type": "equip",
       "title": "",
       "desc": "",
       "category": "",
@@ -47,6 +47,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787601540587
+    "savedAt": 1787601548583
   }
 }
