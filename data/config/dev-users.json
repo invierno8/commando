@@ -16,14 +16,6 @@
     "createdAt": "2026-08-21T12:29:07.740Z"
   },
   {
-    "id": "dev-mt5vz2e33m3m",
-    "name": "yoav",
-    "role": "",
-    "passwordHash": "$2a$12$c.8MzlyDheRRSAz2MtBKnetgms1TfXg07QHpWobKYXPVnBOauAHKO",
-    "active": true,
-    "createdAt": "2026-08-23T14:12:15.035Z"
-  },
-  {
     "id": "dev-mt6a8tvxgdbi",
     "name": "ayelet",
     "role": "",
