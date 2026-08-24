@@ -29,6 +29,19 @@
   ],
   "brg-commando": [
     {
+      "id": "ntf-1787601604627-6h9i4",
+      "read": false,
+      "ts": 1787601604627,
+      "kind": "ticket",
+      "ticketId": "REQ-1684",
+      "ticketTitle": "נסיון",
+      "unit": "אגוז",
+      "requestedBy": "סמל עומר כהן",
+      "collaborators": [],
+      "type": "submitted",
+      "message": "סמל עומר כהן פתח/ה דרישה חדשה — \"נסיון\" — הממתינה להחלטתך"
+    },
+    {
       "id": "ntf-1787571136610-4hdop",
       "read": true,
       "ts": 1787571136610,
