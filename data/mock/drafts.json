@@ -9,5 +9,19 @@
       "equipInstructions": ""
     },
     "savedAt": 1787570295638
+  },
+  "7512036:ticket": {
+    "data": {
+      "type": "idea",
+      "title": "",
+      "desc": "",
+      "category": "",
+      "damatz": null,
+      "extras": [],
+      "linkedProductId": "",
+      "estimatedPrice": "",
+      "purchaseLink": ""
+    },
+    "savedAt": 1787583655969
   }
 }
