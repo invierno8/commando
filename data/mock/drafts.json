@@ -34,5 +34,19 @@
       "equipInstructions": ""
     },
     "savedAt": 1787600022290
+  },
+  "7182021:ticket": {
+    "data": {
+      "type": "idea",
+      "title": "bxhui",
+      "desc": "",
+      "category": "",
+      "damatz": null,
+      "extras": [],
+      "linkedProductId": "",
+      "estimatedPrice": "",
+      "purchaseLink": ""
+    },
+    "savedAt": 1787601563574
   }
 }
