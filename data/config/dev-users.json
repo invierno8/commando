@@ -14,13 +14,5 @@
     "passwordHash": "$2a$12$.h.xJ/VTYvtVAQqN6WnPT.2gHPslH7UsBsMk5TmZI1X5KZ0DL4Sbe",
     "active": true,
     "createdAt": "2026-08-21T12:29:07.740Z"
-  },
-  {
-    "id": "dev-mt6a8tvxgdbi",
-    "name": "ayelet",
-    "role": "",
-    "passwordHash": "$2a$12$Mj0oek.YWmn3UqtXPGNLs.VW3MM6zdx8/oXh.A2Dq/KTULCNs1Th6",
-    "active": true,
-    "createdAt": "2026-08-23T20:51:45.343Z"
   }
 ]
