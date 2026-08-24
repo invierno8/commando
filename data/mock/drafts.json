@@ -34,19 +34,5 @@
       "equipInstructions": ""
     },
     "savedAt": 1787600022290
-  },
-  "7182021:ticket": {
-    "data": {
-      "type": "idea",
-      "title": "נסיון",
-      "desc": "זה תיאור",
-      "category": "ציוד אישי",
-      "damatz": "3a554a08-5370-47f6-9b42-1533fca65d04.JPG",
-      "extras": [],
-      "linkedProductId": "",
-      "estimatedPrice": "",
-      "purchaseLink": ""
-    },
-    "savedAt": 1787601584595
   }
 }
