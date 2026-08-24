@@ -38,7 +38,7 @@
   "7182021:ticket": {
     "data": {
       "type": "idea",
-      "title": "",
+      "title": "נס",
       "desc": "",
       "category": "",
       "damatz": null,
@@ -47,6 +47,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787601564673
+    "savedAt": 1787601566062
   }
 }
