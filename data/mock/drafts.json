@@ -38,8 +38,8 @@
   "7182021:ticket": {
     "data": {
       "type": "idea",
-      "title": "נס",
-      "desc": "",
+      "title": "נסיון",
+      "desc": "זה תיאור",
       "category": "",
       "damatz": null,
       "extras": [],
@@ -47,6 +47,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787601566062
+    "savedAt": 1787601570609
   }
 }
