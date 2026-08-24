@@ -24,14 +24,6 @@
     "createdAt": "2026-08-21T12:29:07.740Z"
   },
   {
-    "id": "dev-mt3dwzswp17i",
-    "name": "זיו",
-    "role": "",
-    "passwordHash": "$2a$12$H58G7triIcTv5ApPi6fzMOaJ9OtQpqSBJDyymYn3srwBtE7wJIZM.",
-    "active": true,
-    "createdAt": "2026-08-21T20:11:16.634Z"
-  },
-  {
     "id": "dev-mt5vz2e33m3m",
     "name": "yoav",
     "role": "",
