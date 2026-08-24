@@ -23,16 +23,5 @@
       "purchaseLink": ""
     },
     "savedAt": 1787583738287
-  },
-  "7561776:catalogItem": {
-    "data": {
-      "name": "",
-      "category": "",
-      "qty": 0,
-      "desc": "",
-      "notes": "",
-      "equipInstructions": ""
-    },
-    "savedAt": 1787600007729
   }
 }
