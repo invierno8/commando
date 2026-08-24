@@ -23,5 +23,16 @@
       "purchaseLink": ""
     },
     "savedAt": 1787583738287
+  },
+  "7561776:catalogItem": {
+    "data": {
+      "name": "hk",
+      "category": "",
+      "qty": 0,
+      "desc": "",
+      "notes": "",
+      "equipInstructions": ""
+    },
+    "savedAt": 1787600021110
   }
 }
