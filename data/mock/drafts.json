@@ -9,5 +9,19 @@
       "equipInstructions": ""
     },
     "savedAt": 1787570295638
+  },
+  "guest:ticket": {
+    "data": {
+      "type": "repair",
+      "title": "תקלה במכשיר קשר טקטי",
+      "desc": "",
+      "category": "תקשורת",
+      "damatz": null,
+      "extras": [],
+      "linkedProductId": "VHF-07",
+      "estimatedPrice": "",
+      "purchaseLink": ""
+    },
+    "savedAt": 1787570575600
   }
 }
