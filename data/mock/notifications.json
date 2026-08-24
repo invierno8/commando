@@ -29,6 +29,28 @@
   ],
   "brg-commando": [
     {
+      "id": "ntf-1787601801733-fz0hu",
+      "read": false,
+      "ts": 1787601801733,
+      "kind": "ticket",
+      "ticketId": "REQ-1033",
+      "ticketTitle": "אלונקת חילוץ פגומה",
+      "unit": "יחידת מטה",
+      "requestedBy": "נועה שגיא",
+      "collaborators": [
+        {
+          "rank": "רס״ן",
+          "name": "רוני כהן"
+        },
+        {
+          "rank": "סרן",
+          "name": "עידן לוי"
+        }
+      ],
+      "type": "status_changed",
+      "message": "קצין אמל״ח חטיבה (הדגמה) עידכן/ה את הסטטוס של \"אלונקת חילוץ פגומה\" לטופל"
+    },
+    {
       "id": "ntf-1787601624473-d2b69",
       "read": false,
       "ts": 1787601624473,
