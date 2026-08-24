@@ -1,1 +1,13 @@
-{}
+{
+  "7566718:catalogItem": {
+    "data": {
+      "name": "",
+      "category": "",
+      "qty": 0,
+      "desc": "",
+      "notes": "",
+      "equipInstructions": ""
+    },
+    "savedAt": 1787570295638
+  }
+}
