@@ -12,7 +12,7 @@
   },
   "7512036:ticket": {
     "data": {
-      "type": "procurement",
+      "type": "repair",
       "title": "",
       "desc": "",
       "category": "",
@@ -22,6 +22,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787583660113
+    "savedAt": 1787583735146
   }
 }
