@@ -37,7 +37,7 @@
   },
   "7182021:ticket": {
     "data": {
-      "type": "idea",
+      "type": "procurement",
       "title": "",
       "desc": "",
       "category": "",
@@ -47,6 +47,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787601528051
+    "savedAt": 1787601534959
   }
 }
