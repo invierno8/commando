@@ -374,7 +374,11 @@
       "photoUploaded": false,
       "progressStatus": "waiting",
       "progressNote": "ממתין להקצאת גורם אחראי.",
-      "assignee": null,
+      "assignee": {
+        "personalNumber": "7467123",
+        "rank": "סגן",
+        "name": "נועה שגיא"
+      },
       "progressLog": []
     },
     {
