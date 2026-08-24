@@ -445,7 +445,7 @@
       "dueDate": "19/08/2026",
       "photoUploaded": true,
       "progressStatus": "done",
-      "progressNote": "הרצועה הוחלפה, האלונקה נבדקה ואושרה לשימוש מחדש.",
+      "progressNote": "אחלה דרישה לטיפולכם",
       "assignee": {
         "personalNumber": "7467123",
         "rank": "סגן",
@@ -487,6 +487,15 @@
           "status": "done",
           "statusChanged": false,
           "text": "תודה על הטיפול המהיר!"
+        },
+        {
+          "id": "lg-1787601799313",
+          "author": "קצין אמל״ח חטיבה (הדגמה)",
+          "authorRole": "brigade_officer",
+          "stamp": "24.8.2026 23:03",
+          "status": "done",
+          "statusChanged": true,
+          "text": "אחלה דרישה לטיפולכם"
         }
       ]
     },
