@@ -29,17 +29,17 @@
   ],
   "brg-commando": [
     {
-      "id": "ntf-1787601604627-6h9i4",
+      "id": "ntf-1787601624473-d2b69",
       "read": false,
-      "ts": 1787601604627,
+      "ts": 1787601624473,
       "kind": "ticket",
       "ticketId": "REQ-1684",
       "ticketTitle": "נסיון",
       "unit": "אגוז",
       "requestedBy": "סמל עומר כהן",
       "collaborators": [],
-      "type": "submitted",
-      "message": "סמל עומר כהן פתח/ה דרישה חדשה — \"נסיון\" — הממתינה להחלטתך"
+      "type": "approved",
+      "message": "\"נסיון\" אושרה על ידי קצין אמל״ח יחידה (הדגמה) והועברה לתיעדוף החטיבה"
     },
     {
       "id": "ntf-1787571136610-4hdop",
