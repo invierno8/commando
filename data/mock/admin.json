@@ -1,4 +1,15 @@
 {
   "pendingDeletions": [],
-  "auditLog": []
+  "auditLog": [
+    {
+      "id": "log-1787670433349-txey",
+      "actor": "קצין אמל״ח יחידה (הדגמה)",
+      "action": "יצירת צוות — צוות 7 (מגלן)",
+      "target": "מגלן / צוות 7",
+      "targetType": null,
+      "snapshot": null,
+      "restored": false,
+      "ts": 1787670433349
+    }
+  ]
 }
