@@ -59,19 +59,5 @@
       "purchaseLink": ""
     },
     "savedAt": 1787652596327
-  },
-  "7962807:ticket": {
-    "data": {
-      "type": "equip",
-      "title": "תקלה במשקפת ראיית לילה",
-      "desc": "",
-      "category": "ראייה",
-      "damatz": null,
-      "extras": [],
-      "linkedProductId": "NVG-03",
-      "estimatedPrice": "",
-      "purchaseLink": ""
-    },
-    "savedAt": 1787652657278
   }
 }
