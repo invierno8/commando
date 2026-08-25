@@ -75,7 +75,7 @@
     "data": {
       "type": "equip",
       "title": "חסר יחידות במלטי",
-      "desc": "",
+      "desc": "10",
       "category": "",
       "damatz": null,
       "extras": [],
@@ -83,6 +83,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787657355376
+    "savedAt": 1787657360791
   }
 }
