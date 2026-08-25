@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt8i1fowscur",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-25T10:05:27.344Z",
+  "route": "catalog",
+  "targetLabel": "mock-toggle",
+  "secondaryTargets": [],
+  "comment": "demo data turn off never works, make it work",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-25T10:05:27.344Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
