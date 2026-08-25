@@ -24,7 +24,7 @@
   "actionRequestedAt": "2026-08-25T13:18:39.175Z",
   "actionRequestedBy": "admin",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/74",
-  "actionLog": "PR already opened by a concurrent run (#74) before this session reached bookkeeping; no second PR opened.",
+  "actionLog": "PR already opened by a concurrent run (#74) before this session reached bookkeeping; no second PR opened. Update: a second duplicate, PR #78 (jynx-catalog-order-status-0cwbc9, this exact routine's own trigger context for a later run), independently implements the same 4-stage order status via a different field name (orderStatus vs #74's procurementStage). Two open PRs (#74/#78) for one request. Pick exactly one to merge, close the other.",
   "replies": [],
   "reactions": {
     "👍": [],
