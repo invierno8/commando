@@ -60,15 +60,18 @@
     },
     "savedAt": 1787652596327
   },
-  "7222678:catalogItem": {
+  "7222678:ticket": {
     "data": {
-      "name": "משקפי מגן בליסטיי",
-      "category": "ראייה",
-      "qty": "150",
-      "desc": "משקפי מגן בליסטיי",
-      "notes": "",
-      "equipInstructions": "פריט מדף "
+      "type": "idea",
+      "title": "",
+      "desc": "",
+      "category": "",
+      "damatz": null,
+      "extras": [],
+      "linkedProductId": "",
+      "estimatedPrice": "",
+      "purchaseLink": ""
     },
-    "savedAt": 1787657308175
+    "savedAt": 1787657325740
   }
 }
