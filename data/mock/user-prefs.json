@@ -1,8 +1,7 @@
 {
   "guest:dashboard-layout:system_admin": {
     "order": [
-      "kpis",
-      "priority"
+      "kpis"
     ],
     "hidden": [
       "responseTime",
@@ -10,7 +9,8 @@
       "ticketTypes",
       "procurementCost",
       "readiness",
-      "trend"
+      "trend",
+      "priority"
     ]
   },
   "guest:dashboard-layout:brigade_officer": {
