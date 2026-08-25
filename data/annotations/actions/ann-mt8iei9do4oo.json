@@ -1,0 +1,11 @@
+{
+  "id": "ann-mt8iei9do4oo",
+  "route": "tickets",
+  "targetLabel": "Tickets — ticket: חסר לי כלי עבודה מקיטה (REQ-1302)",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "בחירת העדיפות לא עובדת כי הרשימה לבחירת דרישה מוסתרת מתחת לדרישות אחרות תתקן את זה בבקשה שיהיה ידיד למשתמש ויהיה אפשר לבחור",
+  "authorName": "Admin",
+  "requestedAt": "2026-08-25T10:15:38.523Z",
+  "requestedBy": "Admin"
+}
