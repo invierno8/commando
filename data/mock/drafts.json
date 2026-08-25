@@ -95,13 +95,13 @@
   },
   "4567458:catalogItem": {
     "data": {
-      "name": "",
+      "name": "דו",
       "category": "",
       "qty": 0,
       "desc": "",
       "notes": "",
       "equipInstructions": ""
     },
-    "savedAt": 1787677029148
+    "savedAt": 1787677035059
   }
 }
