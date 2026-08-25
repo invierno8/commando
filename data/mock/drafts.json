@@ -98,13 +98,13 @@
       "type": "equip",
       "title": "",
       "desc": "2",
-      "category": "",
+      "category": "ראייה",
       "damatz": null,
       "extras": [],
       "linkedProductId": "NEW-7714",
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787661200246
+    "savedAt": 1787661203383
   }
 }
