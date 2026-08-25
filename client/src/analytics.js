@@ -56,17 +56,27 @@ export function categoryBreakdown(tickets) {
 }
 
 /* דירוג פריטים לפי מספר דרישות "תיקון" שנפתחו נגדם — מצביע על ציוד       */
-/* שדורש תשומת לב תחזוקתית/החלפה חוזרת, לא רק על עומס דרישות כללי.        */
+/* שדורש תשומת לב תחזוקתית/החלפה חוזרת, לא רק על עומס דרישות כללי. כל     */
+/* שורה נושאת גם את רשימת דרישות התיקון הגולמיות עצמן (repairs) — התאריך, */
+/* היחידה, הפירוט והסטטוס של כל תקלה בפועל — כך שמסך הדשבורד יכול להציג   */
+/* רובריקת פירוט (breakdown) לכל פריט, לא רק את המונה המצטבר.             */
 export function repairLeaderboard(tickets, catalog) {
-  const counts = {};
+  const grouped = {};
   tickets.forEach((t) => {
     if (t.type !== "repair" || !t.linkedProductId) return;
-    counts[t.linkedProductId] = (counts[t.linkedProductId] || 0) + 1;
+    (grouped[t.linkedProductId] ||= []).push(t);
   });
-  return Object.entries(counts)
-    .map(([id, count]) => {
+  return Object.entries(grouped)
+    .map(([id, list]) => {
       const item = catalog.find((it) => it.id === id);
-      return { id, count, name: item?.name || id, qty: item?.qty };
+      const repairs = list
+        .slice()
+        .sort((a, b) => (parseStamp(b.submittedAt)?.getTime() || 0) - (parseStamp(a.submittedAt)?.getTime() || 0))
+        .map((t) => ({
+          id: t.id, desc: t.desc, submittedAt: t.submittedAt,
+          unit: t.unit, requestedBy: t.requestedBy, status: t.status,
+        }));
+      return { id, count: list.length, name: item?.name || id, qty: item?.qty, repairs };
     })
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
