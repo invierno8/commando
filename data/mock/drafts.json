@@ -74,12 +74,12 @@
   "7232305:catalogItem": {
     "data": {
       "name": "",
-      "category": "תקשורת",
+      "category": "ראייה",
       "qty": 0,
       "desc": "",
       "notes": "",
       "equipInstructions": ""
     },
-    "savedAt": 1787658914124
+    "savedAt": 1787658917520
   }
 }
