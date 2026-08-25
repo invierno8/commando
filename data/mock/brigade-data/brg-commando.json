@@ -3,6 +3,7 @@
     "מגלן",
     "דובדבן",
     "אגוז",
+    "יחידת מטה",
     "יחידת מטה"
   ],
   "catalog": [
@@ -622,6 +623,14 @@
         "rank": "סגן",
         "name": "טל אשכנזי",
         "personalNumber": "7578934",
+        "email": "tal.ash@example.mil"
+      },
+      {
+        "id": "uo-4",
+        "unit": "יחידת מטה",
+        "rank": "סגן",
+        "name": "דוד",
+        "personalNumber": "45214587",
         "email": "tal.ash@example.mil"
       }
     ],
