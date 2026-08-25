@@ -20,8 +20,8 @@
   "guest:dashboard-layout:brigade_officer": {
     "order": [
       "kpis",
-      "trend",
       "priority",
+      "trend",
       "responseTime",
       "categoryAnalytics",
       "ticketTypes",
