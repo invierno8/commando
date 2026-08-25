@@ -51,11 +51,16 @@ function renderWithMentions(text, directory) {
 /*  2. A draggable, collapsible side list of comments — Open/Done tabs,   */
 /*     "just mine" toggle, and (added 2026-08-23, work item                */
 /*     jynx-mt558crxb02w) a "This page / All pages" scope toggle: "This    */
-/*     page" is the original route-filtered behavior, "All pages" drops    */
-/*     the route filter entirely and shows every route's comment (each     */
-/*     tagged with its own route so you can tell them apart) — this is     */
-/*     what makes this panel a genuine single place to see every open       */
-/*     comment, not just this screen's. Hovering a row outlines the         */
+/*     page" is the route-filtered view, "All pages" drops the route       */
+/*     filter entirely and shows every route's comment (each tagged with   */
+/*     its own route so you can tell them apart). Defaults to "All pages"  */
+/*     (changed 2026-08-25, jynx-mt8j2qfgvo1w — a real QA report of         */
+/*     opening this panel on a screen with few/no comments of its own and  */
+/*     seeing "nothing there" despite plenty existing on other screens;    */
+/*     "This page" as the starting scope buried them behind a toggle       */
+/*     nobody had a reason to discover yet) — this is what makes this      */
+/*     panel a genuine single place to see every open comment by default,  */
+/*     not just this screen's. Hovering a row outlines the                 */
 /*     matching page element in the Jynx brand color; clicking a row        */
 /*     scrolls to and flashes it — both are necessarily a no-op for a       */
 /*     cross-route item in "All pages" mode (its element isn't in this      */
@@ -85,9 +90,9 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   const [items, setItems] = useState([]);
   const [statusFilter, setStatusFilter] = useState("open"); // open | done
   const [mineOnly, setMineOnly] = useState(false);
-  // "This page" (default — route-filtered, the original behavior) vs "All
-  // pages" (no route filter at all) — see the LEGO BLOCK comment above.
-  const [scope, setScope] = useState("page"); // page | all
+  // "This page" (route-filtered) vs "All pages" (no route filter at all,
+  // the default — see the LEGO BLOCK comment above for why).
+  const [scope, setScope] = useState("all"); // page | all
   // Filtering pass (jynx-mt5f2ow7dqrw): date-range pills, a keyword search
   // box, and an "element filter" — Ctrl/Cmd+click any element on the page
   // (while "pick" mode is on) to narrow the list to comments whose own
