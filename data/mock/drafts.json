@@ -65,13 +65,13 @@
       "type": "procurement",
       "title": "חסר לי כלי עבודה מקיטה",
       "desc": "עבור המשיכיות עבודה אנחנו צריכים קיטים של כלי כוח עבודה מקיטה בדחיפות לפני המבצע ",
-      "category": "",
+      "category": "תצפית",
       "damatz": null,
       "extras": [],
       "linkedProductId": "",
       "estimatedPrice": "15000",
       "purchaseLink": ""
     },
-    "savedAt": 1787652713593
+    "savedAt": 1787652740651
   }
 }
