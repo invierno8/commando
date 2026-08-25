@@ -1,0 +1,35 @@
+{
+  "id": "ann-mt8on10cwbc9",
+  "authorId": "dev-mt7rx6k3ju6s",
+  "authorName": "Vova",
+  "createdAt": "2026-08-25T13:10:12.444Z",
+  "route": "catalog",
+  "targetLabel": "Catalog — main screen",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "pagination-bar"
+  ],
+  "comment": "להוסיף סטטוס דרישות\n1.בתהליך\n2.ממתין להזמנה\n3. בדרך \n4. אישור מזמין סופי[→ pagination-bar]",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
