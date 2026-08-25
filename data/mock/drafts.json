@@ -96,7 +96,7 @@
   "7395798:ticket": {
     "data": {
       "type": "equip",
-      "title": "",
+      "title": "2",
       "desc": "2",
       "category": "ראייה",
       "damatz": null,
@@ -105,6 +105,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787661203383
+    "savedAt": 1787661210578
   }
 }
