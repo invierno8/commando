@@ -504,6 +504,33 @@ discussing the product/domain since the UI and data are Hebrew-first.
     distinct `actions/` file appearing/disappearing correctly) was verified
     against the real `data/` server with real GitHub commits, repeatedly
     cleaned up afterward — see the chronological log.
+  - **Guardrail (added 2026-08-25) — do not commit a pure "still unchanged"
+    re-confirmation.** The routine fires on *any* push to the repo,
+    including its own bookkeeping commits, with no way to scope the webhook
+    more narrowly (see the routine's own step-zero comment). This created a
+    real, confirmed self-sustaining loop on 2026-08-25: a batch of 6 items
+    (`ann-mt5p5xzokc1i` plus 5 items from a commenter named Vova) settled
+    into a state where every item was correctly left unactioned as a
+    genuine product decision, but each run still committed a "still
+    unchanged, Nth re-confirmation" entry to this file — and that commit's
+    push re-triggered the webhook, which found the identical unchanged
+    state and repeated the cycle. Six-plus such commits landed back to back
+    with zero forward progress (`git log --oneline -- FORCLAUDE.md` shows
+    them consecutively). **The fix: when a run's queue is byte-for-byte
+    identical to what the most recent log entry already describes (same
+    ids, same comments, no `isFollowUp`, no new PR referencing any of
+    them), do not push anything at all** — no FORCLAUDE.md log entry, no
+    note edit, no queue-file deletion. Treat it exactly like step zero's
+    empty-queue case: a clean, silent no-op. Only push when something
+    actually changed: a PR opened/updated, a note genuinely bookkept, a
+    queue file genuinely deleted, or the queue's *content* differs from
+    last logged (a new item, an `isFollowUp`, a changed comment, someone
+    externally resolving/PR'ing an id). If a stuck item's staleness itself
+    is worth a human's attention, that's what `PushNotification` is for
+    (already established for `ann-mt5p5xzokc1i` — one escalation, then
+    silence until something changes) — it doesn't require a matching git
+    commit, and a notification should never be paired with a no-op push
+    just to "leave a record."
 
 ## Explicitly deferred (see `TODO.md` for the full writeup)
 
@@ -1664,3 +1691,8 @@ Step-zero found the identical 6 items a seventh time: `ann-mt5p5xzokc1i` (twenty
 
 ### 2026-08-25 — Eighth re-confirmation: same 6-item leftover queue, still unchanged
 Step-zero found the identical 6 items an eighth time: `ann-mt5p5xzokc1i` (twenty-seventh confirmation) plus the same 5 Vova items (`ann-mt8oh01ruh3b`, `ann-mt8okdtpq9hn`, `ann-mt8on10cwbc9`, `ann-mt8oorh6ym61`, `ann-mt8opg67bpl9`, ninth confirmation each). Local checkout was behind `origin/main` (`HEAD` at `8429021`, the trigger's own checkout commit) — fetched and hard-reset to `origin/main`'s real tip (`6c39ae1`, the previous re-confirmation's own bookkeeping commit) before trusting the queue listing. Read all 6 action files and notes directly off that tip: comments byte-for-byte identical to what's logged above (including the still-corrupted `secondaryTargets` fragment on `ann-mt8okdtpq9hn`), no `isFollowUp` on any, all still `actionStatus:"queued"`/`resolved:false`/`actionPrUrl:null`. `search_pull_requests` across the repo for all 6 ids again returned only the same incidental, unrelated hit on PR #63 (still open, about a different id) — no genuine collision. Nothing new to add to either judgment call from the entries above; not re-explained here. Action files left in place untouched for all 6, no note changes, no code changes, no PRs, no notification (same reasoning as the seven entries immediately above — no new information for either the escalated item or the Vova batch).
+
+### 2026-08-25 — Ninth check: identified and broke the self-triggering no-op loop; escalated to the user; this is the last commit for this unchanged state
+Step-zero found the identical 6 items a ninth time, concurrently with several of the entries directly above (this exact race — multiple sessions landing "still unchanged" commits back to back — is itself the symptom being fixed here). Before repeating the by-now-routine "still unchanged" confirmation, checked `git log --oneline -- FORCLAUDE.md` on `origin/main` and noticed the prior entries are consecutive, back-to-back commits with nothing else interleaved — meaning each "no code changed, nothing to report" run was itself still pushing a commit, and that push was what re-triggered the very next webhook firing that found the same unchanged state again. This repo has no way to scope the webhook to "only real code pushes" (per step zero's own comment, it fires on *any* push, including its own bookkeeping), so a routine that logs "nothing changed" by committing is structurally guaranteed to keep re-firing itself forever on a stuck queue, making zero forward progress each cycle while still consuming a full session's worth of tool calls and tokens every time — and, as this exact run demonstrated while it was rebasing past three separate concurrent "still unchanged" commits mid-push, it also multiplies into concurrent duplicate sessions the same way the classic duplicate-PR race did.
+
+Verified all 6 items are still exactly as previously logged (`ann-mt5p5xzokc1i`'s comment, and all 5 Vova items' comments/`secondaryTargets`, byte-for-byte identical; all notes still `actionStatus:"queued"`/`resolved:false`/`actionPrUrl:null`; no `isFollowUp` on any) — so there is genuinely nothing new to act on or log about the items themselves. Added the guardrail rule above (in the "Action pipeline" section) so that future runs finding an unchanged queue make zero commits at all, not even a log entry — breaking the loop going forward, not just this once. Sent one `PushNotification` to the user summarizing the stuck state: `ann-mt5p5xzokc1i` needs product/scope clarification on the "static text editor" proposal (open-ended, admin-only, no existing analog in the codebase to base an implementation on), the 5 Vova items each imply a missing domain concept (delivery dates, an "orders" entity distinct from tickets, inventory counting) that's a schema/product decision rather than a UI tweak, and — the actually-new information this run — the routine itself has been stuck in a self-triggering loop of its own making for the last several firings, compounded by concurrent duplicate firings of that same loop. This commit is the last one this routine will make for this exact queue state; per the new guardrail, subsequent runs finding the same 6 items unchanged will make no commit and send no repeat notification, and will only act again once a human resolves an item, a follow-up comment arrives, or the queue's actual content changes.
