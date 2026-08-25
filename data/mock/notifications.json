@@ -2,7 +2,7 @@
   "brg-golani": [
     {
       "id": "ntf-1787663725016-89268",
-      "read": false,
+      "read": true,
       "ts": 1787663725016,
       "kind": "ticket",
       "ticketId": "REQ-2101",
