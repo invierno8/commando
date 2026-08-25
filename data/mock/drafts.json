@@ -81,21 +81,5 @@
       "equipInstructions": ""
     },
     "savedAt": 1787658921236
-  },
-  "7232305:ticket": {
-    "data": {
-      "type": "equip",
-      "title": "בקשת הצטיידות — משקפי מגן בליסטיי",
-      "desc": "5",
-      "category": "ראייה",
-      "damatz": "MMMM.jpg",
-      "extras": [
-        "MMMM.jpg"
-      ],
-      "linkedProductId": "NEW-7714",
-      "estimatedPrice": "",
-      "purchaseLink": ""
-    },
-    "savedAt": 1787658958355
   }
 }
