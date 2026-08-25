@@ -1,0 +1,11 @@
+{
+  "id": "ann-mt8oorh6ym61",
+  "route": "dashboard",
+  "targetLabel": "Dashboard — widget: מצב ציוד",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "להוסיך מודול ספירת מלאי",
+  "authorName": "Vova",
+  "requestedAt": "2026-08-25T13:18:31.795Z",
+  "requestedBy": "admin"
+}
