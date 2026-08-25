@@ -50,7 +50,7 @@
     "data": {
       "type": "repair",
       "title": "תקלה באלונקה 8 ",
-      "desc": "",
+      "desc": "צריך ",
       "category": "רפואה",
       "damatz": null,
       "extras": [],
@@ -58,6 +58,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787652583308
+    "savedAt": 1787652591609
   }
 }
