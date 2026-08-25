@@ -64,11 +64,11 @@
     "data": {
       "name": "משקפי מגן (שומר אחים)",
       "category": "ראייה",
-      "qty": 0,
+      "qty": "150",
       "desc": "",
       "notes": "",
       "equipInstructions": ""
     },
-    "savedAt": 1787657139930
+    "savedAt": 1787657146701
   }
 }
