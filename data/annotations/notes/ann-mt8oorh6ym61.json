@@ -22,7 +22,7 @@
   "actionRequestedAt": "2026-08-25T13:18:30.652Z",
   "actionRequestedBy": "admin",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/71",
-  "actionLog": "Note: PR #73 (a different concurrent session, opened ~30s after #71) is an independent, non-identical implementation of this same request that was never recorded in this note or FORCLAUDE.md. Both PRs are real and open — a human should pick one to merge and close the other, not merge both.",
+  "actionLog": "Note: PR #73 (a different concurrent session, opened ~30s after #71) is an independent, non-identical implementation of this same request that was never recorded in this note or FORCLAUDE.md. Both PRs are real and open — a human should pick one to merge and close the other, not merge both. Update: a third PR, #75, was also opened for this same id (head branch/SHA matches this exact routine's own trigger context for a later run) — three open PRs (#71/#73/#75) for one request. Pick exactly one to merge, close the other two.",
   "replies": [],
   "reactions": {
     "👍": [],
