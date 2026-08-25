@@ -92,21 +92,5 @@
       "equipInstructions": ""
     },
     "savedAt": 1787661122773
-  },
-  "7395798:ticket": {
-    "data": {
-      "type": "equip",
-      "title": "2",
-      "desc": "2",
-      "category": "ראייה",
-      "damatz": "MMMM.jpg",
-      "extras": [
-        "MMMM.jpg"
-      ],
-      "linkedProductId": "NEW-7714",
-      "estimatedPrice": "",
-      "purchaseLink": ""
-    },
-    "savedAt": 1787661221549
   }
 }
