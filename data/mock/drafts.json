@@ -62,7 +62,7 @@
   },
   "7222678:ticket": {
     "data": {
-      "type": "idea",
+      "type": "procurement",
       "title": "",
       "desc": "",
       "category": "",
@@ -72,6 +72,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787657325740
+    "savedAt": 1787657327625
   }
 }
