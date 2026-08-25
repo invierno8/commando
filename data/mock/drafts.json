@@ -48,13 +48,13 @@
   },
   "7912776:catalogItem": {
     "data": {
-      "name": "",
+      "name": "f",
       "category": "",
       "qty": 0,
       "desc": "",
       "notes": "",
-      "equipInstructions": "asfa"
+      "equipInstructions": ""
     },
-    "savedAt": 1787652444344
+    "savedAt": 1787652448224
   }
 }
