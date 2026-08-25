@@ -198,7 +198,17 @@
       "progressStatus": null,
       "progressNote": "",
       "assignee": null,
-      "progressLog": [],
+      "progressLog": [
+        {
+          "id": "lg-1787663722073",
+          "author": "קצין אמל״ח יחידה (הדגמה)",
+          "authorRole": "unit_officer",
+          "stamp": "25.8.2026 16:15",
+          "status": null,
+          "statusChanged": false,
+          "text": "וןוןוטןוןו"
+        }
+      ],
       "rejectionReason": null
     },
     {
