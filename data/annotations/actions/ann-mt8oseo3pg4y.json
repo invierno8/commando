@@ -1,0 +1,11 @@
+{
+  "id": "ann-mt8oseo3pg4y",
+  "route": "tickets",
+  "targetLabel": "Tickets — main screen",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "להוסיף כלי סינון לפי יחידה",
+  "authorName": "Vova",
+  "requestedAt": "2026-08-25T13:18:17.368Z",
+  "requestedBy": "admin"
+}
