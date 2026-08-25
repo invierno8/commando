@@ -1,0 +1,13 @@
+{
+  "id": "ann-mt8okdtpq9hn",
+  "route": "dashboard",
+  "targetLabel": "Dashboard — widget: מגמת דרישות — 14 יום אחרונים",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "Dashboard — widget: ה[→ Dashboard — widget: פריטים עם תקלות חוזרות"
+  ],
+  "comment": "להוסיף שכבהת הזמנות מול דרישות.[→ Dashboard — widget: ה[→ Dashboard — widget: פריטים עם תקלות חוזרות] תפלגות קטגוריות]",
+  "authorName": "Vova",
+  "requestedAt": "2026-08-25T13:18:47.593Z",
+  "requestedBy": "admin"
+}
