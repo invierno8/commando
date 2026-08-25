@@ -29,6 +29,19 @@
   ],
   "brg-commando": [
     {
+      "id": "ntf-1787652761802-26wwi",
+      "read": false,
+      "ts": 1787652761802,
+      "kind": "ticket",
+      "ticketId": "REQ-1302",
+      "ticketTitle": "חסר לי כלי עבודה מקיטה",
+      "unit": "דובדבן",
+      "requestedBy": "טוראי איתי לוי",
+      "collaborators": [],
+      "type": "submitted",
+      "message": "טוראי איתי לוי פתח/ה דרישה חדשה — \"חסר לי כלי עבודה מקיטה\" — הממתינה להחלטתך"
+    },
+    {
       "id": "ntf-1787652572106-ssfkl",
       "read": false,
       "ts": 1787652572106,
