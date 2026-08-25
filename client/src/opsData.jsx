@@ -98,3 +98,21 @@ export function ProgressStatusPill({ status }) {
   if (!status) return <span className="pill pill-neutral">טרם נפתח מעקב</span>;
   return <span className={`pill pill-${PROGRESS_STATUS_TONE[status]}`}>{PROGRESS_STATUS_LABELS[status]}</span>;
 }
+
+/* מצב הזמנה — שלב הרכש/אספקה הפיזי של פריט קטלוג ספציפי (לא לבלבל עם       */
+/* progressStatus של דרישה: זה שדה עצמאי על הפריט עצמו, נקבע ידנית ע״י מי    */
+/* שיכול לערוך את הפריט — ראו setProcurementStage ב-Catalog.jsx). ריק/undefined */
+/* פירושו שאף שלב לא הוגדר לפריט עדיין.                                     */
+export const PROCUREMENT_STAGE = { IN_PROCESS: "in_process", AWAITING_ORDER: "awaiting_order", IN_TRANSIT: "in_transit", FINAL_APPROVAL: "final_approval" };
+export const PROCUREMENT_STAGE_LABELS = {
+  in_process: "בתהליך",
+  awaiting_order: "ממתין להזמנה",
+  in_transit: "בדרך",
+  final_approval: "אישור מזמין סופי",
+};
+const PROCUREMENT_STAGE_TONE = { in_process: "yellow", awaiting_order: "neutral", in_transit: "blue", final_approval: "green" };
+
+export function ProcurementStagePill({ stage }) {
+  if (!stage) return <span className="pill pill-neutral">לא הוגדר</span>;
+  return <span className={`pill pill-${PROCUREMENT_STAGE_TONE[stage]}`}>{PROCUREMENT_STAGE_LABELS[stage]}</span>;
+}
