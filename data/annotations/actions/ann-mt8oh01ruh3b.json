@@ -1,0 +1,13 @@
+{
+  "id": "ann-mt8oh01ruh3b",
+  "route": "catalog",
+  "targetLabel": "Catalog — main screen",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "pagination-bar"
+  ],
+  "comment": "חסר גראפ תאריכי אספקה ומפה ויזואלית\n[→ pagination-bar]",
+  "authorName": "Vova",
+  "requestedAt": "2026-08-25T13:18:52.051Z",
+  "requestedBy": "admin"
+}
