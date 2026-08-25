@@ -59,19 +59,5 @@
       "purchaseLink": ""
     },
     "savedAt": 1787652596327
-  },
-  "7962807:ticket": {
-    "data": {
-      "type": "procurement",
-      "title": "חסר לי כלי עבודה מקיטה",
-      "desc": "עבור המשיכיות עבודה אנחנו צריכים קיטים של כלי כוח עבודה מקיטה בדחיפות לפני המבצע ",
-      "category": "לוגיסטיקה",
-      "damatz": "888.png",
-      "extras": [],
-      "linkedProductId": "",
-      "estimatedPrice": "15000",
-      "purchaseLink": ""
-    },
-    "savedAt": 1787652754154
   }
 }
