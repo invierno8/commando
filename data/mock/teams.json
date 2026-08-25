@@ -1,1 +1,20 @@
-{}
+{
+  "brg-commando": {
+    "teams": [
+      {
+        "id": "team-1787670431512-0vuu",
+        "unit": "מגלן",
+        "name": "צוות 7",
+        "logo": null,
+        "description": "",
+        "leadRank": "רס״ל",
+        "leadName": "סנטה",
+        "leadPersonalNumber": "4567458",
+        "requireLeadApproval": false,
+        "subteams": [],
+        "createdAt": 1787670431512
+      }
+    ],
+    "requests": []
+  }
+}
