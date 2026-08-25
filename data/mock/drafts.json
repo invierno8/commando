@@ -50,11 +50,11 @@
     "data": {
       "name": "אלונקה 8 ",
       "category": "רפואה",
-      "qty": 0,
+      "qty": "8",
       "desc": "",
       "notes": "",
       "equipInstructions": ""
     },
-    "savedAt": 1787652482171
+    "savedAt": 1787652484893
   }
 }
