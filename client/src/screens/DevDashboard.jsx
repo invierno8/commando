@@ -305,6 +305,7 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
   const filteredEquip = scopedCatalog.filter((it) =>
     matchesSearch([it.name, it.id, it.category, it.responsibleName, it.responsibleRank], equipQuery)
   );
+  const equipUnitsTotal = filteredEquip.reduce((sum, it) => sum + Number(it.qty || 0), 0);
 
   const reqIsFiltering = reqQuery.trim().length > 0 || reqStatusFilter !== "all";
   const openRequests = [...scopedTickets]
@@ -335,6 +336,10 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
     ),
     equipment: () => (
       <>
+        <div className="dash-kpis equip-count-summary" data-devblock={`${WIDGET_DEFS.equipment.title} — ספירת מלאי`}>
+          <MiniKpi label="פריטים ייחודיים בתצוגה" value={filteredEquip.length} />
+          <MiniKpi label="סה״כ יחידות במלאי" value={equipUnitsTotal} />
+        </div>
         <SearchBar value={equipQuery} onChange={setEquipQuery} placeholder="חיפוש ציוד לפי שם, מק״ט, קטגוריה או אחראי..." />
         {filteredEquip.length === 0 && <div className="empty-state">לא נמצא ציוד התואם את החיפוש.</div>}
         <div className="equip-scroll">
@@ -739,6 +744,7 @@ const CSS = `
 .dash-reset-confirm-no{ background:none; color:var(--text-dim); border:1px solid var(--line); }
 .dash-reset-confirm-no:hover{ color:var(--text); }
 .dash-kpis{ display:flex; gap:10px; flex-wrap:wrap; }
+.equip-count-summary{ margin-bottom:12px; }
 .mini-kpi{
   background:var(--panel-raised); border:1px solid var(--line); border-radius:var(--radius-card); padding:12px 18px;
   min-width:110px; opacity:0; animation:fadeSlideUp var(--t-slow) ease forwards;
