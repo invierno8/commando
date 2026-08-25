@@ -1,0 +1,33 @@
+{
+  "id": "ann-mt8ih0xavev6",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-25T10:17:34.702Z",
+  "route": "tickets",
+  "targetLabel": "Tickets — ticket detail: חסר לי כלי עבודה מקיטה (REQ-1302)",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "שיהיה אפשר לבחור עדיפות גם מפה בבקשה",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-25T10:17:34.702Z",
+  "actionRequestedBy": "Admin",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
