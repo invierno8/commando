@@ -97,7 +97,7 @@
     "data": {
       "type": "equip",
       "title": "",
-      "desc": "",
+      "desc": "2",
       "category": "",
       "damatz": null,
       "extras": [],
@@ -105,6 +105,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787661194488
+    "savedAt": 1787661200246
   }
 }
