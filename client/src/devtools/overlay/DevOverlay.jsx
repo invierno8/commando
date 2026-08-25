@@ -32,14 +32,18 @@ function parseSecondaryTargetsFromComment(comment) {
   return found.slice(0, 10);
 }
 
-export default function DevOverlay({ active, route, isAdmin, canJynxChrome, markersOn, drawMode, drawColor, onSubmitted }) {
+export default function DevOverlay({ active, hoverOn, route, isAdmin, canJynxChrome, markersOn, drawMode, drawColor, onSubmitted }) {
   // canJynxChrome (isAdmin OR a per-user canJynxComment grant, combined
   // upstream in DevAuthGate.jsx) קובע אם מותר לגלוש בכלל על ה-UI של Jynx
   // עצמו (.jynx-chrome) — ראו useHoverTarget.js. משתמשי-פיתוח רגילים בלי
   // ההרשאה הזו אף פעם לא רואים הילה שם. isAdmin עצמו נשאר נפרד — עדיין שולט
   // על ברירת-המחדל של "פעולה" בהערות על האפליקציה ועל הסימונים הקבועים
   // (AdminAnnotationMarkers), שלא נפתחים לג'ינקס-קומנטר.
-  const target = useHoverTarget(active, canJynxChrome);
+  // hoverOn (=overlayOn מ-DevAuthGate.jsx, לא active) שולט על הילת-ה-hover
+  // בפני עצמה — active כאן כולל גם drawMode (כדי שהקומפוננטה כולה תישאר
+  // מורכבת בזמן ציור), ובאג אמיתי שנתקן: כש-active היה משמש גם לשער את
+  // ה-hover, כיבוי כפתור העין בזמן שמצב-ציור דלוק לא כיבה את ההילה בפועל.
+  const target = useHoverTarget(active && hoverOn, canJynxChrome);
   const [popover, setPopover] = useState(null); // { x, y, label, secondaryTargets: [], isJynxMeta } | null
   const [markersRefreshKey, setMarkersRefreshKey] = useState(0);
   const isJynxHover = !!target?.closest(".jynx-chrome");
