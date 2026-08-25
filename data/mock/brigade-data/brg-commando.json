@@ -287,42 +287,6 @@
   ],
   "tickets": [
     {
-      "id": "REQ-1907",
-      "title": "חסר יחידות במלטי",
-      "desc": "10",
-      "unit": "דובדבן",
-      "category": "ראייה",
-      "type": "equip",
-      "estimatedPrice": null,
-      "purchaseLink": "",
-      "linkedProductId": "NEW-7714",
-      "linkedProductName": "משקפי מגן בליסטיי",
-      "damatz": "MMMM.jpg",
-      "extras": [
-        "MMMM.jpg"
-      ],
-      "status": "pending",
-      "priority": null,
-      "requestedBy": "רס״ל טל ברק",
-      "raisedByUnitOfficer": false,
-      "createdAt": "עכשיו",
-      "submittedAt": "25.8.2026 14:29",
-      "decidedAt": null,
-      "decidedBy": null,
-      "prioritizedAt": null,
-      "dueDate": "",
-      "photoUploaded": true,
-      "collaborators": [],
-      "progressStatus": null,
-      "progressNote": "",
-      "assignee": null,
-      "progressLog": [],
-      "rejectionReason": null,
-      "archived": false,
-      "teamLeadGate": null,
-      "gateTeamId": null
-    },
-    {
       "id": "REQ-1042",
       "title": "חוסר במשקפות ראיית לילה",
       "desc": "נדרשות 4 יחידות נוספות לפלוגה לקראת תרגיל.",
@@ -336,20 +300,21 @@
       "extras": [
         "תמונת_מצאי.jpg"
       ],
-      "status": "pending",
+      "status": "approved",
       "priority": null,
       "requestedBy": "רס״ל דניאל אור",
       "createdAt": "היום, 08:12",
       "submittedAt": "18/08/2026 08:12",
-      "decidedAt": null,
-      "decidedBy": null,
+      "decidedAt": "25.8.2026 14:30",
+      "decidedBy": "קצין אמל״ח יחידה (הדגמה)",
       "prioritizedAt": null,
       "dueDate": "",
       "photoUploaded": true,
       "progressStatus": null,
       "progressNote": "",
       "assignee": null,
-      "progressLog": []
+      "progressLog": [],
+      "rejectionReason": null
     },
     {
       "id": "REQ-1041",
