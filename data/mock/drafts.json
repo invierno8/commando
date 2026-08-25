@@ -64,7 +64,7 @@
     "data": {
       "type": "procurement",
       "title": "חסר לי כלי עבודה מקיטה",
-      "desc": "",
+      "desc": "עבור המשיכיות עבודה אנחנו צריכים ",
       "category": "",
       "damatz": null,
       "extras": [],
@@ -72,6 +72,6 @@
       "estimatedPrice": "15000",
       "purchaseLink": ""
     },
-    "savedAt": 1787652694202
+    "savedAt": 1787652703449
   }
 }
