@@ -51,14 +51,14 @@
       "type": "repair",
       "title": "תקלה במכשיר קשר טקטי",
       "desc": "",
-      "category": "תקשורת",
+      "category": "אחר",
       "damatz": null,
       "extras": [],
       "linkedProductId": "VHF-07",
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787659997043
+    "savedAt": 1787660006372
   },
   "7222678:catalogItem": {
     "data": {
