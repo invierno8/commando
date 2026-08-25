@@ -15,7 +15,7 @@
     },
     {
       "id": "ntf-1787481609656-4pb94",
-      "read": false,
+      "read": true,
       "ts": 1787481609656,
       "kind": "ticket",
       "ticketId": "REQ-2101",
