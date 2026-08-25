@@ -1,0 +1,11 @@
+{
+  "id": "ann-mt8ih0xavev6",
+  "route": "tickets",
+  "targetLabel": "Tickets — ticket detail: חסר לי כלי עבודה מקיטה (REQ-1302)",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "שיהיה אפשר לבחור עדיפות גם מפה בבקשה",
+  "authorName": "Admin",
+  "requestedAt": "2026-08-25T10:17:35.755Z",
+  "requestedBy": "Admin"
+}
