@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mt8j2qfgvo1w",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-25T10:34:27.532Z",
+  "route": "wizard",
+  "targetLabel": "dev-toolbar-comments-toggle",
+  "secondaryTargets": [],
+  "comment": "i still dont see any comments there is nothing there althou i left 10 comments at least and more users are working on it now",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-25T10:34:27.532Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
