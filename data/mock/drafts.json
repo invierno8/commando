@@ -86,7 +86,7 @@
     "data": {
       "type": "equip",
       "title": "בקשת הצטיידות — משקפי מגן בליסטיי",
-      "desc": "",
+      "desc": "5",
       "category": "ראייה",
       "damatz": null,
       "extras": [],
@@ -94,6 +94,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787658938148
+    "savedAt": 1787658945968
   }
 }
