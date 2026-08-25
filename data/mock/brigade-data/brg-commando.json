@@ -33,7 +33,11 @@
       "notes": "",
       "rejectionReason": null,
       "equipInstructions": "פריט מדף ",
-      "interested": [],
+      "interested": [
+        {
+          "name": "סמל רוני זיו"
+        }
+      ],
       "teamLeadGate": null,
       "gateTeamId": null
     },
