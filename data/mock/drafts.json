@@ -70,21 +70,5 @@
       "equipInstructions": "פריט מדף "
     },
     "savedAt": 1787657308175
-  },
-  "7222678:ticket": {
-    "data": {
-      "type": "equip",
-      "title": "חסר יחידות במלטי",
-      "desc": "10",
-      "category": "ראייה",
-      "damatz": "MMMM.jpg",
-      "extras": [
-        "MMMM.jpg"
-      ],
-      "linkedProductId": "NEW-7714",
-      "estimatedPrice": "",
-      "purchaseLink": ""
-    },
-    "savedAt": 1787657380189
   }
 }
