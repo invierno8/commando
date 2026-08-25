@@ -13,7 +13,7 @@
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-25T10:04:50.440Z",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/63",
-  "actionLog": "Reproduced live with Playwright as a non-admin dev user: the overlay toggle got permanently stuck (hover highlighting stopped updating) after an off/on cycle, due to a stale requestAnimationFrame ref in useHoverTarget.js never being cleared on cleanup. Fixed and verified both directions (off hides it, on restores it) before/after the fix. PR #63.",
+  "actionLog": "Reproduced live with Playwright as a non-admin dev user: the overlay toggle got permanently stuck (hover highlighting stopped updating) after an off/on cycle, due to a stale requestAnimationFrame ref in useHoverTarget.js never being cleared on cleanup. Fixed and verified both directions (off hides it, on restores it) before/after the fix. PR #63. PR #61 (a separate concurrent run) fixes a different, non-overlapping bug on the same control: DevOverlay's hover-tracking was driven by active={overlayOn || drawMode} instead of the eye toggle alone, so leaving draw mode on made the eye button unable to hide the hover halo at all. Neither PR's diff touches the other's fix — both need to land, not just whichever this field happens to point at; see FORCLAUDE.md's 2026-08-25 entries for the full reconciliation.",
   "resolvedBy": "auto (PR opened)",
   "replies": [],
   "reactions": {
