@@ -62,6 +62,14 @@
       "personalNumber": "7288341",
       "email": "omer.dagan@hangar.mil",
       "isSuperAdmin": false
+    },
+    {
+      "id": "6149a675-ddc4-4951-891d-4a0b3aa0b8ca",
+      "rank": "רב״ט",
+      "name": "וובה",
+      "personalNumber": "70721721",
+      "email": "team_qa@idf.gov.il",
+      "isSuperAdmin": false
     }
   ]
 }
