@@ -22,7 +22,7 @@
   "actionRequestedAt": "2026-08-25T13:18:24.981Z",
   "actionRequestedBy": "admin",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/72",
-  "actionLog": "Implemented by a concurrent run as PR #72: turned the recurring-malfunctions widget's flat row list into a labeled table (header row + the already-computed-but-unshown stock-qty column from repairLeaderboard()). Bookkeeping applied by a later run that found the PR already open on origin/main's latest tip but the note still unbookkept. Note: PR #76 (a different concurrent session) is an independent, non-identical implementation of this same request (adds column headers only, no stock-qty column) that was never recorded in this note or FORCLAUDE.md. Both PRs are real and open — a human should pick one to merge and close the other, not merge both.",
+  "actionLog": "Implemented by a concurrent run as PR #72 (canonical, actionPrUrl below): turned the recurring-malfunctions widget's flat row list into a labeled table (header row + the already-computed-but-unshown stock-qty column from repairLeaderboard()). PR #76, a near-identical column-headers-only duplicate of #72 from another concurrent run, was closed. PR #77, a materially different concurrent implementation (adds a per-item expandable fault-history breakdown via an analytics.js change, not just headers), is still open at https://github.com/invierno8/commando/pull/77 — a human should decide whether to merge #77 on top of #72 (the two are complementary, not competing) or pick one.",
   "replies": [],
   "reactions": {
     "👍": [],
