@@ -74,7 +74,7 @@
   "7222678:ticket": {
     "data": {
       "type": "equip",
-      "title": "חסר יחי",
+      "title": "חסר יחידות במלטי",
       "desc": "",
       "category": "",
       "damatz": null,
@@ -83,6 +83,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787657351839
+    "savedAt": 1787657355376
   }
 }
