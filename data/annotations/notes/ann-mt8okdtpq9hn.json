@@ -1,0 +1,35 @@
+{
+  "id": "ann-mt8okdtpq9hn",
+  "authorId": "dev-mt7rx6k3ju6s",
+  "authorName": "Vova",
+  "createdAt": "2026-08-25T13:08:09.085Z",
+  "route": "dashboard",
+  "targetLabel": "Dashboard — widget: מגמת דרישות — 14 יום אחרונים",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "Dashboard — widget: ה[→ Dashboard — widget: פריטים עם תקלות חוזרות"
+  ],
+  "comment": "להוסיף שכבהת הזמנות מול דרישות.[→ Dashboard — widget: ה[→ Dashboard — widget: פריטים עם תקלות חוזרות] תפלגות קטגוריות]",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
