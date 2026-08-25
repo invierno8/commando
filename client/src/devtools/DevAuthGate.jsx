@@ -427,7 +427,7 @@ export default function DevAuthGate({ route, devFabProps }) {
   return (
     <>
       <style>{CSS}</style>
-      <DevOverlay active={overlayOn || drawMode} route={route} isAdmin={isAdmin} canJynxChrome={isAdmin || canJynxComment} markersOn={markersOn} drawMode={drawMode} drawColor={drawColor} />
+      <DevOverlay active={overlayOn || drawMode} overlayOn={overlayOn} route={route} isAdmin={isAdmin} canJynxChrome={isAdmin || canJynxComment} markersOn={markersOn} drawMode={drawMode} drawColor={drawColor} />
       <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} isAdmin={isAdmin} canJynxComment={canJynxComment} />
       {drawMode && (
         <div

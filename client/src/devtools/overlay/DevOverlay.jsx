@@ -32,14 +32,24 @@ function parseSecondaryTargetsFromComment(comment) {
   return found.slice(0, 10);
 }
 
-export default function DevOverlay({ active, route, isAdmin, canJynxChrome, markersOn, drawMode, drawColor, onSubmitted }) {
+export default function DevOverlay({ active, overlayOn, route, isAdmin, canJynxChrome, markersOn, drawMode, drawColor, onSubmitted }) {
   // canJynxChrome (isAdmin OR a per-user canJynxComment grant, combined
   // upstream in DevAuthGate.jsx) קובע אם מותר לגלוש בכלל על ה-UI של Jynx
   // עצמו (.jynx-chrome) — ראו useHoverTarget.js. משתמשי-פיתוח רגילים בלי
   // ההרשאה הזו אף פעם לא רואים הילה שם. isAdmin עצמו נשאר נפרד — עדיין שולט
   // על ברירת-המחדל של "פעולה" בהערות על האפליקציה ועל הסימונים הקבועים
   // (AdminAnnotationMarkers), שלא נפתחים לג'ינקס-קומנטר.
-  const target = useHoverTarget(active, canJynxChrome);
+  //
+  // jynx-mt8i0n7ssax2: "the eye button didn't work, I still see the hover
+  // borders" — `active` (below) is `overlayOn || drawMode` upstream in
+  // DevAuthGate.jsx, on purpose, so this whole component (and DrawingCanvas
+  // inside it) stays mounted while draw mode is on even if the hover-overlay
+  // eye toggle is off. But that same `active` was also the only thing gating
+  // the hover-highlight itself, so turning the eye off while draw mode was
+  // on couldn't actually hide the glowing border — `active` stayed true via
+  // drawMode. Gate the hover highlight specifically on `overlayOn`, not the
+  // broader mount condition.
+  const target = useHoverTarget(active && overlayOn, canJynxChrome);
   const [popover, setPopover] = useState(null); // { x, y, label, secondaryTargets: [], isJynxMeta } | null
   const [markersRefreshKey, setMarkersRefreshKey] = useState(0);
   const isJynxHover = !!target?.closest(".jynx-chrome");
