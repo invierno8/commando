@@ -34,5 +34,16 @@
       "equipInstructions": ""
     },
     "savedAt": 1787600022290
+  },
+  "7769828:catalogItem": {
+    "data": {
+      "name": "",
+      "category": "",
+      "qty": 0,
+      "desc": "",
+      "notes": "",
+      "equipInstructions": ""
+    },
+    "savedAt": 1787652152609
   }
 }
