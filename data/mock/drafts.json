@@ -62,7 +62,7 @@
   },
   "7962807:ticket": {
     "data": {
-      "type": "repair",
+      "type": "procurement",
       "title": "",
       "desc": "",
       "category": "",
@@ -72,6 +72,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787652675087
+    "savedAt": 1787652677096
   }
 }
