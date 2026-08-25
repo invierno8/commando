@@ -45,5 +45,19 @@
       "equipInstructions": ""
     },
     "savedAt": 1787652156824
+  },
+  "guest:ticket": {
+    "data": {
+      "type": "repair",
+      "title": "תקלה באלונקה 8 ",
+      "desc": "",
+      "category": "רפואה",
+      "damatz": null,
+      "extras": [],
+      "linkedProductId": "NEW-8650",
+      "estimatedPrice": "",
+      "purchaseLink": ""
+    },
+    "savedAt": 1787652583308
   }
 }
