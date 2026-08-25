@@ -62,7 +62,7 @@
   },
   "7962807:ticket": {
     "data": {
-      "type": "idea",
+      "type": "equip",
       "title": "תקלה במשקפת ראיית לילה",
       "desc": "",
       "category": "ראייה",
@@ -72,6 +72,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787652648241
+    "savedAt": 1787652657278
   }
 }
