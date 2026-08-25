@@ -29,6 +29,19 @@
   ],
   "brg-commando": [
     {
+      "id": "ntf-1787657383625-oury6",
+      "read": false,
+      "ts": 1787657383625,
+      "kind": "ticket",
+      "ticketId": "REQ-1907",
+      "ticketTitle": "חסר יחידות במלטי",
+      "unit": "דובדבן",
+      "requestedBy": "רס״ל טל ברק",
+      "collaborators": [],
+      "type": "submitted",
+      "message": "רס״ל טל ברק פתח/ה דרישה חדשה — \"חסר יחידות במלטי\" — הממתינה להחלטתך"
+    },
+    {
       "id": "ntf-1787657311228-02x69",
       "read": false,
       "ts": 1787657311228,
