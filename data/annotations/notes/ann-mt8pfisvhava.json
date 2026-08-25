@@ -1,0 +1,33 @@
+{
+  "id": "ann-mt8pfisvhava",
+  "authorId": "dev-mt7rx6k3ju6s",
+  "authorName": "Vova",
+  "createdAt": "2026-08-25T13:32:21.871Z",
+  "route": "dashboard",
+  "targetLabel": "Dashboard — widget: תמונת מצב — היחידה שלך",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "יש רובריקה - סירוב\nאני רוצה בלחיצת 2 קליל להיכנס לרשימת סורבו,\nנא להוסיף מודול",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
