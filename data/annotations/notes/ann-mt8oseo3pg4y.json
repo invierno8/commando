@@ -18,11 +18,11 @@
   "reopenedNote": null,
   "archived": false,
   "archivedAt": null,
-  "actionStatus": "queued",
+  "actionStatus": "done",
   "actionRequestedAt": "2026-08-25T13:18:16.172Z",
   "actionRequestedBy": "admin",
   "actionPrUrl": null,
-  "actionLog": null,
+  "actionLog": "No code change needed — a unit filter already exists on the Tickets screen (client/src/screens/Tickets.jsx:474, a FilterSelect with aria-label \"סינון לפי יחידה\") and is wired to real data (filters queue/list/dashboard tabs via searchFiltered). It's hidden only on the \"myTickets\" tab (where it wouldn't make sense — a member only sees their own unit's tickets there) and only shows when a brigade has more than one unit; both seeded brigades have 4+ units, so it should be visible on the queue/list/dashboard tabs for officer/admin roles. No PR opened.",
   "replies": [],
   "reactions": {
     "👍": [],
