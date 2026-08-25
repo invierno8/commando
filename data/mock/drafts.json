@@ -63,7 +63,7 @@
   "7962807:ticket": {
     "data": {
       "type": "procurement",
-      "title": "",
+      "title": "חסר לי כלי עבודה מקיטה",
       "desc": "",
       "category": "",
       "damatz": null,
@@ -72,6 +72,6 @@
       "estimatedPrice": "15000",
       "purchaseLink": ""
     },
-    "savedAt": 1787652690365
+    "savedAt": 1787652694202
   }
 }
