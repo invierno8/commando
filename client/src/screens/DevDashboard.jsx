@@ -513,6 +513,11 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
         <div className="empty">אין עדיין דרישות תיקון בתצוגה זו — סימן טוב.</div>
       ) : (
         <div className="repair-board">
+          <div className="repair-board-row repair-board-head">
+            <span>פריט</span>
+            <span>מק״ט</span>
+            <span>תקלות חוזרות</span>
+          </div>
           {repairBoard.map((r) => {
             const fullItem = catalog.find((it) => it.id === r.id);
             return (
@@ -855,6 +860,10 @@ ${SCOPE_PICKER_CSS}
 .repair-board-name{ font-size:13.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .repair-board-id{ font-family:var(--font-mono); font-size:11.5px; color:var(--text-dim); }
 .repair-board-count{ font-size:12px; font-weight:700; color:var(--red); background:color-mix(in srgb, var(--red) 12%, transparent); border-radius:var(--radius-lg); padding:3px 10px; white-space:nowrap; }
+.repair-board-head{
+  background:transparent; border:none; padding:0 13px 4px; cursor:default;
+  font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em;
+}
 
 .procurement-cost-inner{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:18px 0; text-align:center; }
 .procurement-cost-big{ font-family:var(--font-mono); font-size:32px; font-weight:800; color:var(--accent); }
