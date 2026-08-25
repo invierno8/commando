@@ -305,6 +305,10 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
   const filteredEquip = scopedCatalog.filter((it) =>
     matchesSearch([it.name, it.id, it.category, it.responsibleName, it.responsibleRank], equipQuery)
   );
+  // ספירת מלאי — סיכום מצטבר של שדה qty הקיים על כל פריט קטלוג (לא מסונן
+  // לפי חיפוש, כך שהמספר לא "קופץ" תוך כדי הקלדה בשדה החיפוש).
+  const equipTotalQty = scopedCatalog.reduce((sum, it) => sum + (Number(it.qty) || 0), 0);
+  const equipCriticalCount = scopedCatalog.filter((it) => conditionFor(it.qty).tone === "red").length;
 
   const reqIsFiltering = reqQuery.trim().length > 0 || reqStatusFilter !== "all";
   const openRequests = [...scopedTickets]
@@ -335,6 +339,24 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
     ),
     equipment: () => (
       <>
+        <div className="dash-kpis equip-kpis">
+          <MiniKpi
+            label="פריטים בקטלוג"
+            value={scopedCatalog.length}
+            devblock={`${WIDGET_DEFS.equipment.title} — ספירת מלאי — פריטים בקטלוג`}
+          />
+          <MiniKpi
+            label="סה״כ יחידות במלאי"
+            value={equipTotalQty}
+            devblock={`${WIDGET_DEFS.equipment.title} — ספירת מלאי — סה״כ יחידות במלאי`}
+          />
+          <MiniKpi
+            label="פריטים במצב קריטי"
+            value={equipCriticalCount}
+            tone={equipCriticalCount > 0 ? "red" : "green"}
+            devblock={`${WIDGET_DEFS.equipment.title} — ספירת מלאי — פריטים במצב קריטי`}
+          />
+        </div>
         <SearchBar value={equipQuery} onChange={setEquipQuery} placeholder="חיפוש ציוד לפי שם, מק״ט, קטגוריה או אחראי..." />
         {filteredEquip.length === 0 && <div className="empty-state">לא נמצא ציוד התואם את החיפוש.</div>}
         <div className="equip-scroll">
@@ -797,6 +819,7 @@ ${SCOPE_PICKER_CSS}
 .widget-hide-btn:hover{ color:var(--red); border-color:var(--red); }
 .widget-corner-badge{ position:absolute; top:16px; left:18px; }
 
+.equip-kpis{ margin-bottom:14px; }
 .equip-scroll{ display:flex; gap:14px; overflow-x:auto; padding:16px 2px 4px; scroll-snap-type:x proximity; }
 .equip-card{
   scroll-snap-align:start; flex:none; width:260px; display:flex; align-items:flex-start; gap:12px;
