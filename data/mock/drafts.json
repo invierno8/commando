@@ -59,5 +59,19 @@
       "purchaseLink": ""
     },
     "savedAt": 1787652596327
+  },
+  "7962807:ticket": {
+    "data": {
+      "type": "idea",
+      "title": "",
+      "desc": "",
+      "category": "",
+      "damatz": null,
+      "extras": [],
+      "linkedProductId": "",
+      "estimatedPrice": "",
+      "purchaseLink": ""
+    },
+    "savedAt": 1787652670905
   }
 }
