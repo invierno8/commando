@@ -513,6 +513,7 @@ export default function Tickets({ role, persona, brigadeId, officerUnit, userId,
           ticket={tickets.find((t) => t.id === detailTicket.id) || detailTicket}
           onClose={() => setDetailTicket(null)}
           onSetDueDate={setDueDate}
+          onSetPriority={setPriority}
           onAddCollaborator={addCollaborator}
           onRemoveCollaborator={removeCollaborator}
           unitLogos={unitLogos}
@@ -684,19 +685,60 @@ function ApprovalQueueView({ tickets, onDecide, onOpen, unitLogos, title = "תו
 
 // עיגול אחד שמציג את העדיפות הנוכחית (או "טרם" אם אין) — לחיצה עליו פותחת
 // רשימה נפתחת מעוצבת לבחירת עדיפות, במקום שלושה כפתורים תמיד-גלויים לצידו.
+//
+// ann-mt8iei9do4oo: הרשימה הנפתחת נבנתה במקור עם position:absolute רגיל
+// בתוך שורת-הדרישה עצמה — אבל .ticket-row (theme רגיל) מוגדר עם
+// opacity:0 + animation:...forwards, ששתיהן יוצרות הקשר-ערימה (stacking
+// context) עצמאי לכל שורה. כתוצאה מכך z-index של הרשימה הנפתחת היה
+// תקף רק *בתוך* השורה שלה, לא מול שורות אחרות — כל שורה מאוחרת יותר
+// ב-DOM (עם ה-stacking context העצמאי שלה) צוירה מעליה במלואה, בדיוק
+// "מוסתר מתחת לדרישות אחרות" שתואר בתלונה. הפתרון: מרנדרים את הרשימה
+// עצמה דרך createPortal ל-document.body (כמו כל overlay/modal אחר
+// באפליקציה, ראו הכלל ב-FORCLAUDE.md), עם position:fixed וקואורדינטות
+// מחושבות מ-getBoundingClientRect של הכפתור — כך אין יותר הורה עם
+// stacking context מתחרה.
 const PRIORITY_ORDER = ["red", "yellow", "green"];
 function PriorityPickerMenu({ value, onChange }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null);
+  const triggerRef = useRef(null);
+
+  function openMenu(e) {
+    e.stopPropagation();
+    const r = triggerRef.current.getBoundingClientRect();
+    setPos({ top: r.bottom + 6, left: r.left + r.width / 2 });
+    setOpen((o) => !o);
+  }
+
+  // ה-blur-guard חייב לבדוק גם .closest(".prio-picker-dropdown") על
+  // relatedTarget, לא רק e.currentTarget.contains: מאז שהרשימה עצמה
+  // מרונדרת ב-portal (ראו למעלה), contains() (בדיקת DOM אמיתי, לא עץ-
+  // React) כבר לא רואה אותה כצאצא של המכולה הזו — בלעדי הבדיקה הנוספת,
+  // המעבר-פוקוס מהכפתור לפריט ברשימה היה סוגר את הרשימה *לפני* שהקליק על
+  // הפריט מספיק להירשם.
   return (
-    <div className="prio-picker-menu" tabIndex={-1} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false); }}>
+    <div
+      className="prio-picker-menu"
+      tabIndex={-1}
+      onBlur={(e) => {
+        if (e.currentTarget.contains(e.relatedTarget)) return;
+        if (e.relatedTarget?.closest?.(".prio-picker-dropdown")) return;
+        setOpen(false);
+      }}
+    >
       <button
         type="button"
+        ref={triggerRef}
         className={"prio-picker-trigger" + (value ? " prio-picker-trigger-" + value : " prio-picker-trigger-none")}
-        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        onClick={openMenu}
         title={value ? `עדיפות נוכחית: ${PRIORITY_LABEL[value]} — לחיצה לשינוי` : "טרם תועדף — לחיצה לקביעת עדיפות"}
       />
-      {open && (
-        <div className="prio-picker-dropdown" onClick={(e) => e.stopPropagation()}>
+      {open && pos && createPortal(
+        <div
+          className="prio-picker-dropdown"
+          style={{ top: pos.top, left: pos.left }}
+          onClick={(e) => e.stopPropagation()}
+        >
           {PRIORITY_ORDER.map((p) => (
             <button
               type="button"
@@ -708,7 +750,8 @@ function PriorityPickerMenu({ value, onChange }) {
               {PRIORITY_LABEL[p]}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -741,7 +784,7 @@ function BrigadeDashboard({ tickets, onPriority, onOpen, unitLogos }) {
 /* ------------------------------------------------------------------ */
 
 function TicketDetailModal({
-  ticket, onClose, onSetDueDate, onAddCollaborator, onRemoveCollaborator, unitLogos, catalog, onViewProduct,
+  ticket, onClose, onSetDueDate, onSetPriority, onAddCollaborator, onRemoveCollaborator, unitLogos, catalog, onViewProduct,
   role, persona, currentActorLabel, rosterCandidates, onSetAssignee, onAddProgressLog, onReopen, onArchive,
 }) {
   const t = ticket;
@@ -773,6 +816,16 @@ function TicketDetailModal({
             <StatusPill status={t.status} />
             {t.status === "rejected" && (
               <span className="ticket-expiry-inline">יימחק אוטומטית בעוד {t.daysLeft ?? 30} ימים</span>
+            )}
+            {/* ann-mt8ih0xavev6: אפשר לתעדף גם מכאן, לא רק משורת הדשבורד
+                החטיבתי — אותה הרשאה ואותו סטטוס-שער כמו BrigadeDashboard
+                (קצין אמל״ח חטיבה+, ורק על דרישה שכבר אושרה — לפני אישור
+                תיעדוף עדיין לא רלוונטי). */}
+            {isBrigadeOfficerPlus && t.status === "approved" && (
+              <span className="detail-priority-picker">
+                <span className="detail-priority-picker-label">עדיפות:</span>
+                <PriorityPickerMenu value={t.priority} onChange={(p) => onSetPriority(t.id, p)} />
+              </span>
             )}
           </div>
           <h2>{t.title}</h2>
@@ -1534,8 +1587,12 @@ const CSS = `
 .prio-picker-trigger-yellow{ background:var(--yellow); }
 .prio-picker-trigger-green{ background:var(--green); }
 .prio-picker-trigger-none{ background:var(--panel-raised); border-style:dashed; box-shadow:0 0 0 1.5px var(--line); }
+/* position:fixed + top/left inline (ראו PriorityPickerMenu) — לא absolute
+   יחסית ל-.prio-picker-menu יותר, כי הרשימה עצמה מרונדרת ב-portal ל-
+   document.body (ראו ההערה שם למה). transform:translateX(-50%) עדיין
+   ממרכז אותה מתחת לכפתור, בהתאם ל-left שמחושב כמרכז הכפתור ב-JS. */
 .prio-picker-dropdown{
-  position:absolute; top:calc(100% + 6px); left:50%; transform:translateX(-50%); z-index:60; min-width:130px;
+  position:fixed; transform:translateX(-50%); z-index:250; min-width:130px;
   background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg); box-shadow:var(--shadow-md);
   padding:6px; animation:fadeSlideUp var(--t-fast) ease; display:flex; flex-direction:column; gap:2px;
 }
@@ -1627,6 +1684,8 @@ const CSS = `
   letter-spacing:.06em; border-bottom:1px solid var(--line); padding-bottom:12px; margin-bottom:20px; padding-inline-end:36px;
 }
 .detail-id-row{ display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
+.detail-priority-picker{ display:inline-flex; align-items:center; gap:6px; margin-inline-start:auto; }
+.detail-priority-picker-label{ font-size:11.5px; color:var(--text-dim); font-family:var(--font-sans); }
 .detail-modal h2{ font-family:var(--font-sans); font-weight:700; font-size:24px; margin:4px 0 12px; }
 .modal-head{ margin-bottom:22px; }
 
