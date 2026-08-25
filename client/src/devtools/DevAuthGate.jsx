@@ -29,6 +29,22 @@ const TOOLBAR_ICON_SCALE_KEY = "jynx-toolbar-icon-scale";
 // handleRoleItemDragEnd למטה ו-DevFab.jsx's handleRoleDragEnd.
 const ROLE_DOCKED_KEY = "jynx-role-docked";
 
+// jynx-mt8i0n7ssax2: "the eye button didn't work, i still see the hover
+// borders" — overlayOn was the one Jynx-chrome toggle in this file that
+// never round-tripped through localStorage (every sibling toggle here —
+// roleDocked, toolbarOrientation, iconScale, drawColor — does). It defaulted
+// back to `true` on every full page reload, including the reload that
+// MockDataToggle.jsx's own mock/live switch triggers — so turning the eye
+// off, then flipping data mode (or just refreshing), silently turned hover
+// highlighting back on with no visible cause. Persisting it closes that gap.
+const OVERLAY_ON_KEY = "jynx-overlay-on";
+function loadOverlayOn() {
+  try {
+    const raw = localStorage.getItem(OVERLAY_ON_KEY);
+    return raw === null ? true : raw === "true";
+  } catch { return true; }
+}
+
 // 4-swatch draw-color palette (added 2026-08-23, per QA feedback asking for
 // one whenever the draw tool is turned on) — Jynx's own accent purple stays
 // the default so the drawing feature keeps looking like Jynx out of the box,
@@ -95,7 +111,8 @@ export default function DevAuthGate({ route, devFabProps }) {
   // working internals untouched.
   const [notifUnread, setNotifUnread] = useState(0);
   const [adminOpen, setAdminOpen] = useState(false);
-  const [overlayOn, setOverlayOn] = useState(true);
+  const [overlayOn, setOverlayOn] = useState(loadOverlayOn);
+  useEffect(() => { try { localStorage.setItem(OVERLAY_ON_KEY, String(overlayOn)); } catch { /* ignore */ } }, [overlayOn]);
   const [commentsOn, setCommentsOn] = useState(false);
   // סימוני-מנהל הקבועים על העמוד (AdminAnnotationMarkers.jsx) — נפרד בכוונה
   // מ-overlayOn (שרק שולט על הילת-hover, לא על הנקודות הקבועות). דלוק
