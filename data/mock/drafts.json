@@ -95,7 +95,7 @@
   },
   "7395798:ticket": {
     "data": {
-      "type": "idea",
+      "type": "equip",
       "title": "",
       "desc": "",
       "category": "",
@@ -105,6 +105,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787661178265
+    "savedAt": 1787661181244
   }
 }
