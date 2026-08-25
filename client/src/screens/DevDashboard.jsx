@@ -305,6 +305,17 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
   const filteredEquip = scopedCatalog.filter((it) =>
     matchesSearch([it.name, it.id, it.category, it.responsibleName, it.responsibleRank], equipQuery)
   );
+  // מודול ספירת מלאי — סך יחידות וחלוקה לפי מצב מלאי (תקין/מוגבל/קריטי),
+  // מחושב תמיד על כל הציוד בתחום (scopedCatalog), לא רק על התוצאות המסוננות,
+  // כדי שהמונה ישאר יציב תוך כדי חיפוש.
+  const inventoryCount = scopedCatalog.reduce(
+    (acc, it) => {
+      acc.totalQty += it.qty || 0;
+      acc.byCondition[conditionFor(it.qty).tone] += 1;
+      return acc;
+    },
+    { totalQty: 0, byCondition: { green: 0, yellow: 0, red: 0 } }
+  );
 
   const reqIsFiltering = reqQuery.trim().length > 0 || reqStatusFilter !== "all";
   const openRequests = [...scopedTickets]
@@ -335,6 +346,17 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
     ),
     equipment: () => (
       <>
+        <div className="inventory-count-strip" data-devblock={`${WIDGET_DEFS.equipment.title} — ספירת מלאי`}>
+          <div className="inventory-count-total">
+            <span className="inventory-count-total-value">{inventoryCount.totalQty.toLocaleString("he-IL")}</span>
+            <span className="inventory-count-total-label">סה״כ יחידות במלאי · {scopedCatalog.length} פריטים</span>
+          </div>
+          <div className="inventory-count-by-condition">
+            <span className="inventory-count-chip inventory-count-chip-green"><b>{inventoryCount.byCondition.green}</b> תקין</span>
+            <span className="inventory-count-chip inventory-count-chip-yellow"><b>{inventoryCount.byCondition.yellow}</b> מוגבל</span>
+            <span className="inventory-count-chip inventory-count-chip-red"><b>{inventoryCount.byCondition.red}</b> קריטי</span>
+          </div>
+        </div>
         <SearchBar value={equipQuery} onChange={setEquipQuery} placeholder="חיפוש ציוד לפי שם, מק״ט, קטגוריה או אחראי..." />
         {filteredEquip.length === 0 && <div className="empty-state">לא נמצא ציוד התואם את החיפוש.</div>}
         <div className="equip-scroll">
@@ -796,6 +818,24 @@ ${SCOPE_PICKER_CSS}
 .dash-section:hover .widget-hide-btn{ opacity:1; }
 .widget-hide-btn:hover{ color:var(--red); border-color:var(--red); }
 .widget-corner-badge{ position:absolute; top:16px; left:18px; }
+
+.inventory-count-strip{
+  display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  background:var(--panel-raised); border:1px solid var(--line); border-radius:var(--radius-md);
+  padding:12px 15px; margin-top:10px;
+}
+.inventory-count-total{ display:flex; flex-direction:column; gap:2px; }
+.inventory-count-total-value{ font-family:var(--font-mono); font-size:20px; font-weight:700; color:var(--text); }
+.inventory-count-total-label{ font-size:11.5px; color:var(--text-dim); }
+.inventory-count-by-condition{ display:flex; gap:8px; flex-wrap:wrap; }
+.inventory-count-chip{
+  display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text-dim);
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg); padding:4px 10px;
+}
+.inventory-count-chip b{ font-family:var(--font-mono); font-size:13px; }
+.inventory-count-chip-green b{ color:var(--green); }
+.inventory-count-chip-yellow b{ color:var(--yellow); }
+.inventory-count-chip-red b{ color:var(--red); }
 
 .equip-scroll{ display:flex; gap:14px; overflow-x:auto; padding:16px 2px 4px; scroll-snap-type:x proximity; }
 .equip-card{
