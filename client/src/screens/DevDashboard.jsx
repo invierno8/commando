@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell,
 } from "recharts";
@@ -166,6 +166,8 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
   const [reqQuery, setReqQuery] = useState("");
   const [reqStatusFilter, setReqStatusFilter] = useState("all");
   const [layout, setLayout] = useState(() => defaultLayout(role));
+  const [scrollToWidget, setScrollToWidget] = useState(null);
+  const widgetRefs = useRef({});
   const [dragKey, setDragKey] = useState(null);
   const [dragOverKey, setDragOverKey] = useState(null);
 
@@ -215,6 +217,22 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [crossNav, loaded]);
+
+  // ניווט צולב בתוך הדשבורד: לחיצה על "סורבו" בתמונת המצב מסננת ישירות
+  // את ווידג׳ט "בקשות פתוחות" לסטטוס סורב וגוללת אליו — גם אם הוא הוסתר.
+  useEffect(() => {
+    if (!scrollToWidget) return;
+    if (!layout.order.includes(scrollToWidget)) return;
+    const el = widgetRefs.current[scrollToWidget];
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    setScrollToWidget(null);
+  }, [scrollToWidget, layout.order]);
+
+  function goToRejectedRequests() {
+    setReqStatusFilter("rejected");
+    if (!layout.order.includes("openRequests")) showWidget("openRequests");
+    setScrollToWidget("openRequests");
+  }
 
   const data = useMemo(
     () => (loaded ? getScopedData(scope, loaded.units, loaded.dash) : null),
@@ -330,7 +348,7 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
         <MiniKpi label="סה״כ דרישות היחידה" value={data.total} />
         <MiniKpi label="ממתינות להחלטתך" value={data.totals.pending} tone="yellow" />
         <MiniKpi label="אושרו" value={data.totals.approved} tone="green" />
-        <MiniKpi label="סורבו" value={data.totals.rejected} tone="red" />
+        <MiniKpi label="סורבו" value={data.totals.rejected} tone="red" onClick={goToRejectedRequests} />
       </div>
     ),
     equipment: () => (
@@ -584,6 +602,7 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
           return (
             <section
               key={key}
+              ref={(el) => { widgetRefs.current[key] = el; }}
               draggable
               className={
                 "panel-card dash-section dash-widget"
@@ -631,15 +650,17 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
   );
 }
 
-function MiniKpi({ label, value, tone, devblock }) {
+function MiniKpi({ label, value, tone, devblock, onClick }) {
+  const Tag = onClick ? "button" : "div";
   return (
-    <div
-      className={"mini-kpi" + (tone ? ` mini-kpi-${tone}` : "")}
+    <Tag
+      className={"mini-kpi" + (tone ? ` mini-kpi-${tone}` : "") + (onClick ? " mini-kpi-clickable" : "")}
       {...(devblock ? { "data-devblock": devblock } : {})}
+      {...(onClick ? { onClick, type: "button", title: "מעבר לרשימת הבקשות שסורבו" } : {})}
     >
       <div className="mini-kpi-value"><span className="count-up">{value}</span></div>
       <div className="mini-kpi-label">{label}</div>
-    </div>
+    </Tag>
   );
 }
 
@@ -748,6 +769,10 @@ const CSS = `
 .mini-kpi-yellow .mini-kpi-value{ color:var(--yellow); }
 .mini-kpi-green .mini-kpi-value{ color:var(--green); }
 .mini-kpi-red .mini-kpi-value{ color:var(--red); }
+.mini-kpi-clickable{
+  font:inherit; text-align:inherit; cursor:pointer; transition:border-color var(--t-fast) ease, transform var(--t-fast) ease;
+}
+.mini-kpi-clickable:hover{ border-color:var(--accent); transform:translateY(-1px); }
 
 ${SCOPE_PICKER_CSS}
 
