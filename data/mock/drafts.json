@@ -74,12 +74,12 @@
   "7232305:catalogItem": {
     "data": {
       "name": "",
-      "category": "",
+      "category": "תקשורת",
       "qty": 0,
       "desc": "",
       "notes": "",
       "equipInstructions": ""
     },
-    "savedAt": 1787658910953
+    "savedAt": 1787658914124
   }
 }
