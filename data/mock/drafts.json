@@ -100,11 +100,13 @@
       "desc": "2",
       "category": "ראייה",
       "damatz": "MMMM.jpg",
-      "extras": [],
+      "extras": [
+        "MMMM.jpg"
+      ],
       "linkedProductId": "NEW-7714",
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787661216204
+    "savedAt": 1787661221549
   }
 }
