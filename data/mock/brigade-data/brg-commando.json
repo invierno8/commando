@@ -136,7 +136,13 @@
       "addedBy": "רס״ן רוני כהן",
       "updatedAt": "10/07/2026 14:05",
       "updatedBy": "רס״ר מאיה ברק",
-      "media": []
+      "media": [
+        {
+          "type": "image",
+          "url": "item-photo-1.jpg",
+          "caption": "תמונה כללית של הפריט (placeholder)"
+        }
+      ]
     },
     {
       "id": "BAT-12",
@@ -156,7 +162,13 @@
       "addedBy": "רס״ר מאיה ברק",
       "updatedAt": "05/08/2026 11:40",
       "updatedBy": "רס״ר מאיה ברק",
-      "media": []
+      "media": [
+        {
+          "type": "image",
+          "url": "item-photo-2.jpg",
+          "caption": "תמונה כללית של הפריט (placeholder)"
+        }
+      ]
     },
     {
       "id": "MED-04",
@@ -216,7 +228,13 @@
       "addedBy": "רס״ר מאיה ברק",
       "updatedAt": "17/08/2026 19:40",
       "updatedBy": "רס״ן רוני כהן",
-      "media": []
+      "media": [
+        {
+          "type": "image",
+          "url": "item-photo-3.jpg",
+          "caption": "תמונה כללית של הפריט (placeholder)"
+        }
+      ]
     },
     {
       "id": "TNT-06",
@@ -236,7 +254,13 @@
       "addedBy": "סגן טל אשכנזי",
       "updatedAt": "16/08/2026 15:40",
       "updatedBy": "סגן טל אשכנזי",
-      "media": []
+      "media": [
+        {
+          "type": "image",
+          "url": "item-photo-1.jpg",
+          "caption": "תמונה כללית של הפריט (placeholder)"
+        }
+      ]
     },
     {
       "id": "NAV-01",
@@ -260,7 +284,13 @@
       "addedBy": "סרן עידן לוי",
       "updatedAt": "01/06/2026 08:00",
       "updatedBy": "סרן עידן לוי",
-      "media": []
+      "media": [
+        {
+          "type": "image",
+          "url": "item-photo-2.jpg",
+          "caption": "תמונה כללית של הפריט (placeholder)"
+        }
+      ]
     },
     {
       "id": "LGT-05",
@@ -286,7 +316,13 @@
       "addedBy": "רס״ן רוני כהן",
       "updatedAt": "18/06/2026 10:15",
       "updatedBy": "רס״ן רוני כהן",
-      "media": []
+      "media": [
+        {
+          "type": "image",
+          "url": "item-photo-3.jpg",
+          "caption": "תמונה כללית של הפריט (placeholder)"
+        }
+      ]
     }
   ],
   "tickets": [
