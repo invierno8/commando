@@ -49,16 +49,16 @@
   "guest:ticket": {
     "data": {
       "type": "repair",
-      "title": "תקלה באלונקה 8 ",
-      "desc": "צריך לתקן ",
-      "category": "רפואה",
+      "title": "תקלה במכשיר קשר טקטי",
+      "desc": "",
+      "category": "תקשורת",
       "damatz": null,
       "extras": [],
-      "linkedProductId": "NEW-8650",
+      "linkedProductId": "VHF-07",
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787652596327
+    "savedAt": 1787659989482
   },
   "7222678:catalogItem": {
     "data": {
