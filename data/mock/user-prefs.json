@@ -2,9 +2,6 @@
   "guest:dashboard-layout:system_admin": {
     "order": [
       "kpis",
-      "equipment",
-      "activityLog",
-      "trend",
       "priority"
     ],
     "hidden": [
@@ -12,9 +9,8 @@
       "categoryAnalytics",
       "ticketTypes",
       "procurementCost",
-      "repairLeaderboard",
-      "openRequests",
-      "readiness"
+      "readiness",
+      "trend"
     ]
   },
   "guest:dashboard-layout:brigade_officer": {
