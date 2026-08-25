@@ -1,8 +1,0 @@
-{
-  "id": "jynx-mt8i1fowscur",
-  "route": "catalog",
-  "targetLabel": "mock-toggle",
-  "secondaryTargets": [],
-  "comment": "demo data turn off never works, make it work",
-  "requestedAt": "2026-08-25T10:05:28.359Z"
-}
