@@ -7,7 +7,7 @@ import {
 import PhotoTile from "../components/PhotoTile.jsx";
 import MediaGallery from "../components/MediaGallery.jsx";
 import MediaEditor from "../components/MediaEditor.jsx";
-import { StatusPill, TICKET_TYPE_LABELS, CATALOG_ORIGINS, CATALOG_ORIGIN_LABELS } from "../opsData.jsx";
+import { StatusPill, TICKET_TYPE_LABELS, CATALOG_ORIGINS, CATALOG_ORIGIN_LABELS, CATALOG_ORDER_STATUS, CATALOG_ORDER_STATUS_LABELS, CatalogOrderStatusPill } from "../opsData.jsx";
 import { fetchDraft, saveDraft, clearDraft } from "../api-client/draftStore.js";
 
 /* ================================================================== */
@@ -407,6 +407,28 @@ export default function ProductDossier({
               </span>
             )}
           </div>
+        )}
+
+        <div className="dossier-section-title">סטטוס הזמנה</div>
+        {editing && canEdit ? (
+          <div className="origin-pick-row">
+            {Object.values(CATALOG_ORDER_STATUS).map((s) => (
+              <button
+                type="button"
+                key={s}
+                className={"origin-pick" + (draft.orderStatus === s ? " active" : "")}
+                onClick={() => patch("orderStatus", draft.orderStatus === s ? null : s)}
+              >
+                {CATALOG_ORDER_STATUS_LABELS[s]}
+              </button>
+            ))}
+          </div>
+        ) : view.orderStatus ? (
+          <div className="dossier-origin-view">
+            <CatalogOrderStatusPill status={view.orderStatus} />
+          </div>
+        ) : (
+          <div className="dossier-origin-empty">סטטוס ההזמנה טרם עודכן לפריט זה.</div>
         )}
 
         <div className="dossier-section-title equip-path-title"><PackagePlus size={14} /> מסלול הצטיידות</div>

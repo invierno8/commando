@@ -13,7 +13,7 @@ import {
 } from "../api-client/brigadeStore.js";
 import { pushNotification, NOTIFICATION_TYPES } from "../api-client/notificationStore.js";
 import { STRUCTURAL_ROLES } from "../roles.js";
-import { CATALOG_ORIGINS, CATALOG_ORIGIN_LABELS } from "../opsData.jsx";
+import { CATALOG_ORIGINS, CATALOG_ORIGIN_LABELS, CATALOG_ORDER_STATUS_LABELS, CatalogOrderStatusPill } from "../opsData.jsx";
 import { requiresTeamLeadApproval } from "../api-client/teamStore.js";
 
 /* תפריט סינון לפי מקור/אחריות — לא FilterSelect רגיל (select) בכוונה:    */
@@ -25,6 +25,11 @@ const ORIGIN_FILTER_OPTIONS = [
   { value: CATALOG_ORIGINS.INDUSTRY, label: CATALOG_ORIGIN_LABELS.industry },
   { value: CATALOG_ORIGINS.IN_HOUSE, label: CATALOG_ORIGIN_LABELS.in_house },
 ];
+
+// סינון לפי סטטוס הזמנה — ליד עמוד הדפדוף בכוונה (ולא ליד שאר הפילטרים
+// למעלה): זה נתון מעקב לוגיסטי שרלוונטי בעיקר כשכבר גוללים ברשימה, לא
+// חלק מקבלת ההחלטה איזה פריטים להציג מלכתחילה.
+const ORDER_STATUS_FILTER_OPTIONS = Object.entries(CATALOG_ORDER_STATUS_LABELS).map(([value, label]) => ({ value, label }));
 
 function OriginFilterMenu({ value, onChange }) {
   const [open, setOpen] = useState(false);
@@ -68,7 +73,7 @@ function blankItem(unit, submittedBy) {
     addedAt: new Date().toLocaleDateString("he-IL"), addedBy: submittedBy,
     updatedAt: new Date().toLocaleDateString("he-IL"), updatedBy: submittedBy,
     media: [], status: CATALOG_STATUS.ACTIVE, notes: "", rejectionReason: null, equipInstructions: "", interested: [],
-    teamLeadGate: null, gateTeamId: null,
+    teamLeadGate: null, gateTeamId: null, orderStatus: null,
   };
 }
 
@@ -108,6 +113,7 @@ export default function Catalog({ brigadeId, role, persona, officerUnit, userId,
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [originFilter, setOriginFilter] = useState("all");
+  const [orderStatusFilter, setOrderStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(24);
   const [tab, setTab] = useState("catalog");
@@ -135,6 +141,7 @@ export default function Catalog({ brigadeId, role, persona, officerUnit, userId,
     setQuery("");
     setCategory("all");
     setOriginFilter("all");
+    setOrderStatusFilter("all");
     setItem(null);
     setPage(1);
     setTab("catalog");
@@ -227,11 +234,12 @@ export default function Catalog({ brigadeId, role, persona, officerUnit, userId,
       (it) =>
         (tab !== "catalog" || category === "all" || it.category === category) &&
         (tab !== "catalog" || originFilter === "all" || it.origin === originFilter) &&
+        (tab !== "catalog" || orderStatusFilter === "all" || it.orderStatus === orderStatusFilter) &&
         matchesSearch([it.name, it.id, it.category, it.desc, it.responsibleName, it.responsibleRank], query)
     );
-  }, [listForTab, query, category, originFilter, tab]);
+  }, [listForTab, query, category, originFilter, orderStatusFilter, tab]);
 
-  useEffect(() => { setPage(1); }, [query, category, originFilter, pageSize, tab]);
+  useEffect(() => { setPage(1); }, [query, category, originFilter, orderStatusFilter, pageSize, tab]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pagedItems = useMemo(
@@ -443,10 +451,17 @@ export default function Catalog({ brigadeId, role, persona, officerUnit, userId,
                 <div className="prod-name">{it.name || "ללא שם"}</div>
                 <div className="prod-id">{it.id}</div>
                 {tab === "catalog" ? (
-                  <div className="prod-qty">
-                    <span className="prod-qty-dot" />
-                    במלאי: {it.qty}
-                  </div>
+                  <>
+                    <div className="prod-qty">
+                      <span className="prod-qty-dot" />
+                      במלאי: {it.qty}
+                    </div>
+                    {it.orderStatus && (
+                      <div className="prod-order-status">
+                        <CatalogOrderStatusPill status={it.orderStatus} />
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="prod-submitted-by">הוצע ע״י {it.addedBy}</div>
                 )}
@@ -463,7 +478,12 @@ export default function Catalog({ brigadeId, role, persona, officerUnit, userId,
       </div>
       )}
       {filtered.length > 0 && (
-        <Pagination page={Math.min(page, pageCount)} pageSize={pageSize} totalItems={filtered.length} onPageChange={setPage} onPageSizeChange={setPageSize} />
+        <div className="catalog-pagination-row" data-devblock="pagination-bar">
+          {tab === "catalog" && (
+            <FilterSelect value={orderStatusFilter} onChange={setOrderStatusFilter} options={ORDER_STATUS_FILTER_OPTIONS} allLabel="כל סטטוסי ההזמנה" ariaLabel="סינון לפי סטטוס הזמנה" />
+          )}
+          <Pagination page={Math.min(page, pageCount)} pageSize={pageSize} totalItems={filtered.length} onPageChange={setPage} onPageSizeChange={setPageSize} />
+        </div>
       )}
       </>
       )}
@@ -533,6 +553,10 @@ const CSS = `
 .prod-id{ font-family:var(--font-mono); font-size:12px; color:var(--accent); }
 .prod-qty{ font-size:12.5px; color:var(--text-dim); display:flex; align-items:center; gap:5px; }
 .prod-qty-dot{ width:5px; height:5px; border-radius:50%; background:var(--green); }
+.prod-order-status{ margin-top:4px; }
+.prod-order-status .pill{ font-size:10.5px; padding:2px 7px; }
+.catalog-pagination-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.catalog-pagination-row .pagination-bar{ flex:1; }
 .prod-submitted-by{ font-size:11.5px; color:var(--text-dim); }
 .prod-card-decide{ display:flex; gap:8px; }
 .prod-card-decide button{

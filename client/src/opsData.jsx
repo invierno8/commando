@@ -63,6 +63,22 @@ export const STATUS_LABEL = {
   rejected: "סורב",
 };
 
+/* מעקב לוגיסטי — שלב ההזמנה/אספקה בפועל של פריט קטלוג ספציפי, נפרד לגמרי  */
+/* מ-status (אישור/דחייה של הצעת הפריט) ומ-PROGRESS_STATUS (מעקב טיפול     */
+/* בדרישה). נקבע ידנית על ידי קצין אמל״ח דרך תעודת הזהות של הפריט.        */
+export const CATALOG_ORDER_STATUS = {
+  IN_PROCESS: "in_process", AWAITING_ORDER: "awaiting_order", ON_THE_WAY: "on_the_way", FINAL_APPROVAL: "final_approval",
+};
+export const CATALOG_ORDER_STATUS_LABELS = {
+  in_process: "בתהליך", awaiting_order: "ממתין להזמנה", on_the_way: "בדרך", final_approval: "אישור מזמין סופי",
+};
+const CATALOG_ORDER_STATUS_TONE = { in_process: "yellow", awaiting_order: "neutral", on_the_way: "blue", final_approval: "green" };
+
+export function CatalogOrderStatusPill({ status }) {
+  if (!status) return null;
+  return <span className={`pill pill-${CATALOG_ORDER_STATUS_TONE[status]}`}>{CATALOG_ORDER_STATUS_LABELS[status]}</span>;
+}
+
 const PRIORITY_LABEL = { red: "דחוף", yellow: "בינוני", green: "שגרתי" };
 
 export function PriorityDot({ p, label }) {
