@@ -76,13 +76,13 @@
       "type": "equip",
       "title": "חסר יחידות במלטי",
       "desc": "10",
-      "category": "",
+      "category": "ראייה",
       "damatz": null,
       "extras": [],
       "linkedProductId": "NEW-7714",
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1787657360791
+    "savedAt": 1787657363842
   }
 }
