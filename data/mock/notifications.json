@@ -29,6 +29,19 @@
   ],
   "brg-commando": [
     {
+      "id": "ntf-1787652840664-wpct6",
+      "read": false,
+      "ts": 1787652840664,
+      "kind": "ticket",
+      "ticketId": "REQ-1302",
+      "ticketTitle": "חסר לי כלי עבודה מקיטה",
+      "unit": "דובדבן",
+      "requestedBy": "טוראי איתי לוי",
+      "collaborators": [],
+      "type": "assigned",
+      "message": "קצין אמל״ח חטיבה (הדגמה) הקצה/תה את רס״ן רוני כהן לטיפול ב״חסר לי כלי עבודה מקיטה״"
+    },
+    {
       "id": "ntf-1787652795062-isfr7",
       "read": false,
       "ts": 1787652795062,
