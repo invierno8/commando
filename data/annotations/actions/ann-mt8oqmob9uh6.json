@@ -1,0 +1,11 @@
+{
+  "id": "ann-mt8oqmob9uh6",
+  "route": "catalog",
+  "targetLabel": "Catalog — item: כוונת יום טקטית (OPT-01)",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "הוספת תמונה לכל פריט",
+  "authorName": "Vova",
+  "requestedAt": "2026-08-25T13:18:23.083Z",
+  "requestedBy": "admin"
+}
