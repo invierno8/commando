@@ -15,9 +15,11 @@ import { useKeepInViewport } from "./useKeepInViewport.js";
 
 // סדר ברירת המחדל של כפתורי-הפעולה בסרגל (לא כולל את הידית/שם-המשתמש/
 // יציאה/קיפול — אלה קבועים בכוונה, ראו ה-JSX). "markers" תמיד נשמר ברשימה
-// המלאה גם למשתמש לא-מנהל, כדי שסדר-השמירה יישאר יציב בלי קשר למי שמחובר
-// כרגע — הסינון לפי isAdmin קורה רק ברינדור, לא כאן. השוואת orderChanged
-// (האם הסדר שונה מברירת המחדל) עברה כולה ל-JynxSettings.jsx.
+// המלאה גם למשתמש בלי הרשאה, כדי שסדר-השמירה יישאר יציב בלי קשר למי שמחובר
+// כרגע — הסינון לפי isAdmin/canJynxComment קורה רק ברינדור, לא כאן (ראו
+// jynx-mth4g9g5xnga: נקודות-הסטטוס נפתחו מ-isAdmin-בלבד גם ל"Jynx commenter",
+// בדיוק כמו CommentsPanel.jsx). השוואת orderChanged (האם הסדר שונה מברירת
+// המחדל) עברה כולה ל-JynxSettings.jsx.
 const DEFAULT_TOOLBAR_ORDER = ["role", "overlay", "draw", "comments", "markers", "admin", "mentions"];
 const TOOLBAR_ORDER_KEY = "jynx-toolbar-item-order";
 const TOOLBAR_ORIENTATION_KEY = "jynx-toolbar-orientation";
@@ -274,7 +276,7 @@ export default function DevAuthGate({ route, devFabProps }) {
         overlay: () => setOverlayOn((v) => !v),
         draw: () => setDrawMode((v) => !v),
         comments: () => setCommentsOn((v) => !v),
-        markers: isAdmin ? () => setMarkersOn((v) => !v) : null,
+        markers: (isAdmin || canJynxComment) ? () => setMarkersOn((v) => !v) : null,
         admin: () => setAdminOpen(true),
       };
       const keyableIds = toolbarOrder.filter((id) => actions[id]);
@@ -283,7 +285,7 @@ export default function DevAuthGate({ route, devFabProps }) {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [devName, toolbarOpen, toolbarOrder, isAdmin, roleDocked, devFabProps.setOpen]);
+  }, [devName, toolbarOpen, toolbarOrder, isAdmin, canJynxComment, roleDocked, devFabProps.setOpen]);
 
   async function login() {
     setError("");
@@ -407,7 +409,7 @@ export default function DevAuthGate({ route, devFabProps }) {
         <MessageSquare size={13} />
       </button>
     ),
-    markers: isAdmin ? (
+    markers: (isAdmin || canJynxComment) ? (
       <button type="button" className={"dev-toolbar-icon-btn" + (markersOn ? " active" : "")} data-devblock="dev-toolbar-markers-toggle" onClick={() => setMarkersOn((v) => !v)} title={markersOn ? "Hide comment status dots on the page" : "Show comment status dots on the page"}>
         <Target size={13} />
       </button>

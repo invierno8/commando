@@ -17,8 +17,11 @@ import { submitAnnotation, submitJynxFeedback } from "../devApi.js";
 /*     box, submitting straight to data/routes/annotations.js. When the */
 /*     logged-in dev user is ALSO admin-verified, every note they write */
 /*     is automatically flagged as an action item — no extra click.     */
-/*  3. Admin-only: persistent (not hover-only) markers on every open     */
-/*     comment on the current screen, see AdminAnnotationMarkers.jsx.    */
+/*  3. Persistent (not hover-only) markers on every open comment on the  */
+/*     current screen — visible to isAdmin and to a "Jynx commenter"     */
+/*     grant alike (jynx-mth4g9g5xnga), see AdminAnnotationMarkers.jsx;  */
+/*     the "Action" trigger inside a marker's detail card stays          */
+/*     isAdmin-only, since it kicks off the real automated PR pipeline.  */
 /* ================================================================== */
 
 // טוקן טקסט משני בתוך המשפט — "[→ תווית]" — ראו submit() למטה: זה מה שנשלח
@@ -37,8 +40,10 @@ export default function DevOverlay({ active, route, isAdmin, canJynxChrome, mark
   // upstream in DevAuthGate.jsx) קובע אם מותר לגלוש בכלל על ה-UI של Jynx
   // עצמו (.jynx-chrome) — ראו useHoverTarget.js. משתמשי-פיתוח רגילים בלי
   // ההרשאה הזו אף פעם לא רואים הילה שם. isAdmin עצמו נשאר נפרד — עדיין שולט
-  // על ברירת-המחדל של "פעולה" בהערות על האפליקציה ועל הסימונים הקבועים
-  // (AdminAnnotationMarkers), שלא נפתחים לג'ינקס-קומנטר.
+  // על ברירת-המחדל של "פעולה" בהערות על האפליקציה. AdminAnnotationMarkers
+  // (הסימונים הקבועים) מקבל גם isAdmin וגם canJynxChrome עכשיו: הראשון
+  // שולט רק על כפתור "פעולה" בכרטיס הפרטים, השני שולט אם הסימונים בכלל
+  // מוצגים — ראו jynx-mth4g9g5xnga (נקודות-הסטטוס נפתחו לג'ינקס-קומנטר).
   const target = useHoverTarget(active, canJynxChrome);
   const [popover, setPopover] = useState(null); // { x, y, label, secondaryTargets: [], isJynxMeta } | null
   const [markersRefreshKey, setMarkersRefreshKey] = useState(0);
@@ -188,7 +193,7 @@ export default function DevOverlay({ active, route, isAdmin, canJynxChrome, mark
           onSubmit={submit}
         />
       )}
-      <AdminAnnotationMarkers isAdmin={isAdmin} active={markersOn} route={route} refreshKey={markersRefreshKey} />
+      <AdminAnnotationMarkers isAdmin={isAdmin} canView={canJynxChrome} active={markersOn} route={route} refreshKey={markersRefreshKey} />
       <DrawingCanvas active={drawMode && !popover} onComplete={handleDrawingComplete} color={drawColor} />
     </div>,
     document.body
