@@ -14,7 +14,7 @@
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-08-31T10:55:00.053Z",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/81",
-  "actionLog": null,
+  "actionLog": "A sibling run raced this same item and independently opened PR #80 (functionally equivalent). #81 landed on main first and is kept as canonical; #80 closed as a duplicate with an explanatory comment.",
   "replies": [],
   "reactions": {
     "👍": [],
