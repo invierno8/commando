@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mth57nfhogk9",
+  "authorId": "dev-mth1zeixm2f5",
+  "authorName": "אילאיל",
+  "createdAt": "2026-08-31T11:16:17.885Z",
+  "route": "catalog",
+  "targetLabel": "dev-fab-mock-toggle-row",
+  "secondaryTargets": [],
+  "comment": "in jinx, make sure the positionis is aware so that no items hides another",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-31T11:16:17.885Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
