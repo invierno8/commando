@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mth4g9g5xnga",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-31T10:55:00.053Z",
+  "route": "catalog",
+  "targetLabel": "dev-toolbar-markers-toggle",
+  "secondaryTargets": [],
+  "comment": "the marker dots menu fiture is no avialbale for dev users, only for admin user please make it a deafult jynx option",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-31T10:55:00.053Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
