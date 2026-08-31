@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Settings2, LogOut } from "lucide-react";
+import { Settings2, LogOut, Keyboard } from "lucide-react";
 import { useKeepInViewport } from "./useKeepInViewport.js";
 
 /* ================================================================== */
@@ -14,8 +14,14 @@ import { useKeepInViewport } from "./useKeepInViewport.js";
 /* "Logout". Same open/click-outside/viewport-clamp shape as             */
 /* MentionsBell.jsx, the sibling toolbar dropdown right next to this one.*/
 /* ================================================================== */
-export default function DevGreetingMenu({ devName, onOpenSettings, onLogout }) {
+export default function DevGreetingMenu({ devName, onOpenSettings, onLogout, hotkeys }) {
   const [open, setOpen] = useState(false);
+  // jynx-mth50gvydy9j: an accordion row inside this same dropdown rather
+  // than a second popup/modal — keeps the ask ("write for the user what is
+  // the hotkey, under 'hi' menu") literally under this menu instead of one
+  // more click away. Resets closed whenever the dropdown itself closes so it
+  // doesn't reopen pre-expanded next time for no reason.
+  const [showHotkeys, setShowHotkeys] = useState(false);
   const wrapRef = useRef(null);
   const dropdownRef = useRef(null);
   useKeepInViewport(dropdownRef, open, 8);
@@ -28,6 +34,7 @@ export default function DevGreetingMenu({ devName, onOpenSettings, onLogout }) {
     window.addEventListener("click", onDocClick, true);
     return () => window.removeEventListener("click", onDocClick, true);
   }, [open]);
+  useEffect(() => { if (!open) setShowHotkeys(false); }, [open]);
 
   return (
     <div ref={wrapRef} className="dev-greeting-wrap" data-devblock="dev-toolbar-greeting-btn">
@@ -47,6 +54,37 @@ export default function DevGreetingMenu({ devName, onOpenSettings, onLogout }) {
           >
             <Settings2 size={13} /> User settings
           </button>
+          <button
+            type="button" className="dev-greeting-dropdown-item"
+            onClick={() => setShowHotkeys((v) => !v)}
+          >
+            <Keyboard size={13} /> Keyboard shortcuts
+          </button>
+          {showHotkeys && (
+            <div className="dev-greeting-hotkey-panel">
+              {hotkeys && hotkeys.length > 0 ? (
+                hotkeys.map((h) => (
+                  <div key={h.num} className="dev-greeting-hotkey-row">
+                    <span className="dev-greeting-hotkey-num">{h.num}</span>
+                    {h.label}
+                  </div>
+                ))
+              ) : (
+                <div className="dev-greeting-hotkey-empty">No shortcuts available right now.</div>
+              )}
+              <div className="dev-greeting-hotkey-hint">
+                Press a number key to trigger that toolbar button (ignored while typing in a field).
+                {" "}
+                <button
+                  type="button" className="dev-greeting-hotkey-link"
+                  onClick={() => { setOpen(false); onOpenSettings(); }}
+                >
+                  Reorder them in User settings → Menu
+                </button>
+                {" "}to change the numbers.
+              </div>
+            </div>
+          )}
           <button
             type="button" className="dev-greeting-dropdown-item"
             onClick={() => { setOpen(false); onLogout(); }}
@@ -84,4 +122,21 @@ const CSS = `
   font-family:var(--font-sans); font-size:12px; font-weight:600; color:var(--text); cursor:pointer; text-align:start;
 }
 .dev-greeting-dropdown-item:hover{ background:var(--panel-raised); color:var(--jynx); }
+.dev-greeting-hotkey-panel{
+  display:flex; flex-direction:column; gap:4px; background:var(--bg); border:1px solid var(--line);
+  border-radius:8px; padding:7px 8px; margin:2px 0 4px;
+}
+.dev-greeting-hotkey-row{
+  display:flex; align-items:center; gap:8px; font-family:var(--font-sans); font-size:12px; color:var(--text);
+}
+.dev-greeting-hotkey-num{
+  flex:none; width:16px; height:16px; border-radius:4px; background:var(--jynx); color:#fff;
+  font-family:var(--font-mono); font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center;
+}
+.dev-greeting-hotkey-empty{ font-size:11.5px; color:var(--text-dim); }
+.dev-greeting-hotkey-hint{ font-size:10.5px; color:var(--text-dim); line-height:1.5; margin-top:2px; }
+.dev-greeting-hotkey-link{
+  background:none; border:none; padding:0; color:var(--jynx); font-size:10.5px; font-weight:700;
+  cursor:pointer; text-decoration:underline; text-underline-offset:2px; display:inline;
+}
 `;

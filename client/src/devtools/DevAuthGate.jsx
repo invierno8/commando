@@ -4,6 +4,7 @@ import { devLogin, devLogout, fetchDevMe, fetchAdminMe, fetchMentions } from "./
 import DevFab from "./DevFab.jsx";
 import DevGreetingMenu from "./DevGreetingMenu.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
+import { ITEM_LABELS } from "./JynxSettings.jsx";
 import DevOverlay from "./overlay/DevOverlay.jsx";
 import CommentsPanel from "./overlay/CommentsPanel.jsx";
 import MentionsBell from "./MentionsBell.jsx";
@@ -423,6 +424,16 @@ export default function DevAuthGate({ route, devFabProps }) {
   // חיצוני חשוף כרגע להפעלה מהמקלדת (ראו useEffect למעלה).
   const KEYABLE_IDS = ["role", "overlay", "draw", "comments", "markers", "admin"];
   let keyableIndex = 0;
+  // jynx-mth50gvydy9j: "the hotkey is not clearly stated to the user and
+  // they cannot change it" — the number-key badges on each toolbar icon
+  // (jynx-toolbar-key-badge below) already exist, but nothing anywhere
+  // explains what they do. Built the exact same way the badges themselves
+  // are numbered (same KEYABLE_IDS/TOOLBAR_ITEM_NODES filter, same
+  // toolbarOrder) so the list shown in the "Hi" menu can never drift out of
+  // sync with what pressing a number key actually does.
+  const hotkeyList = toolbarOrder
+    .filter((id) => KEYABLE_IDS.includes(id) && TOOLBAR_ITEM_NODES[id])
+    .map((id, i) => ({ num: i + 1, label: ITEM_LABELS[id] || id }));
 
   return (
     <>
@@ -492,7 +503,7 @@ export default function DevAuthGate({ route, devFabProps }) {
             </div>
             );
           })}
-          <DevGreetingMenu devName={devName} onOpenSettings={() => setAdminOpen(true)} onLogout={logout} />
+          <DevGreetingMenu devName={devName} onOpenSettings={() => setAdminOpen(true)} onLogout={logout} hotkeys={hotkeyList} />
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-collapse-btn" onClick={toggleToolbarOpen} title="Collapse to the Jynx bubble">
             <X size={13} />
           </button>

@@ -33,7 +33,12 @@ const ICON_SCALE_OPTIONS = [
 /* who already could drag/resize/reorder their own toolbar before.        */
 /* ================================================================== */
 
-const ITEM_LABELS = {
+// Exported (not just a local const) so DevGreetingMenu.jsx's "Keyboard
+// shortcuts" list (jynx-mth50gvydy9j) can show the same human labels next to
+// each toolbar item's number-key hotkey, instead of duplicating this map —
+// this is a plain data lookup, not a CSS class, so it doesn't fall under the
+// "duplicate the <style> block, never share it" rule elsewhere in this repo.
+export const ITEM_LABELS = {
   role: "Role & brigade",
   overlay: "Hover overlay",
   draw: "Drawing",
