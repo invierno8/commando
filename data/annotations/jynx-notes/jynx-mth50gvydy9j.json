@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mth50gvydy9j",
+  "authorId": "dev-mth1zeixm2f5",
+  "authorName": "אילאיל",
+  "createdAt": "2026-08-31T11:10:42.814Z",
+  "route": "catalog",
+  "targetLabel": "dev-fab-toolbar",
+  "secondaryTargets": [],
+  "comment": "currently the hotkey is not clearly stated to the user and they cannot change it.\nwrite for the user what is the hotkey, under \"hi\" menu, and make it changeable by the user.",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-31T11:10:42.814Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
