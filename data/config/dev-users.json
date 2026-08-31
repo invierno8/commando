@@ -22,5 +22,13 @@
     "passwordHash": "$2a$12$3w9i8EYuy31nx8nSxF01ROG5C80UCTZCZbMTjgeQwQaltcSD1i74S",
     "active": true,
     "createdAt": "2026-08-24T21:54:21.236Z"
+  },
+  {
+    "id": "dev-mth1zeixm2f5",
+    "name": "אילאיל",
+    "role": "מנהלת מוצר",
+    "passwordHash": "$2a$12$H4uwzKq4ydQD4lNqY8Rr/O1OnyIShfXSl9r3IezjC66UQhA8HvgPC",
+    "active": true,
+    "createdAt": "2026-08-31T09:45:56.357Z"
   }
 ]
