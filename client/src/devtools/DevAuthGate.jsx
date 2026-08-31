@@ -509,7 +509,23 @@ export default function DevAuthGate({ route, devFabProps }) {
         {...devFabProps}
         docked={roleDocked}
         onDock={dockRole}
-        dockAnchorPos={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom + 40 }}
+        // jynx-mth57nfhogk9: "make sure the position is aware so that no
+        // items hides another" — this used to be a fixed "+40" guess for
+        // the gap above the toolbar, which is only tall enough for a
+        // single-row horizontal toolbar. In vertical orientation (or with
+        // several extra items/large icon scale) the real toolbar is far
+        // taller than 40px, so the docked role/brigade panel — whose first
+        // row is dev-fab-mock-toggle-row, the exact spot this comment was
+        // left on — opened low enough to render on top of, and hide, the
+        // toolbar's own buttons. Anchoring off the toolbar's own measured
+        // height (toolbarFab.sizeRef, the real DOM node) instead of a
+        // guess keeps the panel clear of it regardless of orientation/
+        // item count/icon size; falls back to the old 40 before the first
+        // measurement lands.
+        dockAnchorPos={{
+          right: toolbarFab.pos.right,
+          bottom: toolbarFab.pos.bottom + (toolbarFab.sizeRef.current?.offsetHeight || 40) + 8,
+        }}
       />
       {adminOpen && (
         <DevAdminPanel
