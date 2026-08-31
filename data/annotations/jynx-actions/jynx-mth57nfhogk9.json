@@ -1,0 +1,8 @@
+{
+  "id": "jynx-mth57nfhogk9",
+  "route": "catalog",
+  "targetLabel": "dev-fab-mock-toggle-row",
+  "secondaryTargets": [],
+  "comment": "in jinx, make sure the positionis is aware so that no items hides another",
+  "requestedAt": "2026-08-31T11:16:19.119Z"
+}
