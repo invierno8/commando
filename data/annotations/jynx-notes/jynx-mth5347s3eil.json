@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mth5347s3eil",
+  "authorId": "dev-mth1zeixm2f5",
+  "authorName": "אילאיל",
+  "createdAt": "2026-08-31T11:12:46.360Z",
+  "route": "catalog",
+  "targetLabel": "comments-sidebar-list",
+  "secondaryTargets": [],
+  "comment": "for dev user - allow deleting their own comments.",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
