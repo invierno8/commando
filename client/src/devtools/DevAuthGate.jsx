@@ -458,9 +458,6 @@ export default function DevAuthGate({ route, devFabProps }) {
           onDragOver={(e) => e.preventDefault()}
           {...toolbarFab.dragHandlers}
         >
-          <button type="button" className="dev-toolbar-grip" onClick={toggleOrientation} title={`Switch to ${toolbarOrientation === "horizontal" ? "vertical" : "horizontal"} menu (click here — drag anywhere else on the bar to move it)`}>
-            {toolbarOrientation === "vertical" ? <GripHorizontal size={15} /> : <GripVertical size={15} />}
-          </button>
           {toolbarOrder.map((id) => {
             if (!TOOLBAR_ITEM_NODES[id]) return null;
             const isKeyable = KEYABLE_IDS.includes(id);
@@ -495,6 +492,17 @@ export default function DevAuthGate({ route, devFabProps }) {
           <DevGreetingMenu devName={devName} onOpenSettings={() => setAdminOpen(true)} onLogout={logout} />
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-collapse-btn" onClick={toggleToolbarOpen} title="Collapse to the Jynx bubble">
             <X size={13} />
+          </button>
+          {/* jynx-mth59kjpe6wk: the grip used to be the FIRST child, so it sat
+              at whichever end of the bar is farthest from the fixed right/bottom
+              anchor corner (left end when horizontal, top end when vertical) —
+              clicking it to flip orientation made the whole bar's visible mass
+              jump across the screen to hug the anchor corner instead. As the
+              LAST child it sits right next to that same fixed corner in both
+              orientations, so the bar now visibly grows away from the grip
+              (leftward/upward) instead of the click point itself jumping. */}
+          <button type="button" className="dev-toolbar-grip" onClick={toggleOrientation} title={`Switch to ${toolbarOrientation === "horizontal" ? "vertical" : "horizontal"} menu (click here — drag anywhere else on the bar to move it)`}>
+            {toolbarOrientation === "vertical" ? <GripHorizontal size={15} /> : <GripVertical size={15} />}
           </button>
         </div>
       ) : (
