@@ -8,9 +8,9 @@ import { getStickyChromeRects, isCoveredBySticky } from "./stickyChromeBounds.js
 import DrawingOverlay from "./DrawingOverlay.jsx";
 
 /* ================================================================== */
-/* LEGO BLOCK — admin-only, always-on (not hover-triggered) indicator    */
-/* for every comment (open OR resolved) on the current screen. One dot   */
-/* per element, grouped by targetLabel. Three interaction tiers:         */
+/* LEGO BLOCK — always-on (not hover-triggered) indicator for every      */
+/* comment (open OR resolved) on the current screen. One dot per         */
+/* element, grouped by targetLabel. Three interaction tiers:             */
 /*  - idle: small, quiet — doesn't clutter the page.                     */
 /*  - hover: grows, and the main element + any secondary/linked          */
 /*    elements from that group's comments outline on the live page       */
@@ -22,10 +22,16 @@ import DrawingOverlay from "./DrawingOverlay.jsx";
 /* A group with only resolved comments (nothing open) renders as a       */
 /* smaller, static, unanimated dot — kept visible as a quiet history      */
 /* marker rather than disappearing outright once closed.                 */
-/* Gated on two independent things: isAdmin (who can ever see this) and   */
-/* `active` (the toolbar's dedicated show/hide toggle, see                */
-/* DevAuthGate.jsx's "Target" icon — separate from the hover-glow         */
-/* overlay toggle, since someone might want one without the other).       */
+/* Gated on two independent things: `canView` (who can ever see this —    */
+/* isAdmin OR a granted canJynxComment user, since jynx-mth4g9g5xnga:      */
+/* this used to be admin-only, and the admin dev user asked for it to     */
+/* become a default Jynx option for any Jynx commenter) and `active` (the */
+/* toolbar's dedicated show/hide toggle, see DevAuthGate.jsx's "Target"   */
+/* icon — separate from the hover-glow overlay toggle, since someone      */
+/* might want one without the other). `isAdmin` stays separate and only   */
+/* gates the "Action" button in each dot's detail card — triggering the   */
+/* automated action pipeline is still admin-only, and the server route    */
+/* (`POST /admin/annotations/:id/action`) enforces that independently.    */
 /* ================================================================== */
 
 const STATUS_COLOR = { none: "var(--red)", queued: "var(--jynx)", in_progress: "var(--jynx)", pr_opened: "var(--green)", done: "var(--green)", failed: "var(--dev)" };
@@ -47,13 +53,13 @@ function groupStatus(list) {
   }, "done");
 }
 
-export default function AdminAnnotationMarkers({ isAdmin, active, route, refreshKey }) {
+export default function AdminAnnotationMarkers({ isAdmin, canView, active, route, refreshKey }) {
   const [items, setItems] = useState([]);
   const [tick, setTick] = useState(0);
   const [openLabel, setOpenLabel] = useState(null);
 
   useEffect(() => {
-    if (!isAdmin || !active) return;
+    if (!canView || !active) return;
     let cancelled = false;
     // כל ההערות על המסך הזה, לא רק הפתוחות — כדי שגם הערות שנסגרו יישארו
     // כנקודת-היסטוריה קטנה (ראו קיבוץ groupStatus/allResolved למטה), לא
@@ -63,7 +69,7 @@ export default function AdminAnnotationMarkers({ isAdmin, active, route, refresh
       setItems(all.filter((a) => a.route === route && a.targetLabel));
     });
     return () => { cancelled = true; };
-  }, [isAdmin, active, route, refreshKey]);
+  }, [canView, active, route, refreshKey]);
 
   // rAF-throttled (jynx-mt5edij0xz1s: dots visibly lagged the element they
   // point at during a fast scroll) — a raw setTick() per native scroll
@@ -73,7 +79,7 @@ export default function AdminAnnotationMarkers({ isAdmin, active, route, refresh
   // Collapsing to at most one recompute per animation frame is the same
   // fix useHoverTarget.js already uses for mousemove.
   useEffect(() => {
-    if (!isAdmin || !active) return;
+    if (!canView || !active) return;
     let rafId = null;
     function onLayoutChange() {
       if (rafId) return;
@@ -91,7 +97,7 @@ export default function AdminAnnotationMarkers({ isAdmin, active, route, refresh
       clearInterval(id);
       if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [isAdmin, active]);
+  }, [canView, active]);
 
   // סוגר את הכרטיס הפתוח בכל קליק מחוץ לנקודות/לכרטיס עצמו — בלי זה הוא
   // היה נשאר פתוח לתמיד עד קליק נוסף על אותה נקודה בדיוק.
@@ -106,7 +112,7 @@ export default function AdminAnnotationMarkers({ isAdmin, active, route, refresh
 
   const grouped = useMemo(() => {
     void tick; // תלות מכוונת — רק כדי לגרום לחישוב מחדש בטיק
-    if (!isAdmin || !active) return [];
+    if (!canView || !active) return [];
     const byLabel = new Map();
     items.forEach((a) => {
       if (!byLabel.has(a.targetLabel)) byLabel.set(a.targetLabel, []);
@@ -124,14 +130,14 @@ export default function AdminAnnotationMarkers({ isAdmin, active, route, refresh
       out.push({ label, list, rect });
     });
     return out;
-  }, [items, tick, isAdmin, active]);
+  }, [items, tick, canView, active]);
 
   async function triggerAction(id) {
     setItems((prev) => prev.map((a) => (a.id === id ? { ...a, actionStatus: "queued" } : a)));
     await requestAnnotationAction(id);
   }
 
-  if (!isAdmin || !active || grouped.length === 0) return null;
+  if (!canView || !active || grouped.length === 0) return null;
 
   return createPortal(
     <>
@@ -143,6 +149,7 @@ export default function AdminAnnotationMarkers({ isAdmin, active, route, refresh
           list={list}
           rect={rect}
           open={openLabel === label}
+          isAdmin={isAdmin}
           onToggle={() => setOpenLabel((cur) => (cur === label ? null : label))}
           onAction={triggerAction}
         />
@@ -152,7 +159,7 @@ export default function AdminAnnotationMarkers({ isAdmin, active, route, refresh
   );
 }
 
-function AdminMarkerDot({ label, list, rect, open, onToggle, onAction }) {
+function AdminMarkerDot({ label, list, rect, open, isAdmin, onToggle, onAction }) {
   const openItems = list.filter((a) => !a.resolved);
   const allResolved = openItems.length === 0;
   const status = groupStatus(allResolved ? list : openItems);
@@ -240,7 +247,7 @@ function AdminMarkerDot({ label, list, rect, open, onToggle, onAction }) {
                   >
                     {a.authorName}
                   </span>
-                  {!hasAction && !a.resolved && (
+                  {isAdmin && !hasAction && !a.resolved && (
                     <button type="button" className="admin-marker-action-btn" onClick={() => onAction(a.id)} title="Run the automated agent on this comment">
                       <Zap size={11} /> Action
                     </button>
