@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mth55ybetlt5",
+  "authorId": "dev-mth1zeixm2f5",
+  "authorName": "אילאיל",
+  "createdAt": "2026-08-31T11:14:58.682Z",
+  "route": "catalog",
+  "targetLabel": "dev-fab-toolbar",
+  "secondaryTargets": [],
+  "comment": "for jinx interface - if the user is prompted to login again - all other actions on the screen should be disabled for the user until login is successful. do not lose any text that was written.",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-31T11:14:58.682Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
