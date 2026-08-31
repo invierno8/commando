@@ -124,6 +124,20 @@
       "notes": "",
       "equipInstructions": ""
     },
-    "savedAt": 1788177490769
+    "savedAt": 1788177456615
+  },
+  "7899822:ticket": {
+    "data": {
+      "type": "idea",
+      "title": "",
+      "desc": "",
+      "category": "",
+      "damatz": null,
+      "extras": [],
+      "linkedProductId": "",
+      "estimatedPrice": "",
+      "purchaseLink": ""
+    },
+    "savedAt": 1788177513182
   }
 }
