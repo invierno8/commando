@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mth59kjpe6wk",
+  "authorId": "dev-mth1zeixm2f5",
+  "authorName": "אילאיל",
+  "createdAt": "2026-08-31T11:17:47.461Z",
+  "route": "catalog",
+  "targetLabel": "dev-toolbar-grip",
+  "secondaryTargets": [],
+  "comment": "when clicking on this itme make it the center of movement. currently the menue flips to the right side. make it flip to the left.",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-08-31T11:17:47.461Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
