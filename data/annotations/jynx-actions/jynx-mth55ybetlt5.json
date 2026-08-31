@@ -1,8 +1,0 @@
-{
-  "id": "jynx-mth55ybetlt5",
-  "route": "catalog",
-  "targetLabel": "dev-fab-toolbar",
-  "secondaryTargets": [],
-  "comment": "for jinx interface - if the user is prompted to login again - all other actions on the screen should be disabled for the user until login is successful. do not lose any text that was written.",
-  "requestedAt": "2026-08-31T11:14:59.915Z"
-}
