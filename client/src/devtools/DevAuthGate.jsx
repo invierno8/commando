@@ -178,9 +178,26 @@ export default function DevAuthGate({ route, devFabProps }) {
   // הידית (⋮/⋯, ראו TOOLBAR_ITEM_NODES) עצמה עכשיו גם כפתור — קליק "נקי" (לא
   // גרירה) עליה מחליף אופקי/אנכי. אותה בדיקת consumeWasDragged בדיוק כמו שאר
   // הכפתורים בסרגל הזה, כי הידית עדיין חלק מהאזור שגורר את כל הסרגל.
+  // jynx-mth59kjpe6wk: "make it the center of movement, currently it flips to
+  // the right side" — הסרגל ממוקם עם right/bottom קבועים, אז מעבר אופקי↔אנכי
+  // (שמשנה דרמטית את הרוחב — שורה רחבה מול עמודה צרה) הזיז בפועל רק את
+  // הקצה השמאלי, כי הקצה הימני (המעוגן) נשאר קבוע; מה שהמשתמש חווה כ"הכל
+  // קופץ ימינה/שמאלה" בכל לחיצה. פותר על ידי מדידת הרוחב לפני/אחרי המעבר
+  // ותיקון right כך שהמרכז הגיאומטרי (לא הקצה) יישאר במקום — ראו
+  // useDraggableFab.js's nudgePos. double rAF כדי לוודא שהדפדפן כבר סיים
+  // layout עם המחלקה/הכיוון החדשים לפני המדידה השנייה.
   function toggleOrientation() {
     if (toolbarFab.consumeWasDragged()) return;
+    const el = toolbarFab.sizeRef.current;
+    const oldWidth = el?.offsetWidth || 0;
     setOrientation(toolbarOrientation === "horizontal" ? "vertical" : "horizontal");
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const newWidth = el?.offsetWidth || 0;
+        const delta = newWidth - oldWidth;
+        if (delta) toolbarFab.nudgePos(-delta / 2);
+      });
+    });
   }
   function setOrientation(next) {
     setToolbarOrientation(next);
