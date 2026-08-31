@@ -128,7 +128,7 @@
   },
   "7899822:ticket": {
     "data": {
-      "type": "procurement",
+      "type": "idea",
       "title": "",
       "desc": "",
       "category": "",
@@ -138,6 +138,6 @@
       "estimatedPrice": "",
       "purchaseLink": ""
     },
-    "savedAt": 1788177517379
+    "savedAt": 1788177519307
   }
 }
