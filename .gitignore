@@ -5,8 +5,6 @@ data/node_modules
 
 # live "database" — real, gitignored, files created lazily & empty (see FORCLAUDE.md)
 data/db/
-# runtime-only flags — never committed, default to "mock" in code if absent
-data/config/data-mode.json
 # real secrets (ADMIN_SECRET, host config) — never committed; see data/.env.example
 data/.env
 data/.env.local

@@ -34,6 +34,7 @@ import userProfileRouter from "./routes/user-profile.js";
 import { hydrateDevUsersFromGithub } from "./lib/devUsers.js";
 import { hydrateMockDataFromGithub } from "./lib/jsonStore.js";
 import { hydrateAnnotationSettingsFromGithub } from "./lib/annotationSettings.js";
+import { hydrateDataModeFromGithub } from "./lib/dataMode.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -93,6 +94,7 @@ Promise.all([
   hydrateJynxFeedbackFromGithub().catch((err) => console.error("hydrateJynxFeedbackFromGithub failed:", err)),
   hydrateMockDataFromGithub().catch((err) => console.error("hydrateMockDataFromGithub failed:", err)),
   hydrateAnnotationSettingsFromGithub().catch((err) => console.error("hydrateAnnotationSettingsFromGithub failed:", err)),
+  hydrateDataModeFromGithub().catch((err) => console.error("hydrateDataModeFromGithub failed:", err)),
 ]).finally(() => {
   app.listen(PORT, () => {
     console.log(`HANGAR API listening on http://localhost:${PORT}`);
