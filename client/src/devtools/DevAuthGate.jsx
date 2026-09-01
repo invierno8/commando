@@ -133,6 +133,19 @@ export default function DevAuthGate({ route, devFabProps }) {
     () => (localStorage.getItem(TOOLBAR_ORIENTATION_KEY) === "vertical" ? "vertical" : "horizontal")
   );
   const [toolbarOrder, setToolbarOrder] = useState(loadToolbarOrder);
+  // jynx-mtj8qgdyw7u2: "when clicked the move to vertical is laggy please
+  // animate and fix" — toggleOrientation() below always did this in two
+  // silent jumps (the row/column reflow lands instantly on the state
+  // update, then the nudgePos recentering correction lands a frame or two
+  // later with no transition at all), which reads as a stutter rather than
+  // a deliberate move. This flag turns on a short CSS transition (see
+  // .dev-fab-toolbar.orientation-animating below) for exactly that window
+  // so both changes animate smoothly instead of snapping — it must stay
+  // OFF the rest of the time, because the same `right`/`bottom` position
+  // is also updated on every pointermove of a real drag (useDraggableFab.js),
+  // and a transition active during that would make live dragging visibly
+  // lag behind the cursor.
+  const [orientationAnimating, setOrientationAnimating] = useState(false);
   // תמונת-מצב יחידה, לא מחסנית-undo מלאה — "צעד אחד אחורה" בכוונה (ראו
   // הבקשה המקורית), לא undo/redo כללי.
   const [undoOrder, setUndoOrder] = useState(null);
@@ -207,12 +220,14 @@ export default function DevAuthGate({ route, devFabProps }) {
     if (toolbarFab.consumeWasDragged()) return;
     const el = toolbarFab.sizeRef.current;
     const oldWidth = el?.offsetWidth || 0;
+    setOrientationAnimating(true);
     setOrientation(toolbarOrientation === "horizontal" ? "vertical" : "horizontal");
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const newWidth = el?.offsetWidth || 0;
         const delta = newWidth - oldWidth;
         if (delta) toolbarFab.nudgePos(-delta / 2);
+        setTimeout(() => setOrientationAnimating(false), 200);
       });
     });
   }
@@ -502,7 +517,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       {toolbarOpen ? (
         <div
           ref={toolbarFab.sizeRef}
-          className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "")}
+          className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "") + (orientationAnimating ? " orientation-animating" : "")}
           style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom, "--jynx-icon-scale": iconScale }}
           data-jynx-dock-zone=""
           onDragOver={(e) => e.preventDefault()}
@@ -660,6 +675,16 @@ const CSS = `
 }
 .dev-fab-toolbar:active{ cursor:grabbing; }
 .dev-fab-toolbar.vertical{ flex-direction:column; align-items:stretch; }
+/* jynx-mtj8qgdyw7u2: only active for the brief window toggleOrientation()
+   above runs (see orientationAnimating) — smooths both the row/column
+   reflow and the nudgePos recentering correction into one motion instead of
+   two silent snaps. Never left on by default: the same right/bottom
+   position is also written on every pointermove of a real drag, and a
+   transition running then would make the toolbar visibly lag behind the
+   cursor while dragging. */
+.dev-fab-toolbar.orientation-animating{
+  transition:right var(--t-base) var(--ease), left var(--t-base) var(--ease), bottom var(--t-base) var(--ease);
+}
 /* הידית עצמה עכשיו כפתור אמיתי (מחליף אופקי/אנכי) — לא רק "אזור-גרירה
    שיושב שם", אז צריך רמז ברור שהיא לחיצה: קצת יותר גדולה מכל שאר האייקונים
    ותוחם עדין (border) כדי לא "להיבלע" בתוך פס-הכלים כמו לפני. */
