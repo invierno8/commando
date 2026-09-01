@@ -127,5 +127,18 @@ export function useDraggableFab(storageKey, defaultPos = DEFAULT_POS, anchor = "
     return false;
   }
 
-  return { pos, dragHandlers: { onPointerDown, onPointerMove, onPointerUp }, sizeRef: elRef, consumeWasDragged };
+  // ניוד יזום שלא דרך גרירה — למשל DevAuthGate.jsx's toggleOrientation
+  // מפצה על שינוי-רוחב פתאומי (אופקי/אנכי) כדי שמרכז הקופסה יישאר קבוע במקום
+  // שהפינה המעוגנת (right/bottom) תישאר קבועה ומרכז-הכובד יזוז בעקבות שינוי
+  // הרוחב. אותו clampToViewport בדיוק כמו גרירה, כדי שהתוצאה לעולם לא תצא
+  // מה-viewport ותישמר תחת אותו storageKey.
+  function nudgePos(deltaHoriz) {
+    setPos((p) => {
+      const next = clampToViewport({ ...p, [horizKey]: (p[horizKey] ?? 0) + deltaHoriz }, horizKey, elRef.current);
+      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
+
+  return { pos, dragHandlers: { onPointerDown, onPointerMove, onPointerUp }, sizeRef: elRef, consumeWasDragged, nudgePos };
 }
