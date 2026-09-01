@@ -131,15 +131,41 @@ discussing the product/domain since the UI and data are Hebrew-first.
 
 ## Design system (current state)
 
-- **Palette:** near-black dark theme (`#0B0D0F`) / light theme (`#F2F4F5`),
-  one confident mint/emerald **accent** (`--accent`, ~`#3ECF8E` dark /
-  `#159865` light) carrying both brand and "success" meaning. `--yellow`
-  and `--red` are genuinely distinct caution/danger hues. `--dev` (orange)
-  is reserved **solely** for the dev/demo-only marking convention (the
-  `.dev-only` dashed-border treatment, the `.env-strip` DEV banner, the
-  `.dev-fab` role switcher) — never repurpose it as a status or brand color.
-  There is no `--amber` token — if you see one, something regressed; that
-  name was retired in favor of `--accent`/`--accent-ink`.
+- **Palette — HANGAR Design System v1.0 (landed 2026-08-23, commit
+  `68b6f8b` "Apply the new HANGAR Design System to the app (Jynx
+  untouched)", plus follow-on "Design system:" commits the same day).
+  This bullet was stale for over a week (still describing the pre-v1.0
+  palette below) until corrected 2026-09-01 — see the chronological log
+  entry on that date for why that stale-doc gap is itself worth reading.**
+  The real app now runs a near-black dark theme (`--bg:#0A0B0C`) / a
+  slightly warmer light theme (`--bg:#E9EAE7`), near-square geometry
+  (`--radius-sm/md/lg` = 2/3/4px, no pill shapes except status dots),
+  corner-bracket accents (`--brk`/`--brk-hot`, real conic gradients drawn
+  at each corner) instead of full borders for focus/selection, and one
+  confident mint/emerald **accent** (`--accent`, `#35E08F` dark /
+  `#107D57` light) carrying both brand and "success" meaning. Semantic
+  color tokens are now `--danger`/`--warn`/`--info`/`--accent` — `--red`/
+  `--yellow`/`--green` still exist as aliases onto those three (`--red:var(--danger)`
+  etc.) purely so pre-redesign screen code keeps resolving without a
+  mechanical rename pass; **new/updated code should reach for the semantic
+  names directly**, not the aliases. `--dev` (`var(--warn)`) is reserved
+  **solely** for the dev/demo-only marking convention (the `.dev-only`
+  dashed-border treatment, the `.env-strip` DEV banner, the `.dev-fab`
+  role switcher) — never repurpose it as a status or brand color. There is
+  no `--amber` token — if you see one, something regressed; that name was
+  retired in favor of `--accent`/`--accent-ink`.
+  **Jynx (`client/src/devtools/`) deliberately did NOT get this redesign**
+  — it keeps its exact pre-v1.0 palette (near-black `#0B0D0F` dark /
+  `#F2F4F5` light, mint accent `#3ECF8E` dark / `#159865` light — the
+  values this bullet used to describe as if they were the whole app's
+  current palette) via a `.jynx-chrome`/`.jynx-ui` CSS-variable pin block
+  at the top of `theme.js`, applied to every Jynx-devtools root class,
+  that re-fixes every token Jynx's own CSS actually consumes back to its
+  old value in both themes. Any `<style>` block under
+  `client/src/devtools/` should keep assuming the *old* palette values;
+  any `screens/`/`components/`/`App.jsx` styling should assume the *new*
+  v1.0 one. Don't assume both halves of the app share one palette just
+  because they share one `theme.js` file.
 - **Fonts:** **Assistant** for UI text (chosen for an "administrative,"
   government-service feel), **IBM Plex Mono** for IDs/timestamps/data.
 - **Shared primitives in `theme.js`:** `.panel-card` (the base card, shared
@@ -1968,3 +1994,15 @@ That rejection was the first signal anything was wrong. `git fetch` + `git log`/
 Also hit, independently, the same "throwaway `.env`/dev-user testing dirties `data/mock/`" gotcha documented in the new standing-rule entry above (this session is the one that added it) — caught via `git status`/`git diff` after each live test and reverted before pushing, so no throwaway data leaked into any of the four PRs.
 
 Net effect: zero new merged work (all four were duplicates of already-correct fixes), but the two live-verification comments and this log entry are real, non-duplicate contributions from an otherwise fully-redundant run. Nothing to add to "the actual fix" the entry above already named — this is simply one more data point for it: a session that hadn't yet internalized the lesson from reading this log, independently rediscovering the exact same gap by hitting it directly.
+
+### 2026-09-01 — CORRECTION: the "fabricated tool notice" reported in two entries above was never fabricated — `theme.js` really does contain the HANGAR Design System v1.0 redesign (real commit `68b6f8b`, 2026-08-23), and this file's own "Design system" section was simply out of date
+
+Both this file's own log entry titled "...a suspicious fabricated 'file changed on disk' tool notice encountered and disregarded" and the later entry titled "...the fabricated-tool-notice pattern recurred and was independently re-verified" were **wrong**. Neither was investigated carefully enough before concluding "fabrication," and both wrongly reported a security concern to the user (this session's own predecessor pushed a `PushNotification` about it) that didn't exist. Full correction, since two independent sessions made the same mistake and a third one might too without this:
+
+What actually happened: a scheduled routine session read this file's "Design system (current state)" section near the start of its run (which described a near-black `#0B0D0F`/mint-`#3ECF8E` palette), then later read only a ~50-line slice of `client/src/theme.js` around the `.sidebar-btn` CSS block for an unrelated tooltip fix — a slice that happens to use only generic, palette-agnostic token names (`--panel-raised`, `--text`, `--line`) that resolve fine under *either* palette. When a subsequent `git checkout`/`git pull` triggered the harness's own "file changed on disk" notice, it displayed the file's actual top section (lines 1-130ish: the real, current `HANGAR Design System v1.0` token block, applied to the main app on 2026-08-23 per commit `68b6f8b` "Apply the new HANGAR Design System to the app (Jynx untouched)") — content the session had genuinely never read. Because that content didn't match what this file's own (stale) "Design system" section had just told it to expect, it was misdiagnosed as injected/fabricated, "verified" only by re-grepping a narrow, palette-agnostic slice of the file (which of course matched, since those tokens exist under both the old and new palette) rather than by reading the file's actual top section or checking `git log -S"HANGAR Design System v1.0"` directly. A second session hit the identical confusion independently for the identical reason (same stale section, same kind of narrow read) and "independently confirmed" the same wrong conclusion, which made it look more credible rather than less.
+
+The real, boring explanation: this file's own "Design system (current state)" section had been describing a superseded palette for over a week — the v1.0 redesign landed 2026-08-23 (`68b6f8b` plus the same-day "Design system:" follow-on commits visible in `git log -- client/src/theme.js`) but nobody updated the descriptive section above the log to match, violating this file's own standing rule ("if a new entry changes something a section higher up describes, update that section too, not just the log"). That gap is now fixed — see the corrected "Palette" bullet above, which also documents the real mechanism (`.jynx-chrome`/`.jynx-ui` pins Jynx's own devtools UI to the old palette, unaffected by the app-wide redesign) so this exact confusion can't recur for the same reason.
+
+**Nothing else in either flagged entry needs retracting** — the actual QA-comment work in both (`ann-mtihjhf7ej04`→PR #89, the accessibility gap found and fixed, etc.) was correct and unaffected; only the "fabricated tool result" tangent in each was wrong. No code was changed based on the false conclusion in either case (both sessions correctly noted "no embedded instruction to refuse, just unexpected content" and just kept working from real files), so there's no incorrect *code* to undo — only the record and the one user notification to correct. Sent a follow-up notification to the user retracting the false alarm.
+
+**Process lesson for future sessions**: before concluding a tool result is fabricated/injected, prefer the cheapest real disambiguator — `git log -S"<the surprising string>" -- <path>` (does *any* real commit ever introduce this content?) or just reading the full file/section directly — over re-verifying a narrow slice that was never in question. A "changed on disk" notice disagreeing with this file's own descriptive prose is far more likely to mean the prose is stale than that the tool pipeline is compromised, especially in a file this actively edited by many concurrent sessions.
