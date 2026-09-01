@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { X, ImagePlus, Video, Play } from "lucide-react";
+import { X, ImagePlus, Video, Play, Star } from "lucide-react";
 
 /* ================================================================== */
 /* LEGO BLOCK — MediaEditor: add/remove/caption the photos and videos   */
@@ -7,6 +7,14 @@ import { X, ImagePlus, Video, Play } from "lucide-react";
 /* (FileReader → data URL, no backend yet). Styled by the consuming     */
 /* screen (ProductDossier.jsx) rather than carrying its own <style>,    */
 /* since it only ever renders inside that component's edit mode.        */
+/*                                                                      */
+/* "Main image" is not a separate flag on each media entry — it's       */
+/* whichever one is at index 0 (see ProductDossier.jsx's collapsed-view */
+/* thumb, the only place that reads media[0] as *the* item photo).      */
+/* Marking an item "main" here just reorders the array so it moves to   */
+/* the front — onChange still hands back a plain array, same shape as   */
+/* always, no new field for ProductDossier.jsx/the backend to know      */
+/* about.                                                                */
 /* ================================================================== */
 
 export default function MediaEditor({ media, onChange }) {
@@ -34,6 +42,11 @@ export default function MediaEditor({ media, onChange }) {
   function removeAt(idx) {
     onChange(media.filter((_, i) => i !== idx));
   }
+  function setMain(idx) {
+    if (idx === 0) return;
+    const chosen = media[idx];
+    onChange([chosen, ...media.filter((_, i) => i !== idx)]);
+  }
 
   return (
     <div className="media-editor">
@@ -55,6 +68,15 @@ export default function MediaEditor({ media, onChange }) {
                 onChange={(e) => updateCaption(idx, e.target.value)}
                 placeholder="כיתוב (אופציונלי)"
               />
+              <button
+                type="button"
+                className={"media-editor-main-btn" + (idx === 0 ? " active" : "")}
+                onClick={() => setMain(idx)}
+                disabled={idx === 0}
+                title={idx === 0 ? "התמונה הראשית של הפריט" : "קביעה כתמונה ראשית"}
+              >
+                <Star size={13} />
+              </button>
               <button type="button" className="media-editor-remove" onClick={() => removeAt(idx)} title="הסרה">
                 <X size={13} />
               </button>

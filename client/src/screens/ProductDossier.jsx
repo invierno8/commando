@@ -726,6 +726,14 @@ const CSS = `
   cursor:pointer; display:flex; transition:color var(--t-fast) ease, border-color var(--t-fast) ease;
 }
 .media-editor-remove:hover{ color:var(--red); border-color:var(--red); }
+.media-editor-main-btn{
+  flex:none; background:none; border:1px solid transparent; color:var(--text-dim); border-radius:var(--radius-md); padding:6px;
+  cursor:pointer; display:flex; transition:color var(--t-fast) ease, border-color var(--t-fast) ease;
+}
+.media-editor-main-btn:hover:not(:disabled){ color:var(--yellow); border-color:var(--yellow); }
+.media-editor-main-btn.active{ color:var(--yellow); cursor:default; }
+.media-editor-main-btn.active svg{ fill:var(--yellow); }
+.media-editor-main-btn:disabled{ cursor:default; }
 .media-editor-actions{ display:flex; gap:8px; }
 .media-editor-add{
   display:inline-flex; align-items:center; gap:6px; background:var(--panel-raised); border:1px dashed var(--line);
