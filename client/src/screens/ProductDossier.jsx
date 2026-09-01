@@ -716,6 +716,14 @@ const CSS = `
   position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
   background:rgba(0,0,0,.3); color:#fff;
 }
+.media-editor-item.is-main{ border-color:var(--accent); }
+.media-editor-main-btn{
+  flex:none; background:none; border:1px solid transparent; color:var(--text-dim); border-radius:var(--radius-md); padding:6px;
+  cursor:pointer; display:flex; transition:color var(--t-fast) ease, border-color var(--t-fast) ease;
+}
+.media-editor-main-btn:hover:not(:disabled){ color:var(--accent); border-color:var(--accent); }
+.media-editor-main-btn.is-main{ color:var(--accent); cursor:default; }
+.media-editor-main-btn:disabled{ cursor:default; }
 .media-editor-caption{
   flex:1; min-width:0; background:var(--bg); border:1px solid var(--line); border-radius:var(--radius-md); padding:7px 10px;
   font-size:12.5px; color:var(--text); font-family:var(--font-sans);
