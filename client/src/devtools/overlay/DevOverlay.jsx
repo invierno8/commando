@@ -35,7 +35,7 @@ function parseSecondaryTargetsFromComment(comment) {
   return found.slice(0, 10);
 }
 
-export default function DevOverlay({ active, route, isAdmin, canJynxChrome, markersOn, drawMode, drawColor, onSubmitted }) {
+export default function DevOverlay({ active, hoverOn, route, isAdmin, canJynxChrome, markersOn, drawMode, drawColor, onSubmitted }) {
   // canJynxChrome (isAdmin OR a per-user canJynxComment grant, combined
   // upstream in DevAuthGate.jsx) קובע אם מותר לגלוש בכלל על ה-UI של Jynx
   // עצמו (.jynx-chrome) — ראו useHoverTarget.js. משתמשי-פיתוח רגילים בלי
@@ -45,7 +45,16 @@ export default function DevOverlay({ active, route, isAdmin, canJynxChrome, mark
   // canJynxChrome — נפתחים גם לג'ינקס-קומנטר עכשיו — אבל כפתור "Action"
   // בכרטיס הפרטים שלהם (מפעיל את צינור הפעולה האוטומטי) נשאר isAdmin בלבד,
   // גם כי זה נכון UX-ית וגם כי ה-route בשרת עצמו דורש requireAdmin ממילא.
-  const target = useHoverTarget(active, canJynxChrome);
+  //
+  // jynx-mt8i0n7ssax2: hover tracking is gated on hoverOn (== the eye-icon
+  // toggle alone), NOT on active (== overlayOn || drawMode). active still
+  // decides whether this whole component mounts, since it must stay mounted
+  // for DrawingCanvas below to work while draw mode is on and the hover
+  // overlay is off — but before this fix, useHoverTarget was also driven by
+  // active, so turning the eye toggle off while draw mode was left on never
+  // stopped the hover halo from tracking the cursor: exactly the reported
+  // "eye button didn't work, still see the hover borders" bug.
+  const target = useHoverTarget(hoverOn, canJynxChrome);
   const [popover, setPopover] = useState(null); // { x, y, label, secondaryTargets: [], isJynxMeta } | null
   const [markersRefreshKey, setMarkersRefreshKey] = useState(0);
   const isJynxHover = !!target?.closest(".jynx-chrome");

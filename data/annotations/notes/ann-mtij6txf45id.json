@@ -1,0 +1,33 @@
+{
+  "id": "ann-mtij6txf45id",
+  "authorId": "dev-mth1zeixm2f5",
+  "authorName": "אילאיל",
+  "createdAt": "2026-09-01T10:35:20.451Z",
+  "route": "catalog",
+  "targetLabel": "media-editor-item",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "i should be able to indicate wich image is to be used as the item's main image",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}

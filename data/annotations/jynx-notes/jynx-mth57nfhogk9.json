@@ -1,0 +1,25 @@
+{
+  "id": "jynx-mth57nfhogk9",
+  "authorId": "dev-mth1zeixm2f5",
+  "authorName": "אילאיל",
+  "createdAt": "2026-08-31T11:16:17.885Z",
+  "route": "catalog",
+  "targetLabel": "dev-fab-mock-toggle-row",
+  "secondaryTargets": [],
+  "comment": "in jinx, make sure the positionis is aware so that no items hides another",
+  "resolved": true,
+  "resolvedAt": "2026-08-31T11:40:00.000Z",
+  "resolvedBy": "auto (PR opened)",
+  "resolutionNote": null,
+  "actionStatus": "pr_opened",
+  "actionRequestedAt": "2026-08-31T11:16:17.885Z",
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/84",
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}

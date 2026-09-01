@@ -1,8 +1,0 @@
-{
-  "id": "jynx-mth4g9g5xnga",
-  "route": "catalog",
-  "targetLabel": "dev-toolbar-markers-toggle",
-  "secondaryTargets": [],
-  "comment": "the marker dots menu fiture is no avialbale for dev users, only for admin user please make it a deafult jynx option",
-  "requestedAt": "2026-08-31T10:55:01.323Z"
-}
