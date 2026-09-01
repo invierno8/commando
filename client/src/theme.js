@@ -210,6 +210,20 @@ h1,h2,h3{ font-family:var(--font-sans); font-weight:700; letter-spacing:-.015em;
 .app-sidebar.expanded .sidebar-btn{ width:100%; justify-content:flex-start; padding-inline:11px; }
 .sidebar-btn:hover{ background:var(--panel-raised); color:var(--text); }
 .sidebar-btn.active{ background:var(--accent); color:var(--accent-ink); }
+/* טולטיפ מהיר, לא הטולטיפ הדפדפני (title) — זה מגיע רק אחרי השהיה
+   ארוכה ולא ניתנת לכיוונון. משתמש ב-data-tooltip + ::after עם השהיית-
+   הופעה קצרה משלו (150ms), מוצג רק כשה-sidebar מכווץ (במצב מורחב יש
+   כבר תווית טקסט גלויה, אז הטולטיפ מיותר). aria-label על הכפתור עצמו
+   דואג לנגישות במקום ה-title שהוסר. */
+.sidebar-btn::after{
+  content:attr(data-tooltip); position:absolute; inset-inline-end:calc(100% + 10px); top:50%;
+  transform:translateY(-50%); background:var(--panel-raised); color:var(--text); border:1px solid var(--line);
+  border-radius:6px; padding:4px 9px; font-size:12px; font-weight:600; font-family:var(--font-sans);
+  white-space:nowrap; pointer-events:none; opacity:0; box-shadow:var(--shadow-md); z-index:5;
+  transition:opacity .1s ease;
+}
+.sidebar-btn:hover::after{ opacity:1; transition-delay:.15s; }
+.app-sidebar.expanded .sidebar-btn::after{ display:none; }
 .sidebar-btn-label{ display:none; font-weight:600; font-size:13.5px; white-space:nowrap; align-items:center; gap:7px; }
 .app-sidebar.expanded .sidebar-btn-label{ display:inline-flex; }
 .sidebar-btn-dev-dot{
