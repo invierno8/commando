@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mtj8qgdyw7u2",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-09-01T22:30:26.422Z",
+  "route": "catalog",
+  "targetLabel": "dev-toolbar-grip",
+  "secondaryTargets": [],
+  "comment": "when clicked the move to vertical is laggy please animate and fix",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-09-01T22:30:26.422Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
