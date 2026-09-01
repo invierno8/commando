@@ -99,7 +99,20 @@ export function useHoverTarget(active, allowJynxChrome) {
     window.addEventListener("mousemove", onMove);
     return () => {
       window.removeEventListener("mousemove", onMove);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      // Must also null out the ref, not just cancel the frame — onMove's
+      // `if (rafRef.current) return;` guard treats any non-null value as
+      // "a frame is already pending," so a cancelled-but-not-cleared ref
+      // permanently blocks every future frame from being scheduled once
+      // this effect re-subscribes (e.g. toggling the overlay off then back
+      // on while a frame happened to be in flight — clicking the toggle
+      // button itself moves the mouse onto it first, which reliably
+      // schedules one). Confirmed live: without this, re-enabling the
+      // overlay after a toggle-off/on cycle left hover highlighting
+      // permanently stuck off for the rest of the page session.
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
   }, [active, allowJynxChrome]);
 
