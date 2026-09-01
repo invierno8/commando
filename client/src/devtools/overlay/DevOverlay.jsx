@@ -247,35 +247,35 @@ const CSS = `
   flex:1; font-family:var(--font-mono); font-size:10.5px; color:var(--dev); text-transform:uppercase; letter-spacing:.04em;
 }
 .dev-annotate-popover-admin-hint{
-  font-size:11px; color:#2F8FCE; background:color-mix(in srgb, #2F8FCE 12%, transparent);
+  font-size:12.5px; color:#2F8FCE; background:color-mix(in srgb, #2F8FCE 12%, transparent);
   border-radius:6px; padding:4px 8px;
 }
 .dev-annotate-action-toggle{
   display:inline-flex; align-items:center; gap:5px; align-self:flex-start; border:1px solid var(--line);
-  background:none; color:var(--text-dim); border-radius:20px; padding:4px 10px; font-size:11px; font-weight:700;
+  background:none; color:var(--text-dim); border-radius:20px; padding:4px 10px; font-size:12px; font-weight:700;
   cursor:pointer; font-family:var(--font-sans);
 }
 .dev-annotate-action-toggle.on{ border-color:#2F8FCE; color:#2F8FCE; background:color-mix(in srgb, #2F8FCE 12%, transparent); }
 .dev-annotate-popover-jynx{ border-color:var(--dev); }
 .dev-annotate-popover-label-jynx{ color:var(--dev); }
 .dev-annotate-popover-jynx-hint{
-  font-size:11px; color:var(--dev); background:color-mix(in srgb, var(--dev) 14%, transparent);
+  font-size:12.5px; color:var(--dev); background:color-mix(in srgb, var(--dev) 14%, transparent);
   border-radius:6px; padding:4px 8px;
 }
 .dev-annotate-popover-drawing-hint{
-  font-size:11px; color:var(--jynx); background:color-mix(in srgb, var(--jynx) 12%, transparent);
+  font-size:12.5px; color:var(--jynx); background:color-mix(in srgb, var(--jynx) 12%, transparent);
   border-radius:6px; padding:4px 8px;
 }
 .dev-annotate-popover-jynx textarea:focus{ border-color:var(--dev); }
 .dev-annotate-popover-jynx .dev-annotate-btn-primary{ background:var(--dev); }
 .dev-annotate-popover textarea{
   width:100%; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:7px 9px;
-  font-size:12.5px; font-family:var(--font-sans); color:var(--text); resize:vertical;
+  font-size:14px; font-family:var(--font-sans); color:var(--text); resize:vertical;
 }
 .dev-annotate-popover textarea:focus{ outline:none; border-color:var(--dev); }
 .dev-annotate-popover-actions{ display:flex; justify-content:flex-end; gap:8px; }
 .dev-annotate-btn{
-  border:none; border-radius:7px; padding:6px 12px; font-family:var(--font-sans); font-weight:700; font-size:12px;
+  border:none; border-radius:7px; padding:6px 12px; font-family:var(--font-sans); font-weight:700; font-size:13px;
   cursor:pointer; background:var(--panel-raised); color:var(--text-dim);
 }
 .dev-annotate-btn-primary{ background:var(--dev); color:#fff; }
@@ -301,7 +301,7 @@ const CSS = `
    "+ קשר אלמנט נוסף" נפרד — Ctrl/Cmd+קליק על אלמנט תקין בעמוד מוסיף תג
    לטקסט; קליק רגיל בלי Ctrl/Cmd עובר כרגיל לאפליקציה מתחת). */
 .dev-annotate-picking-hint{
-  font-size:11.5px; color:var(--dev); background:color-mix(in srgb, var(--dev) 10%, transparent);
+  font-size:12.5px; color:var(--dev); background:color-mix(in srgb, var(--dev) 10%, transparent);
   border-radius:6px; padding:5px 9px; animation:devAdminPulse 1.2s ease-in-out infinite;
 }
 @keyframes devAdminPulse{ 50%{ opacity:.55; } }
@@ -315,7 +315,7 @@ const CSS = `
   width:32px; height:32px; object-fit:cover; border-radius:5px; flex:none;
 }
 .dev-annotate-attachment-file{
-  display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text-dim);
+  display:inline-flex; align-items:center; gap:5px; font-size:12.5px; color:var(--text-dim);
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 .dev-annotate-attachment-preview button{
