@@ -122,7 +122,11 @@ function getScopedData(scope, units, dash) {
 
   const trend = dash.trendDays.map((d, i) => {
     const opened = scopedUnits.reduce((sum, u) => sum + (dash.trendByUnit[u]?.[i] || 0), 0);
-    return { d, opened, approved: Math.round(opened * 0.78), rejected: Math.round(opened * 0.12) };
+    const approved = Math.round(opened * 0.78);
+    // "הוזמן" = מתוך הדרישות שאושרו, אלו שכבר הפכו בפועל להזמנת רכש —
+    // אותה לוגיקת יחס-קבוע כמו approved/rejected למעלה, כדי לשמור על
+    // תצוגת דמו עקבית עד שיהיה מקור נתונים אמיתי להזמנות בפועל.
+    return { d, opened, approved, ordered: Math.round(approved * 0.7), rejected: Math.round(opened * 0.12) };
   });
 
   const activity = scope === ALL_SCOPE ? dash.activityLog : dash.activityLog.filter((a) => a.unit === scope);
@@ -410,8 +414,9 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
           </span>
         </div>
         <div className="dot-legend-row">
-          <span className="dot-legend"><i className="dot-legend-dot" style={{ background: "var(--accent)" }} />נפתחו</span>
+          <span className="dot-legend"><i className="dot-legend-dot" style={{ background: "var(--accent)" }} />נפתחו (דרישות)</span>
           <span className="dot-legend"><i className="dot-legend-dot" style={{ background: "var(--green)" }} />אושרו</span>
+          <span className="dot-legend"><i className="dot-legend-dot" style={{ background: "var(--yellow)" }} />הוזמנו (הזמנות)</span>
         </div>
         <ResponsiveContainer width="100%" height={210}>
           <AreaChart data={data.trend} margin={{ top: 6, right: 10, left: -18, bottom: 0 }}>
@@ -424,6 +429,10 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
                 <stop offset="0%" stopColor={TOKENS.green} stopOpacity={0.3} />
                 <stop offset="100%" stopColor={TOKENS.green} stopOpacity={0} />
               </linearGradient>
+              <linearGradient id="trendFillOrdered" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={TOKENS.yellow} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={TOKENS.yellow} stopOpacity={0} />
+              </linearGradient>
             </defs>
             <CartesianGrid stroke={TOKENS.line} strokeDasharray="3 4" vertical={false} />
             <XAxis dataKey="d" stroke={TOKENS.textDim} fontSize={11} tickLine={false} />
@@ -431,6 +440,7 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
             <Tooltip {...tooltipStyle()} />
             <Area type="monotone" dataKey="opened" stroke={TOKENS.accent} strokeWidth={2} fill="url(#trendFillOpened)" />
             <Area type="monotone" dataKey="approved" stroke={TOKENS.green} strokeWidth={2} fill="url(#trendFillApproved)" />
+            <Area type="monotone" dataKey="ordered" stroke={TOKENS.yellow} strokeWidth={2} fill="url(#trendFillOrdered)" />
           </AreaChart>
         </ResponsiveContainer>
       </>
