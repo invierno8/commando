@@ -132,6 +132,10 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [toolbarOrientation, setToolbarOrientation] = useState(
     () => (localStorage.getItem(TOOLBAR_ORIENTATION_KEY) === "vertical" ? "vertical" : "horizontal")
   );
+  // ראו toggleOrientation למטה — חלון קצר שבו מעבר אופקי/אנכי מקבל transition
+  // חלק על right/bottom במקום קפיצה מיידית.
+  const [orientationTurning, setOrientationTurning] = useState(false);
+  const orientationTurningTimer = useRef(null);
   const [toolbarOrder, setToolbarOrder] = useState(loadToolbarOrder);
   // תמונת-מצב יחידה, לא מחסנית-undo מלאה — "צעד אחד אחורה" בכוונה (ראו
   // הבקשה המקורית), לא undo/redo כללי.
@@ -203,10 +207,20 @@ export default function DevAuthGate({ route, devFabProps }) {
   // ותיקון right כך שהמרכז הגיאומטרי (לא הקצה) יישאר במקום — ראו
   // useDraggableFab.js's nudgePos. double rAF כדי לוודא שהדפדפן כבר סיים
   // layout עם המחלקה/הכיוון החדשים לפני המדידה השנייה.
+  // jynx-mtj8qgdyw7u2: "when clicked the move to vertical is laggy please
+  // animate and fix" — the corrective nudgePos() call below lands a frame
+  // or two *after* the flex-direction swap already reflowed the toolbar, so
+  // the box visibly snapped once for the reflow and again for the centering
+  // correction — a stutter, not a jump-plus-lag. `.dev-fab-toolbar-turning`
+  // (below) puts a short transition on right/bottom for just that window so
+  // the correction slides instead of snapping; it's added/removed around
+  // the toggle only, never during a real drag (nudgePos's own drag path
+  // never touches this class), so dragging the toolbar stays instant.
   function toggleOrientation() {
     if (toolbarFab.consumeWasDragged()) return;
     const el = toolbarFab.sizeRef.current;
     const oldWidth = el?.offsetWidth || 0;
+    setOrientationTurning(true);
     setOrientation(toolbarOrientation === "horizontal" ? "vertical" : "horizontal");
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
@@ -215,6 +229,8 @@ export default function DevAuthGate({ route, devFabProps }) {
         if (delta) toolbarFab.nudgePos(-delta / 2);
       });
     });
+    clearTimeout(orientationTurningTimer.current);
+    orientationTurningTimer.current = setTimeout(() => setOrientationTurning(false), 220);
   }
   function setOrientation(next) {
     setToolbarOrientation(next);
@@ -502,7 +518,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       {toolbarOpen ? (
         <div
           ref={toolbarFab.sizeRef}
-          className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "")}
+          className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "") + (orientationTurning ? " dev-fab-toolbar-turning" : "")}
           style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom, "--jynx-icon-scale": iconScale }}
           data-jynx-dock-zone=""
           onDragOver={(e) => e.preventDefault()}
@@ -659,6 +675,10 @@ const CSS = `
   cursor:grab; touch-action:none;
 }
 .dev-fab-toolbar:active{ cursor:grabbing; }
+/* jynx-mtj8qgdyw7u2 — see toggleOrientation() in DevAuthGate.jsx. Only
+   applied for the brief window around an orientation toggle, never during a
+   real drag, so dragging the toolbar stays instant/1:1 with the pointer. */
+.dev-fab-toolbar-turning{ transition:right .2s cubic-bezier(.4,0,.2,1), bottom .2s cubic-bezier(.4,0,.2,1); }
 .dev-fab-toolbar.vertical{ flex-direction:column; align-items:stretch; }
 /* הידית עצמה עכשיו כפתור אמיתי (מחליף אופקי/אנכי) — לא רק "אזור-גרירה
    שיושב שם", אז צריך רמז ברור שהיא לחיצה: קצת יותר גדולה מכל שאר האייקונים
