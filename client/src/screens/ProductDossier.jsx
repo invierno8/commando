@@ -297,16 +297,29 @@ export default function ProductDossier({
         <div className="dossier-grid">
           <div>
             <div className="dossier-section-title">קצין אמל״ח אחראי</div>
-            <div className="dossier-officer">
-              <div className="dossier-officer-row">
-                <span className="officer-rank">{item.responsibleRank}</span>
-                <span className="officer-name">{item.responsibleName}</span>
+            {editing && canEdit ? (
+              <div className="origin-fields origin-fields-column">
+                <div className="origin-fields">
+                  <input placeholder="דרגה" value={draft.responsibleRank || ""} onChange={(e) => patch("responsibleRank", e.target.value)} className="origin-field-sm" />
+                  <input placeholder="שם קצין אמל״ח אחראי" value={draft.responsibleName || ""} onChange={(e) => patch("responsibleName", e.target.value)} />
+                </div>
+                <div className="origin-fields">
+                  <input placeholder="מספר אישי" value={draft.responsiblePersonalNumber || ""} onChange={(e) => patch("responsiblePersonalNumber", e.target.value)} className="origin-field-sm" />
+                  <input placeholder="טלפון" value={draft.responsiblePhone || ""} onChange={(e) => patch("responsiblePhone", e.target.value)} className="origin-field-sm" />
+                </div>
               </div>
-              <div className="dossier-officer-meta">
-                <span>מ.א. {item.responsiblePersonalNumber}</span>
-                <a className="drawer-phone" href={`tel:${item.responsiblePhone}`}>{item.responsiblePhone}</a>
+            ) : (
+              <div className="dossier-officer">
+                <div className="dossier-officer-row">
+                  <span className="officer-rank">{view.responsibleRank}</span>
+                  <span className="officer-name">{view.responsibleName}</span>
+                </div>
+                <div className="dossier-officer-meta">
+                  <span>מ.א. {view.responsiblePersonalNumber}</span>
+                  <a className="drawer-phone" href={`tel:${view.responsiblePhone}`}>{view.responsiblePhone}</a>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div>
