@@ -124,8 +124,21 @@ export default function DevAdminPanel({ onClose, onVerified, menuSettings }) {
   return createPortal(
     <div className="overlay jynx-chrome" onClick={onClose}>
       <style>{CSS}</style>
-      <div className="dev-admin-modal dev-only jynx-ui" onClick={(e) => e.stopPropagation()}>
+      <div className={"dev-admin-modal dev-only jynx-ui" + (reAuthNeeded ? " dev-admin-reauth-pending" : "")} onClick={(e) => e.stopPropagation()}>
         <button className="drawer-close" onClick={onClose}><X size={16} /></button>
+        {/* jynx-mth55ybetlt5: "if the user is prompted to login again, all
+            other actions on the screen should be disabled ... do not lose
+            any text that was written." The reauth banner below already kept
+            everything mounted (nothing was ever lost), but nothing stopped
+            a click landing on another tab/button while it was showing,
+            which would just fail with the same expired-session error again.
+            Same disable-everything-but-the-recovery-UI shape already used
+            for a pending draft in ProductDossier.jsx's ".dossier-draft-
+            pending" rule — dims and blocks pointer events on every child
+            except the banner itself and the close button, so whatever the
+            user was mid-typing anywhere else in the panel (an edit box, a
+            reply input, a resolve note) stays exactly as they left it and
+            simply becomes usable again the moment re-login succeeds. */}
         {checking ? (
           <div className="dev-admin-empty">Checking permission...</div>
         ) : (
@@ -234,6 +247,13 @@ const CSS = `
 }
 .dev-admin-verify-btn:disabled{ opacity:.5; cursor:not-allowed; }
 .dev-admin-error{ color:var(--red); font-size:12px; }
+
+/* jynx-mth55ybetlt5: same shape as ProductDossier.jsx's
+   ".dossier-draft-pending" rule — while re-login is pending, every direct
+   child of the modal except the banner itself and the close button is
+   dimmed and made unclickable, so nothing else on screen can be actioned
+   (and fail on the same expired session again) until sign-in succeeds. */
+.dev-admin-reauth-pending > *:not(.dev-admin-reauth-banner):not(.drawer-close){ opacity:.35; pointer-events:none; filter:blur(1px); }
 
 .dev-admin-reauth-banner{
   display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px;
