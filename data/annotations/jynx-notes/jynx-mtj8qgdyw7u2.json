@@ -13,7 +13,7 @@
   "actionStatus": "pr_opened",
   "actionRequestedAt": "2026-09-01T22:30:26.422Z",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/94",
-  "actionLog": "PR #94 opened (animate the toolbar's orientation-toggle transition, scoped off during drag).",
+  "actionLog": "PR #94 opened (animate the toolbar's orientation-toggle transition, scoped off during drag). Three more sessions independently hit this same id and each opened their own PR before finding #94 already canonical — all three closed pointing at #94. #97 was a byte-for-byte duplicate (same orientationAnimating-flag/position-transition approach as #94). #96 and #98 took genuinely different, non-duplicate approaches (a scale/opacity settle keyframe, and a plain opacity fade during the reflow, respectively, vs. #94's transitioned right/bottom/width/height) — both sessions chose to close their own PR in favor of #94 rather than leave multiple open for a human to referee.",
   "replies": [],
   "reactions": {
     "👍": [],

@@ -22,7 +22,7 @@
   "actionRequestedAt": "2026-09-01T22:27:34.659Z",
   "actionRequestedBy": "admin",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/93",
-  "actionLog": "Duplicate-PR race: this session's own PR #92 and a concurrent run's PR #93 implemented the same fix (editable responsible-officer fields) essentially simultaneously. #92 was closed as a duplicate, pointing at #93, which is kept as canonical here (it reuses the existing origin-fields/origin-fields-column classes rather than adding a new CSS block for the same layout).",
+  "actionLog": "Duplicate-PR race: this session's own PR #92 and a concurrent run's PR #93 implemented the same fix (editable responsible-officer fields) essentially simultaneously. #92 was closed as a duplicate, pointing at #93, which is kept as canonical here (it reuses the existing origin-fields/origin-fields-column classes rather than adding a new CSS block for the same layout). A second duplicate, #95, was found and closed by a later run for the same reason, also pointing at #93.",
   "replies": [],
   "reactions": {
     "👍": [],
