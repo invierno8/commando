@@ -1,0 +1,25 @@
+{
+  "id": "jynx-mth4g9g5xnga",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-08-31T10:55:00.053Z",
+  "route": "catalog",
+  "targetLabel": "dev-toolbar-markers-toggle",
+  "secondaryTargets": [],
+  "comment": "the marker dots menu fiture is no avialbale for dev users, only for admin user please make it a deafult jynx option",
+  "resolved": true,
+  "resolvedAt": "2026-08-31T11:01:18.000Z",
+  "resolvedBy": "auto (PR opened)",
+  "resolutionNote": null,
+  "actionStatus": "pr_opened",
+  "actionRequestedAt": "2026-08-31T10:55:00.053Z",
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/81",
+  "actionLog": "A sibling run raced this same item and independently opened PR #80 (functionally equivalent). #81 landed on main first and is kept as canonical; #80 closed as a duplicate with an explanatory comment.",
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}

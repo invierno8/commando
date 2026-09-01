@@ -112,6 +112,17 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
     }
   }
 
+  // jynx-mth55ybetlt5 (same work item as DevAdminPanel.jsx's reauth-pending
+  // fix): this popover has its own, older, independent "prompted to login
+  // again" flow (a dev-session 401 on submit(), not the admin-panel one) —
+  // it already never loses the typed draft (comment state is never cleared
+  // on failure), but nothing stopped Send/the action-toggle/attachment
+  // controls/the textarea itself from staying clickable while reloginOpen
+  // was showing, which could fire the same 401 again mid-relogin. Cancel is
+  // deliberately left out of this list — the popover must never trap the
+  // user with no way out.
+  const locked = reloginOpen;
+
   async function relogin() {
     if (!reloginPassword.trim() || reloggingIn) return;
     setReloggingIn(true);
@@ -162,6 +173,7 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
           type="button"
           className={"dev-annotate-action-toggle" + (actionOn ? " on" : "")}
           onClick={() => setActionOn((v) => !v)}
+          disabled={locked}
           title={actionOn ? "This comment will send as an action — click to cancel" : "This comment will send as a plain comment only — click to make it an action"}
         >
           <Zap size={12} /> {actionOn ? "Will send as action" : "Comment only (not action)"}
@@ -174,6 +186,7 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
         placeholder={isJynxMeta ? "What should improve in the dev tool itself?" : "What needs to change/be checked here? (e.g. move this to →)"}
         value={comment}
         onChange={(e) => setComment(e.target.value)}
+        disabled={locked}
       />
       <div className="dev-annotate-picking-hint">
         Ctrl/Cmd+click any element on screen to link it here — it'll appear as a tag in your comment
@@ -188,10 +201,10 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
               ) : (
                 <span className="dev-annotate-attachment-file"><Paperclip size={12} /> {attachment.name}</span>
               )}
-              <button type="button" onClick={() => setAttachment(null)} title="Remove attachment">×</button>
+              <button type="button" onClick={() => setAttachment(null)} disabled={locked} title="Remove attachment">×</button>
             </div>
           ) : (
-            <button type="button" className="dev-annotate-add-secondary-btn" onClick={() => fileInputRef.current?.click()}>
+            <button type="button" className="dev-annotate-add-secondary-btn" onClick={() => fileInputRef.current?.click()} disabled={locked}>
               <Paperclip size={12} /> Attach image or file
             </button>
           )}
@@ -222,7 +235,7 @@ export default function AnnotationPopover({ x, y, label, secondaryTargets, isAdm
         <button type="button" className="dev-annotate-btn" onClick={onCancel} disabled={sending}>
           Cancel
         </button>
-        <button type="button" className="dev-annotate-btn dev-annotate-btn-primary" onClick={submit} disabled={!comment.trim() || sending}>
+        <button type="button" className="dev-annotate-btn dev-annotate-btn-primary" onClick={submit} disabled={!comment.trim() || sending || locked}>
           {sending ? "Sending..." : "Send"}
         </button>
       </div>

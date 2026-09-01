@@ -122,7 +122,11 @@ function getScopedData(scope, units, dash) {
 
   const trend = dash.trendDays.map((d, i) => {
     const opened = scopedUnits.reduce((sum, u) => sum + (dash.trendByUnit[u]?.[i] || 0), 0);
-    return { d, opened, approved: Math.round(opened * 0.78), rejected: Math.round(opened * 0.12) };
+    const approved = Math.round(opened * 0.78);
+    // "הוזמן" = מתוך הדרישות שאושרו, אלו שכבר הפכו בפועל להזמנת רכש —
+    // אותה לוגיקת יחס-קבוע כמו approved/rejected למעלה, כדי לשמור על
+    // תצוגת דמו עקבית עד שיהיה מקור נתונים אמיתי להזמנות בפועל.
+    return { d, opened, approved, ordered: Math.round(approved * 0.7), rejected: Math.round(opened * 0.12) };
   });
 
   const activity = scope === ALL_SCOPE ? dash.activityLog : dash.activityLog.filter((a) => a.unit === scope);
@@ -147,6 +151,7 @@ function tooltipStyle() {
   return {
     contentStyle: { background: TOKENS.panel, border: `1px solid ${TOKENS.line}`, borderRadius: 8, fontFamily: "var(--font-mono)", fontSize: 12, color: TOKENS.text, boxShadow: "var(--shadow-md)" },
     labelStyle: { color: TOKENS.textDim },
+    itemStyle: { color: TOKENS.text },
     cursor: { fill: "var(--panel-raised)" },
   };
 }
@@ -306,6 +311,17 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
   const filteredEquip = scopedCatalog.filter((it) =>
     matchesSearch([it.name, it.id, it.category, it.responsibleName, it.responsibleRank], equipQuery)
   );
+  // מודול ספירת מלאי — סך יחידות וחלוקה לפי מצב מלאי (תקין/מוגבל/קריטי),
+  // מחושב תמיד על כל הציוד בתחום (scopedCatalog), לא רק על התוצאות המסוננות,
+  // כדי שהמונה ישאר יציב תוך כדי חיפוש.
+  const inventoryCount = scopedCatalog.reduce(
+    (acc, it) => {
+      acc.totalQty += it.qty || 0;
+      acc.byCondition[conditionFor(it.qty).tone] += 1;
+      return acc;
+    },
+    { totalQty: 0, byCondition: { green: 0, yellow: 0, red: 0 } }
+  );
 
   const reqIsFiltering = reqQuery.trim().length > 0 || reqStatusFilter !== "all";
   const openRequests = [...scopedTickets]
@@ -336,6 +352,17 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
     ),
     equipment: () => (
       <>
+        <div className="inventory-count-strip" data-devblock={`${WIDGET_DEFS.equipment.title} — ספירת מלאי`}>
+          <div className="inventory-count-total">
+            <span className="inventory-count-total-value">{inventoryCount.totalQty.toLocaleString("he-IL")}</span>
+            <span className="inventory-count-total-label">סה״כ יחידות במלאי · {scopedCatalog.length} פריטים</span>
+          </div>
+          <div className="inventory-count-by-condition">
+            <span className="inventory-count-chip inventory-count-chip-green"><b>{inventoryCount.byCondition.green}</b> תקין</span>
+            <span className="inventory-count-chip inventory-count-chip-yellow"><b>{inventoryCount.byCondition.yellow}</b> מוגבל</span>
+            <span className="inventory-count-chip inventory-count-chip-red"><b>{inventoryCount.byCondition.red}</b> קריטי</span>
+          </div>
+        </div>
         <SearchBar value={equipQuery} onChange={setEquipQuery} placeholder="חיפוש ציוד לפי שם, מק״ט, קטגוריה או אחראי..." />
         {filteredEquip.length === 0 && <div className="empty-state">לא נמצא ציוד התואם את החיפוש.</div>}
         <div className="equip-scroll">
@@ -410,8 +437,9 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
           </span>
         </div>
         <div className="dot-legend-row">
-          <span className="dot-legend"><i className="dot-legend-dot" style={{ background: "var(--accent)" }} />נפתחו</span>
+          <span className="dot-legend"><i className="dot-legend-dot" style={{ background: "var(--accent)" }} />נפתחו (דרישות)</span>
           <span className="dot-legend"><i className="dot-legend-dot" style={{ background: "var(--green)" }} />אושרו</span>
+          <span className="dot-legend"><i className="dot-legend-dot" style={{ background: "var(--yellow)" }} />הוזמנו (הזמנות)</span>
         </div>
         <ResponsiveContainer width="100%" height={210}>
           <AreaChart data={data.trend} margin={{ top: 6, right: 10, left: -18, bottom: 0 }}>
@@ -424,6 +452,10 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
                 <stop offset="0%" stopColor={TOKENS.green} stopOpacity={0.3} />
                 <stop offset="100%" stopColor={TOKENS.green} stopOpacity={0} />
               </linearGradient>
+              <linearGradient id="trendFillOrdered" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={TOKENS.yellow} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={TOKENS.yellow} stopOpacity={0} />
+              </linearGradient>
             </defs>
             <CartesianGrid stroke={TOKENS.line} strokeDasharray="3 4" vertical={false} />
             <XAxis dataKey="d" stroke={TOKENS.textDim} fontSize={11} tickLine={false} />
@@ -431,6 +463,7 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
             <Tooltip {...tooltipStyle()} />
             <Area type="monotone" dataKey="opened" stroke={TOKENS.accent} strokeWidth={2} fill="url(#trendFillOpened)" />
             <Area type="monotone" dataKey="approved" stroke={TOKENS.green} strokeWidth={2} fill="url(#trendFillApproved)" />
+            <Area type="monotone" dataKey="ordered" stroke={TOKENS.yellow} strokeWidth={2} fill="url(#trendFillOrdered)" />
           </AreaChart>
         </ResponsiveContainer>
       </>
@@ -514,6 +547,9 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
         <div className="empty">אין עדיין דרישות תיקון בתצוגה זו — סימן טוב.</div>
       ) : (
         <div className="repair-board">
+          <div className="repair-board-row repair-board-head">
+            <span>פריט</span><span>מלאי</span><span>תקלות חוזרות</span>
+          </div>
           {repairBoard.map((r) => {
             const fullItem = catalog.find((it) => it.id === r.id);
             const isOpen = expandedRepairId === r.id;
@@ -526,10 +562,10 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
                     onClick={() => fullItem && setOpenItem(fullItem)}
                     disabled={!fullItem}
                   >
-                    <span className="repair-board-name">{r.name}</span>
-                    <span className="repair-board-id">{r.id}</span>
+                    <span className="repair-board-name">{r.name}<span className="repair-board-id">{r.id}</span></span>
+                    <span className="repair-board-qty">{r.qty ?? "—"}</span>
+                    <span className="repair-board-count">{r.count} תקלות</span>
                   </button>
-                  <span className="repair-board-count">{r.count} תקלות</span>
                   <button
                     type="button"
                     className="repair-board-expand-btn"
@@ -823,6 +859,24 @@ ${SCOPE_PICKER_CSS}
 .widget-hide-btn:hover{ color:var(--red); border-color:var(--red); }
 .widget-corner-badge{ position:absolute; top:16px; left:18px; }
 
+.inventory-count-strip{
+  display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  background:var(--panel-raised); border:1px solid var(--line); border-radius:var(--radius-md);
+  padding:12px 15px; margin-top:10px;
+}
+.inventory-count-total{ display:flex; flex-direction:column; gap:2px; }
+.inventory-count-total-value{ font-family:var(--font-mono); font-size:20px; font-weight:700; color:var(--text); }
+.inventory-count-total-label{ font-size:11.5px; color:var(--text-dim); }
+.inventory-count-by-condition{ display:flex; gap:8px; flex-wrap:wrap; }
+.inventory-count-chip{
+  display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:var(--text-dim);
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg); padding:4px 10px;
+}
+.inventory-count-chip b{ font-family:var(--font-mono); font-size:13px; }
+.inventory-count-chip-green b{ color:var(--green); }
+.inventory-count-chip-yellow b{ color:var(--yellow); }
+.inventory-count-chip-red b{ color:var(--red); }
+
 .equip-scroll{ display:flex; gap:14px; overflow-x:auto; padding:16px 2px 4px; scroll-snap-type:x proximity; }
 .equip-card{
   scroll-snap-align:start; flex:none; width:260px; display:flex; align-items:flex-start; gap:12px;
@@ -872,19 +926,35 @@ ${SCOPE_PICKER_CSS}
 
 .repair-board{ display:flex; flex-direction:column; gap:8px; }
 .repair-board-item{ display:flex; flex-direction:column; }
+/* flex, not the original grid-template-columns:1fr auto auto — once the
+   name/qty/count cells live inside one .repair-board-main button (so the
+   whole row is clickable, see below) plus a separate expand-btn, they're
+   no longer 3 direct grid children of .repair-board-row, so the 3-column
+   grid can't line up with them without display:contents on the button
+   (a real accessibility footgun for a click target). .repair-board-head's
+   3 labels use the same flex/gap so they still line up closely above the
+   row content, even though this isn't pixel-perfect grid alignment. */
 .repair-board-row{
-  display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:10px; width:100%;
+  display:flex; align-items:center; gap:10px; width:100%;
   background:var(--panel-raised); border:1px solid var(--line); border-radius:var(--radius-md); padding:10px 13px;
   font-family:var(--font-sans); transition:border-color var(--t-fast) ease;
 }
+.repair-board-row:hover:not(:disabled){ border-color:var(--accent); }
+.repair-board-row:disabled{ cursor:default; }
+.repair-board-head{
+  display:flex; align-items:center; gap:10px; background:none; border:none; padding:0 13px; cursor:default;
+  font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em;
+}
+.repair-board-head span:first-child{ flex:1; }
 .repair-board-main{
-  display:flex; flex-direction:column; align-items:flex-start; gap:1px; min-width:0; width:100%;
+  display:flex; align-items:center; gap:10px; flex:1; min-width:0;
   background:none; border:none; padding:0; margin:0; font-family:inherit; text-align:right; cursor:pointer;
 }
 .repair-board-main:hover:not(:disabled) .repair-board-name{ color:var(--accent); }
 .repair-board-main:disabled{ cursor:default; }
-.repair-board-name{ font-size:13.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
-.repair-board-id{ font-family:var(--font-mono); font-size:11.5px; color:var(--text-dim); }
+.repair-board-name{ display:flex; flex-direction:column; gap:2px; flex:1; min-width:0; font-size:13.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.repair-board-id{ font-family:var(--font-mono); font-size:11px; color:var(--text-dim); font-weight:400; }
+.repair-board-qty{ font-family:var(--font-mono); font-size:12.5px; color:var(--text-dim); white-space:nowrap; }
 .repair-board-count{ font-size:12px; font-weight:700; color:var(--red); background:color-mix(in srgb, var(--red) 12%, transparent); border-radius:var(--radius-lg); padding:3px 10px; white-space:nowrap; }
 .repair-board-expand-btn{
   display:flex; align-items:center; justify-content:center; background:none; border:1px solid var(--line);

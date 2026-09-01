@@ -24,7 +24,13 @@
       "addedBy": "סרן עומר לביא",
       "updatedAt": "12/08/2026 10:00",
       "updatedBy": "סרן עומר לביא",
-      "media": []
+      "media": [
+        {
+          "type": "image",
+          "url": "item-photo-1.jpg",
+          "caption": "תמונה כללית של הפריט (placeholder)"
+        }
+      ]
     },
     {
       "id": "IFAK-03",
@@ -79,7 +85,13 @@
       "addedBy": "סגן בר כספי",
       "updatedAt": "09/08/2026 13:15",
       "updatedBy": "סגן בר כספי",
-      "media": []
+      "media": [
+        {
+          "type": "image",
+          "url": "item-photo-2.jpg",
+          "caption": "תמונה כללית של הפריט (placeholder)"
+        }
+      ]
     },
     {
       "id": "RDO-04",
@@ -105,7 +117,13 @@
       "addedBy": "רס״ן שירה נוי",
       "updatedAt": "14/08/2026 09:45",
       "updatedBy": "רס״ן שירה נוי",
-      "media": []
+      "media": [
+        {
+          "type": "image",
+          "url": "item-photo-3.jpg",
+          "caption": "תמונה כללית של הפריט (placeholder)"
+        }
+      ]
     },
     {
       "id": "BAT-02",
@@ -125,7 +143,13 @@
       "addedBy": "רס״ר גיא מזרחי",
       "updatedAt": "17/08/2026 07:50",
       "updatedBy": "רס״ר גיא מזרחי",
-      "media": []
+      "media": [
+        {
+          "type": "image",
+          "url": "item-photo-1.jpg",
+          "caption": "תמונה כללית של הפריט (placeholder)"
+        }
+      ]
     },
     {
       "id": "NAV-02",
@@ -149,7 +173,13 @@
       "addedBy": "סגן בר כספי",
       "updatedAt": "01/07/2026 12:00",
       "updatedBy": "סגן בר כספי",
-      "media": []
+      "media": [
+        {
+          "type": "image",
+          "url": "item-photo-2.jpg",
+          "caption": "תמונה כללית של הפריט (placeholder)"
+        }
+      ]
     },
     {
       "id": "LGT-02",
@@ -169,7 +199,13 @@
       "addedBy": "רס״ן שירה נוי",
       "updatedAt": "20/06/2026 16:20",
       "updatedBy": "רס״ן שירה נוי",
-      "media": []
+      "media": [
+        {
+          "type": "image",
+          "url": "item-photo-3.jpg",
+          "caption": "תמונה כללית של הפריט (placeholder)"
+        }
+      ]
     }
   ],
   "tickets": [

@@ -1,0 +1,25 @@
+{
+  "id": "jynx-mth50gvydy9j",
+  "authorId": "dev-mth1zeixm2f5",
+  "authorName": "אילאיל",
+  "createdAt": "2026-08-31T11:10:42.814Z",
+  "route": "catalog",
+  "targetLabel": "dev-fab-toolbar",
+  "secondaryTargets": [],
+  "comment": "currently the hotkey is not clearly stated to the user and they cannot change it.\nwrite for the user what is the hotkey, under \"hi\" menu, and make it changeable by the user.",
+  "resolved": true,
+  "resolvedAt": "2026-08-31T11:30:00.000Z",
+  "resolvedBy": "auto (PR opened)",
+  "resolutionNote": null,
+  "actionStatus": "pr_opened",
+  "actionRequestedAt": "2026-08-31T11:10:42.814Z",
+  "actionPrUrl": "https://github.com/invierno8/commando/pull/82",
+  "actionLog": "A concurrent routine run had already opened PR #82 (same 'Hi menu shortcuts list + link to reorder settings' fix) by the time this run finished its own independent implementation and re-checked PRs by id immediately before pushing, per the standing rule — this run's own local implementation was discarded without pushing since it added nothing over #82.",
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}

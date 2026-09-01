@@ -1,0 +1,33 @@
+{
+  "id": "ann-mtihjhf7ej04",
+  "authorId": "dev-mth1zeixm2f5",
+  "authorName": "אילאיל",
+  "createdAt": "2026-09-01T09:49:11.539Z",
+  "route": "catalog",
+  "targetLabel": "sidebar-btn",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "on mouse over (or hover) tooltip should apear faster.",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}

@@ -29,6 +29,22 @@ const TOOLBAR_ICON_SCALE_KEY = "jynx-toolbar-icon-scale";
 // handleRoleItemDragEnd למטה ו-DevFab.jsx's handleRoleDragEnd.
 const ROLE_DOCKED_KEY = "jynx-role-docked";
 
+// jynx-mt8i0n7ssax2: "the eye button didn't work, i still see the hover
+// borders" — overlayOn was the one Jynx-chrome toggle in this file that
+// never round-tripped through localStorage (every sibling toggle here —
+// roleDocked, toolbarOrientation, iconScale, drawColor — does). It defaulted
+// back to `true` on every full page reload, including the reload that
+// MockDataToggle.jsx's own mock/live switch triggers — so turning the eye
+// off, then flipping data mode (or just refreshing), silently turned hover
+// highlighting back on with no visible cause. Persisting it closes that gap.
+const OVERLAY_ON_KEY = "jynx-overlay-on";
+function loadOverlayOn() {
+  try {
+    const raw = localStorage.getItem(OVERLAY_ON_KEY);
+    return raw === null ? true : raw === "true";
+  } catch { return true; }
+}
+
 // 4-swatch draw-color palette (added 2026-08-23, per QA feedback asking for
 // one whenever the draw tool is turned on) — Jynx's own accent purple stays
 // the default so the drawing feature keeps looking like Jynx out of the box,
@@ -95,7 +111,8 @@ export default function DevAuthGate({ route, devFabProps }) {
   // working internals untouched.
   const [notifUnread, setNotifUnread] = useState(0);
   const [adminOpen, setAdminOpen] = useState(false);
-  const [overlayOn, setOverlayOn] = useState(true);
+  const [overlayOn, setOverlayOn] = useState(loadOverlayOn);
+  useEffect(() => { try { localStorage.setItem(OVERLAY_ON_KEY, String(overlayOn)); } catch { /* ignore */ } }, [overlayOn]);
   const [commentsOn, setCommentsOn] = useState(false);
   // סימוני-מנהל הקבועים על העמוד (AdminAnnotationMarkers.jsx) — נפרד בכוונה
   // מ-overlayOn (שרק שולט על הילת-hover, לא על הנקודות הקבועות). דלוק
@@ -178,9 +195,26 @@ export default function DevAuthGate({ route, devFabProps }) {
   // הידית (⋮/⋯, ראו TOOLBAR_ITEM_NODES) עצמה עכשיו גם כפתור — קליק "נקי" (לא
   // גרירה) עליה מחליף אופקי/אנכי. אותה בדיקת consumeWasDragged בדיוק כמו שאר
   // הכפתורים בסרגל הזה, כי הידית עדיין חלק מהאזור שגורר את כל הסרגל.
+  // jynx-mth59kjpe6wk: "make it the center of movement, currently it flips to
+  // the right side" — הסרגל ממוקם עם right/bottom קבועים, אז מעבר אופקי↔אנכי
+  // (שמשנה דרמטית את הרוחב — שורה רחבה מול עמודה צרה) הזיז בפועל רק את
+  // הקצה השמאלי, כי הקצה הימני (המעוגן) נשאר קבוע; מה שהמשתמש חווה כ"הכל
+  // קופץ ימינה/שמאלה" בכל לחיצה. פותר על ידי מדידת הרוחב לפני/אחרי המעבר
+  // ותיקון right כך שהמרכז הגיאומטרי (לא הקצה) יישאר במקום — ראו
+  // useDraggableFab.js's nudgePos. double rAF כדי לוודא שהדפדפן כבר סיים
+  // layout עם המחלקה/הכיוון החדשים לפני המדידה השנייה.
   function toggleOrientation() {
     if (toolbarFab.consumeWasDragged()) return;
+    const el = toolbarFab.sizeRef.current;
+    const oldWidth = el?.offsetWidth || 0;
     setOrientation(toolbarOrientation === "horizontal" ? "vertical" : "horizontal");
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const newWidth = el?.offsetWidth || 0;
+        const delta = newWidth - oldWidth;
+        if (delta) toolbarFab.nudgePos(-delta / 2);
+      });
+    });
   }
   function setOrientation(next) {
     setToolbarOrientation(next);
@@ -274,7 +308,7 @@ export default function DevAuthGate({ route, devFabProps }) {
         overlay: () => setOverlayOn((v) => !v),
         draw: () => setDrawMode((v) => !v),
         comments: () => setCommentsOn((v) => !v),
-        markers: isAdmin ? () => setMarkersOn((v) => !v) : null,
+        markers: (isAdmin || canJynxComment) ? () => setMarkersOn((v) => !v) : null,
         admin: () => setAdminOpen(true),
       };
       const keyableIds = toolbarOrder.filter((id) => actions[id]);
@@ -283,7 +317,7 @@ export default function DevAuthGate({ route, devFabProps }) {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [devName, toolbarOpen, toolbarOrder, isAdmin, roleDocked, devFabProps.setOpen]);
+  }, [devName, toolbarOpen, toolbarOrder, isAdmin, canJynxComment, roleDocked, devFabProps.setOpen]);
 
   async function login() {
     setError("");
@@ -407,7 +441,7 @@ export default function DevAuthGate({ route, devFabProps }) {
         <MessageSquare size={13} />
       </button>
     ),
-    markers: isAdmin ? (
+    markers: (isAdmin || canJynxComment) ? (
       <button type="button" className={"dev-toolbar-icon-btn" + (markersOn ? " active" : "")} data-devblock="dev-toolbar-markers-toggle" onClick={() => setMarkersOn((v) => !v)} title={markersOn ? "Hide comment status dots on the page" : "Show comment status dots on the page"}>
         <Target size={13} />
       </button>
@@ -423,11 +457,27 @@ export default function DevAuthGate({ route, devFabProps }) {
   // חיצוני חשוף כרגע להפעלה מהמקלדת (ראו useEffect למעלה).
   const KEYABLE_IDS = ["role", "overlay", "draw", "comments", "markers", "admin"];
   let keyableIndex = 0;
+  // Labels for the "Hi" menu's keyboard-shortcuts list (jynx-mth50gvydy9j:
+  // "the hotkey is not clearly stated ... under 'hi' menu, and make it
+  // changeable"). The numbers here are exactly toolbarOrder's current
+  // position among KEYABLE_IDS — the same computation the keydown handler
+  // above uses — so this list is always accurate, never a stale hardcoded
+  // copy. "Changeable" is the existing Settings → Menu order drag-to-
+  // reorder feature (JynxSettings.jsx / JynxMenuSettingsFields), which
+  // already changes which number does what; DevGreetingMenu links straight
+  // to it instead of building a second, separate remapping UI.
+  const SHORTCUT_LABELS = {
+    role: "Role & brigade", overlay: "Hover overlay", draw: "Drawing",
+    comments: "Comments panel", markers: "Status dots", admin: "Settings",
+  };
+  const keyboardShortcuts = toolbarOrder
+    .filter((id) => TOOLBAR_ITEM_NODES[id] && KEYABLE_IDS.includes(id))
+    .map((id, i) => ({ num: i + 1, label: SHORTCUT_LABELS[id] || id }));
 
   return (
     <>
       <style>{CSS}</style>
-      <DevOverlay active={overlayOn || drawMode} route={route} isAdmin={isAdmin} canJynxChrome={isAdmin || canJynxComment} markersOn={markersOn} drawMode={drawMode} drawColor={drawColor} />
+      <DevOverlay active={overlayOn || drawMode} hoverOn={overlayOn} route={route} isAdmin={isAdmin} canJynxChrome={isAdmin || canJynxComment} markersOn={markersOn} drawMode={drawMode} drawColor={drawColor} />
       <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} isAdmin={isAdmin} canJynxComment={canJynxComment} />
       {drawMode && (
         <div
@@ -492,7 +542,7 @@ export default function DevAuthGate({ route, devFabProps }) {
             </div>
             );
           })}
-          <DevGreetingMenu devName={devName} onOpenSettings={() => setAdminOpen(true)} onLogout={logout} />
+          <DevGreetingMenu devName={devName} onOpenSettings={() => setAdminOpen(true)} onLogout={logout} shortcuts={keyboardShortcuts} />
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-collapse-btn" onClick={toggleToolbarOpen} title="Collapse to the Jynx bubble">
             <X size={13} />
           </button>
@@ -509,7 +559,23 @@ export default function DevAuthGate({ route, devFabProps }) {
         {...devFabProps}
         docked={roleDocked}
         onDock={dockRole}
-        dockAnchorPos={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom + 40 }}
+        // jynx-mth57nfhogk9: "make sure the position is aware so that no
+        // items hides another" — this used to be a fixed "+40" guess for
+        // the gap above the toolbar, which is only tall enough for a
+        // single-row horizontal toolbar. In vertical orientation (or with
+        // several extra items/large icon scale) the real toolbar is far
+        // taller than 40px, so the docked role/brigade panel — whose first
+        // row is dev-fab-mock-toggle-row, the exact spot this comment was
+        // left on — opened low enough to render on top of, and hide, the
+        // toolbar's own buttons. Anchoring off the toolbar's own measured
+        // height (toolbarFab.sizeRef, the real DOM node) instead of a
+        // guess keeps the panel clear of it regardless of orientation/
+        // item count/icon size; falls back to the old 40 before the first
+        // measurement lands.
+        dockAnchorPos={{
+          right: toolbarFab.pos.right,
+          bottom: toolbarFab.pos.bottom + (toolbarFab.sizeRef.current?.offsetHeight || 40) + 8,
+        }}
       />
       {adminOpen && (
         <DevAdminPanel
@@ -654,10 +720,16 @@ const CSS = `
 .jynx-draw-swatch.active{ border-color:var(--text); box-shadow:0 0 0 2px var(--panel), 0 0 0 3px var(--text); }
 
 .dev-fab-mock-toggle-row{ display:flex; margin-bottom:6px; }
+.mock-toggle-wrap{ display:flex; flex-direction:column; gap:4px; }
 .mock-toggle{
   display:inline-flex; align-items:center; gap:6px; border-radius:20px; padding:6px 12px; border:1px solid var(--jynx);
   background:var(--panel); font-family:var(--font-mono); font-size:11px; font-weight:700; cursor:pointer;
 }
+.mock-toggle:disabled{ opacity:.6; cursor:wait; }
 .mock-toggle-mock{ color:var(--jynx); }
 .mock-toggle-live{ color:var(--green); border-color:var(--green); }
+.mock-toggle-error{
+  font-size:10.5px; color:var(--red); font-family:var(--font-sans); padding:0 4px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px;
+}
 `;

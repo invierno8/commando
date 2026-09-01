@@ -14,7 +14,7 @@ import { useKeepInViewport } from "./useKeepInViewport.js";
 /* "Logout". Same open/click-outside/viewport-clamp shape as             */
 /* MentionsBell.jsx, the sibling toolbar dropdown right next to this one.*/
 /* ================================================================== */
-export default function DevGreetingMenu({ devName, onOpenSettings, onLogout }) {
+export default function DevGreetingMenu({ devName, onOpenSettings, onLogout, shortcuts }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -41,6 +41,30 @@ export default function DevGreetingMenu({ devName, onOpenSettings, onLogout }) {
       {open && (
         <div ref={dropdownRef} className="dev-greeting-dropdown jynx-ui">
           <div className="dev-greeting-dropdown-head">Hi, {devName}</div>
+          {/* jynx-mth50gvydy9j: "the hotkey is not clearly stated to the
+              user and they cannot change it ... under 'hi' menu" — lists
+              the number key each toolbar button currently answers to
+              (computed live off the actual menu order in DevAuthGate.jsx,
+              so it can never drift out of sync) and links straight to the
+              existing drag-to-reorder Settings panel, which is what
+              actually changes which number maps to which button. */}
+          {shortcuts && shortcuts.length > 0 && (
+            <div className="dev-greeting-shortcuts">
+              <div className="dev-greeting-shortcuts-label">Keyboard shortcuts</div>
+              {shortcuts.map((s) => (
+                <div key={s.num} className="dev-greeting-shortcut-row">
+                  <span className="dev-greeting-shortcut-key">{s.num}</span>
+                  <span>{s.label}</span>
+                </div>
+              ))}
+              <button
+                type="button" className="dev-greeting-shortcuts-hint"
+                onClick={() => { setOpen(false); onOpenSettings(); }}
+              >
+                Reorder in Settings to change which number does what
+              </button>
+            </div>
+          )}
           <button
             type="button" className="dev-greeting-dropdown-item"
             onClick={() => { setOpen(false); onOpenSettings(); }}
@@ -71,7 +95,7 @@ const CSS = `
 .dev-greeting-wrap{ position:relative; display:flex; align-self:center; }
 .dev-greeting-btn{ font-family:var(--font-sans); font-size:11px; font-weight:700; }
 .dev-greeting-dropdown{
-  position:absolute; top:36px; right:0; width:180px; background:var(--panel); border:1px solid var(--jynx);
+  position:absolute; top:36px; right:0; width:210px; background:var(--panel); border:1px solid var(--jynx);
   border-radius:10px; padding:6px; display:flex; flex-direction:column; gap:2px; box-shadow:var(--shadow-md);
   animation:devAnnotateIn .12s ease; z-index:1;
 }
@@ -79,6 +103,24 @@ const CSS = `
   font-family:var(--font-mono); font-size:11.5px; font-weight:700; color:var(--jynx); padding:6px 8px 8px;
   border-bottom:1px solid var(--line); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
+.dev-greeting-shortcuts{
+  display:flex; flex-direction:column; gap:3px; padding:4px 8px 8px; margin-bottom:2px;
+  border-bottom:1px solid var(--line);
+}
+.dev-greeting-shortcuts-label{
+  font-size:10px; color:var(--text-dim); font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:2px;
+}
+.dev-greeting-shortcut-row{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text); }
+.dev-greeting-shortcut-key{
+  flex:none; width:16px; height:16px; border-radius:4px; background:var(--panel-raised); border:1px solid var(--line);
+  color:var(--jynx); font-family:var(--font-mono); font-size:10px; font-weight:800; display:flex;
+  align-items:center; justify-content:center;
+}
+.dev-greeting-shortcuts-hint{
+  background:none; border:none; color:var(--text-dim); font-family:var(--font-sans); font-size:10.5px;
+  text-align:start; cursor:pointer; padding:4px 0 0; text-decoration:underline; text-underline-offset:2px;
+}
+.dev-greeting-shortcuts-hint:hover{ color:var(--jynx); }
 .dev-greeting-dropdown-item{
   display:flex; align-items:center; gap:8px; background:none; border:none; border-radius:6px; padding:7px 8px;
   font-family:var(--font-sans); font-size:12px; font-weight:600; color:var(--text); cursor:pointer; text-align:start;

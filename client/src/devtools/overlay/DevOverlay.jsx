@@ -17,8 +17,11 @@ import { submitAnnotation, submitJynxFeedback } from "../devApi.js";
 /*     box, submitting straight to data/routes/annotations.js. When the */
 /*     logged-in dev user is ALSO admin-verified, every note they write */
 /*     is automatically flagged as an action item — no extra click.     */
-/*  3. Admin-only: persistent (not hover-only) markers on every open     */
-/*     comment on the current screen, see AdminAnnotationMarkers.jsx.    */
+/*  3. Persistent (not hover-only) markers on every open comment on the  */
+/*     current screen for anyone with canJynxChrome (admin or a granted  */
+/*     canJynxComment user) — see AdminAnnotationMarkers.jsx. Triggering */
+/*     the automated action pipeline from a marker's detail card stays   */
+/*     admin-only (also enforced server-side).                          */
 /* ================================================================== */
 
 // טוקן טקסט משני בתוך המשפט — "[→ תווית]" — ראו submit() למטה: זה מה שנשלח
@@ -32,14 +35,26 @@ function parseSecondaryTargetsFromComment(comment) {
   return found.slice(0, 10);
 }
 
-export default function DevOverlay({ active, route, isAdmin, canJynxChrome, markersOn, drawMode, drawColor, onSubmitted }) {
+export default function DevOverlay({ active, hoverOn, route, isAdmin, canJynxChrome, markersOn, drawMode, drawColor, onSubmitted }) {
   // canJynxChrome (isAdmin OR a per-user canJynxComment grant, combined
   // upstream in DevAuthGate.jsx) קובע אם מותר לגלוש בכלל על ה-UI של Jynx
   // עצמו (.jynx-chrome) — ראו useHoverTarget.js. משתמשי-פיתוח רגילים בלי
   // ההרשאה הזו אף פעם לא רואים הילה שם. isAdmin עצמו נשאר נפרד — עדיין שולט
-  // על ברירת-המחדל של "פעולה" בהערות על האפליקציה ועל הסימונים הקבועים
-  // (AdminAnnotationMarkers), שלא נפתחים לג'ינקס-קומנטר.
-  const target = useHoverTarget(active, canJynxChrome);
+  // על ברירת-המחדל של "פעולה" בהערות על האפליקציה. הסימונים הקבועים
+  // (AdminAnnotationMarkers) עברו (jynx-mth4g9g5xnga) מ"admin בלבד" ל-
+  // canJynxChrome — נפתחים גם לג'ינקס-קומנטר עכשיו — אבל כפתור "Action"
+  // בכרטיס הפרטים שלהם (מפעיל את צינור הפעולה האוטומטי) נשאר isAdmin בלבד,
+  // גם כי זה נכון UX-ית וגם כי ה-route בשרת עצמו דורש requireAdmin ממילא.
+  //
+  // jynx-mt8i0n7ssax2: hover tracking is gated on hoverOn (== the eye-icon
+  // toggle alone), NOT on active (== overlayOn || drawMode). active still
+  // decides whether this whole component mounts, since it must stay mounted
+  // for DrawingCanvas below to work while draw mode is on and the hover
+  // overlay is off — but before this fix, useHoverTarget was also driven by
+  // active, so turning the eye toggle off while draw mode was left on never
+  // stopped the hover halo from tracking the cursor: exactly the reported
+  // "eye button didn't work, still see the hover borders" bug.
+  const target = useHoverTarget(hoverOn, canJynxChrome);
   const [popover, setPopover] = useState(null); // { x, y, label, secondaryTargets: [], isJynxMeta } | null
   const [markersRefreshKey, setMarkersRefreshKey] = useState(0);
   const isJynxHover = !!target?.closest(".jynx-chrome");
@@ -188,7 +203,7 @@ export default function DevOverlay({ active, route, isAdmin, canJynxChrome, mark
           onSubmit={submit}
         />
       )}
-      <AdminAnnotationMarkers isAdmin={isAdmin} active={markersOn} route={route} refreshKey={markersRefreshKey} />
+      <AdminAnnotationMarkers isAdmin={isAdmin} canView={canJynxChrome} active={markersOn} route={route} refreshKey={markersRefreshKey} />
       <DrawingCanvas active={drawMode && !popover} onComplete={handleDrawingComplete} color={drawColor} />
     </div>,
     document.body

@@ -103,5 +103,41 @@
       "equipInstructions": ""
     },
     "savedAt": 1787677254292
+  },
+  "7042359:catalogItem": {
+    "data": {
+      "name": "",
+      "category": "",
+      "qty": 0,
+      "desc": "",
+      "notes": "",
+      "equipInstructions": ""
+    },
+    "savedAt": 1788174294278
+  },
+  "7899822:catalogItem": {
+    "data": {
+      "name": "",
+      "category": "",
+      "qty": 0,
+      "desc": "",
+      "notes": "",
+      "equipInstructions": ""
+    },
+    "savedAt": 1788177456615
+  },
+  "7899822:ticket": {
+    "data": {
+      "type": "idea",
+      "title": "",
+      "desc": "",
+      "category": "",
+      "damatz": null,
+      "extras": [],
+      "linkedProductId": "",
+      "estimatedPrice": "",
+      "purchaseLink": ""
+    },
+    "savedAt": 1788177519307
   }
 }
