@@ -132,6 +132,12 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [toolbarOrientation, setToolbarOrientation] = useState(
     () => (localStorage.getItem(TOOLBAR_ORIENTATION_KEY) === "vertical" ? "vertical" : "horizontal")
   );
+  // jynx-mtj8qgdyw7u2: the horizontal↔vertical flip used to be an instant,
+  // un-animated snap (flex-direction itself can't be transitioned) — this
+  // read as "laggy"/jarring rather than smooth. A brief opacity dip while
+  // the layout swaps (see toggleOrientation below) turns the same instant
+  // reflow into a deliberate, animated transition instead of a flicker.
+  const [toolbarSwitching, setToolbarSwitching] = useState(false);
   const [toolbarOrder, setToolbarOrder] = useState(loadToolbarOrder);
   // תמונת-מצב יחידה, לא מחסנית-undo מלאה — "צעד אחד אחורה" בכוונה (ראו
   // הבקשה המקורית), לא undo/redo כללי.
@@ -207,12 +213,14 @@ export default function DevAuthGate({ route, devFabProps }) {
     if (toolbarFab.consumeWasDragged()) return;
     const el = toolbarFab.sizeRef.current;
     const oldWidth = el?.offsetWidth || 0;
+    setToolbarSwitching(true);
     setOrientation(toolbarOrientation === "horizontal" ? "vertical" : "horizontal");
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const newWidth = el?.offsetWidth || 0;
         const delta = newWidth - oldWidth;
         if (delta) toolbarFab.nudgePos(-delta / 2);
+        setToolbarSwitching(false);
       });
     });
   }
@@ -502,7 +510,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       {toolbarOpen ? (
         <div
           ref={toolbarFab.sizeRef}
-          className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "")}
+          className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "") + (toolbarSwitching ? " switching-orientation" : "")}
           style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom, "--jynx-icon-scale": iconScale }}
           data-jynx-dock-zone=""
           onDragOver={(e) => e.preventDefault()}
@@ -656,10 +664,14 @@ const CSS = `
 
 .dev-fab-toolbar{
   position:fixed; z-index:79; display:flex; align-items:center; gap:6px;
-  cursor:grab; touch-action:none;
+  cursor:grab; touch-action:none; opacity:1; transition:opacity .12s ease;
 }
 .dev-fab-toolbar:active{ cursor:grabbing; }
 .dev-fab-toolbar.vertical{ flex-direction:column; align-items:stretch; }
+/* jynx-mtj8qgdyw7u2: flex-direction itself can't be transitioned, so the
+   horizontal↔vertical flip fades out/in instead of snapping instantly —
+   see toolbarSwitching above. */
+.dev-fab-toolbar.switching-orientation{ opacity:.35; }
 /* הידית עצמה עכשיו כפתור אמיתי (מחליף אופקי/אנכי) — לא רק "אזור-גרירה
    שיושב שם", אז צריך רמז ברור שהיא לחיצה: קצת יותר גדולה מכל שאר האייקונים
    ותוחם עדין (border) כדי לא "להיבלע" בתוך פס-הכלים כמו לפני. */
