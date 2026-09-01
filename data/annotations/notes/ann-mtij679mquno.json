@@ -1,0 +1,33 @@
+{
+  "id": "ann-mtij679mquno",
+  "authorId": "dev-mth1zeixm2f5",
+  "authorName": "אילאיל",
+  "createdAt": "2026-09-01T10:34:51.082Z",
+  "route": "catalog",
+  "targetLabel": "dossier-grid",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "text field should be editable",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
