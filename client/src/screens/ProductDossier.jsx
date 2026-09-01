@@ -297,16 +297,25 @@ export default function ProductDossier({
         <div className="dossier-grid">
           <div>
             <div className="dossier-section-title">קצין אמל״ח אחראי</div>
-            <div className="dossier-officer">
-              <div className="dossier-officer-row">
-                <span className="officer-rank">{item.responsibleRank}</span>
-                <span className="officer-name">{item.responsibleName}</span>
+            {editing && canEdit ? (
+              <div className="origin-fields officer-edit-fields">
+                <input placeholder="דרגה" value={draft.responsibleRank || ""} onChange={(e) => patch("responsibleRank", e.target.value)} className="origin-field-sm" />
+                <input placeholder="שם" value={draft.responsibleName || ""} onChange={(e) => patch("responsibleName", e.target.value)} />
+                <input placeholder="מ.א." value={draft.responsiblePersonalNumber || ""} onChange={(e) => patch("responsiblePersonalNumber", e.target.value)} className="origin-field-sm" />
+                <input placeholder="טלפון" value={draft.responsiblePhone || ""} onChange={(e) => patch("responsiblePhone", e.target.value)} className="origin-field-sm" />
               </div>
-              <div className="dossier-officer-meta">
-                <span>מ.א. {item.responsiblePersonalNumber}</span>
-                <a className="drawer-phone" href={`tel:${item.responsiblePhone}`}>{item.responsiblePhone}</a>
+            ) : (
+              <div className="dossier-officer">
+                <div className="dossier-officer-row">
+                  <span className="officer-rank">{item.responsibleRank}</span>
+                  <span className="officer-name">{item.responsibleName}</span>
+                </div>
+                <div className="dossier-officer-meta">
+                  <span>מ.א. {item.responsiblePersonalNumber}</span>
+                  <a className="drawer-phone" href={`tel:${item.responsiblePhone}`}>{item.responsiblePhone}</a>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div>
@@ -805,6 +814,11 @@ const CSS = `
 }
 .origin-field-sm{ flex:0 0 90px !important; min-width:0 !important; }
 .origin-fields input:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
+.officer-edit-fields{
+  background:var(--panel-raised); border:1px solid var(--line); border-radius:var(--radius-lg); padding:14px 16px;
+  box-sizing:border-box; flex-direction:column;
+}
+.officer-edit-fields input{ width:100%; box-sizing:border-box; }
 
 .dossier-file-list{ display:flex; flex-wrap:wrap; gap:7px; }
 .dossier-file-list-inline{ margin-inline-start:6px; }
