@@ -22,7 +22,7 @@
   "actionRequestedAt": "2026-09-01T22:27:26.911Z",
   "actionRequestedBy": "admin",
   "actionPrUrl": "https://github.com/invierno8/commando/pull/87",
-  "actionLog": null,
+  "actionLog": "Duplicate-PR race: a concurrent automated run independently implemented the same fix and opened PR #88 ~19s after this run's PR #87 (both add a reorder-to-front 'set as main image' control in MediaEditor.jsx). #88 was closed as a duplicate, pointing at #87, which is kept as canonical here.",
   "replies": [],
   "reactions": {
     "👍": [],
