@@ -423,6 +423,22 @@ export default function DevAuthGate({ route, devFabProps }) {
   // חיצוני חשוף כרגע להפעלה מהמקלדת (ראו useEffect למעלה).
   const KEYABLE_IDS = ["role", "overlay", "draw", "comments", "markers", "admin"];
   let keyableIndex = 0;
+  // Labels for the "Hi" menu's keyboard-shortcuts list (jynx-mth50gvydy9j:
+  // "the hotkey is not clearly stated ... under 'hi' menu, and make it
+  // changeable"). The numbers here are exactly toolbarOrder's current
+  // position among KEYABLE_IDS — the same computation the keydown handler
+  // above uses — so this list is always accurate, never a stale hardcoded
+  // copy. "Changeable" is the existing Settings → Menu order drag-to-
+  // reorder feature (JynxSettings.jsx / JynxMenuSettingsFields), which
+  // already changes which number does what; DevGreetingMenu links straight
+  // to it instead of building a second, separate remapping UI.
+  const SHORTCUT_LABELS = {
+    role: "Role & brigade", overlay: "Hover overlay", draw: "Drawing",
+    comments: "Comments panel", markers: "Status dots", admin: "Settings",
+  };
+  const keyboardShortcuts = toolbarOrder
+    .filter((id) => TOOLBAR_ITEM_NODES[id] && KEYABLE_IDS.includes(id))
+    .map((id, i) => ({ num: i + 1, label: SHORTCUT_LABELS[id] || id }));
 
   return (
     <>
@@ -492,7 +508,7 @@ export default function DevAuthGate({ route, devFabProps }) {
             </div>
             );
           })}
-          <DevGreetingMenu devName={devName} onOpenSettings={() => setAdminOpen(true)} onLogout={logout} />
+          <DevGreetingMenu devName={devName} onOpenSettings={() => setAdminOpen(true)} onLogout={logout} shortcuts={keyboardShortcuts} />
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-collapse-btn" onClick={toggleToolbarOpen} title="Collapse to the Jynx bubble">
             <X size={13} />
           </button>
