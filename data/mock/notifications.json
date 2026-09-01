@@ -207,7 +207,7 @@
     },
     {
       "id": "ntf-1787601801733-fz0hu",
-      "read": false,
+      "read": true,
       "ts": 1787601801733,
       "kind": "ticket",
       "ticketId": "REQ-1033",
