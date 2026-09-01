@@ -581,6 +581,31 @@ flagged for later on purpose.
   clientX, clientY, ctrlKey:true, view:window}))` via `page.evaluate(...)`
   — this reproduced the real interaction correctly and confirmed the
   feature itself was never broken, only the test's input emulation was.
+- **A throwaway `.env` with `GITHUB_TOKEN=` (empty) does NOT actually
+  disable GitHub persistence in a Claude Code Remote sandbox** — the shell
+  already has a real ambient `GITHUB_TOKEN` set (for the session's own git
+  operations), and `dotenv` only fills in variables that aren't already
+  present in `process.env`; a Node server started from that same shell
+  inherits the ambient value regardless of what `.env` says. Confirmed
+  2026-09-01 while live-testing `ann-mtij679mquno`/`ann-mtij6txf45id`:
+  `writeCollection()` in `data/lib/jsonStore.js` writes the mock JSON to
+  **local disk unconditionally** once `githubPersistEnabled()` is true —
+  contradicting the "mock writes never touch disk" guarantee described
+  above and in the design-system section — and only *then* attempts a real
+  commit via `commitFileToGithub()`. In this instance the local file got
+  dirtied with throwaway test values (caught and reverted via
+  `git checkout --` before pushing) but the GitHub API call itself failed
+  silently (no stray commit landed on `origin/main` — confirmed via
+  `git fetch` + `git log -- <file>`), most likely because Node's built-in
+  `fetch()` doesn't honor the sandbox's `HTTPS_PROXY` automatically. Don't
+  rely on that failure as a safety net, though — a working token would have
+  committed real throwaway data straight to the public repo with no PR.
+  **The actual fix**: explicitly clear the var for the spawned process
+  (`GITHUB_TOKEN= node server.js` inline, or `unset GITHUB_TOKEN` in the
+  shell first), not just an empty line in `.env`. Always `git status`/
+  `git diff` `data/mock/` and `data/config/dev-users.json` after any
+  live-mode test session that used a throwaway admin login, and revert
+  before pushing.
 - The dev-fab role/brigade/identity switcher (now behind `DevAuthGate.jsx`
   — log in as the seeded `Demo Dev` / `hangar-demo-2026` account first, see
   `README.md`) requires clicking `.dev-fab`
@@ -1933,3 +1958,13 @@ Concretely: pushing `jynx-dossier-officer-editable-9mquno` (item 3) was rejected
 The other three (items 1, 2, 4) did *not* get caught the same way, because their branches pushed cleanly (no name collision) and this session went straight from push to `create_pull_request` without re-running `search_pull_requests` in between — the exact ordering mistake two entries above already named ("check right before push still means before, not after"). Opened **PR #99** (`ann-mtihhb0g8r01`, font sizes), **PR #100** (`ann-mtihjhf7ej04`, tooltip), **PR #101** (`jynx-mtj8qgdyw7u2`, toolbar animation) — then, doing the bookkeeping pass, found all three ids already fully resolved on `origin/main`: #90 (canonical, font sizes — this session's own diff was near-identical, same file, same size bumps), #89 (canonical, tooltip — same `data-tooltip`/`::after` approach), #94 (canonical, toolbar animation — same short-lived transition-class approach, same drag-path exclusion reasoning). Read each canonical PR's actual diff before standing down (not just its title) to confirm genuine equivalence. Posted a comment on each of #99/#100/#101 pointing at its canonical counterpart and closed all three; no note/bookkeeping changes needed since all three notes already correctly pointed at #90/#89/#94.
 
 **The concrete lesson this run adds**, beyond re-stating "check before implementing": an early all-clear check has a validity window bounded by how long the implementation itself takes, not by when the check ran. A single search at the very start of a multi-file, multi-item run (this one took long enough to read code, build, and push four separate branches) can go stale well before the last branch is even pushed, let alone before its PR is opened. The only check that actually closes the window is the one *immediately* before the state-changing action itself — immediately before each individual push, and again immediately before each individual `create_pull_request` call (not one combined check for the whole batch). This session did that correctly for item 3 (caught pre-push, zero PRs opened) and incorrectly for items 1/2/4 (checked at the start, then not again until after three PRs already existed). Given this is now roughly the sixth session-generation to hit this exact race on this exact batch, and every "add a check at point X" fix so far has just moved where in the pipeline the miss happens rather than closing it, the actual fix (some form of claim/lock on a work-item id taken *before* any implementation starts, released only on push-or-abandon) remains unbuilt and is worth a human's attention rather than a seventh re-statement of "check more/earlier" in this log.
+
+### 2026-09-01 — Same four-item batch, another full miss: no `search_pull_requests` check was run at all before implementing, only discovered via a rejected push after all four branches/notes/PRs were already prepared
+
+Step zero found the same six-item queue as every entry above in this batch (`ann-mt5p5xzokc1i`/`ann-mt8oh01ruh3b` unchanged — no commit, per the guardrail — plus `ann-mtihhb0g8r01`, `ann-mtihjhf7ej04`, `ann-mtij679mquno`, `ann-mtij6txf45id`). Read `FORCLAUDE.md` and the file map, but did **not** run `search_pull_requests`/`list_pull_requests` before starting implementation — this session simply didn't know that check was the established practice for this exact scenario, having not yet read this far down the log before beginning work. Implemented all four (same diagnoses as every session above: `DevOverlay.jsx` composer font sizes, `App.jsx`/`theme.js` native-`title`-vs-custom-tooltip, `ProductDossier.jsx` officer-block fields, `MediaEditor.jsx` main-image reorder), built clean, pushed all four branches successfully (no name collisions this time), opened **PR #102/#103/#104/#105**, then updated all four notes' bookkeeping and tried to push — rejected non-fast-forward.
+
+That rejection was the first signal anything was wrong. `git fetch` + `git log`/`git show` on `origin/main` showed all four ids already fully resolved: #90 (font sizes, canonical), #89 (tooltip, canonical), #93 (officer fields, canonical — with #92/#95 already closed as duplicates), #87 (main image, canonical — with #88 already closed). So all four of this session's own PRs were duplicates, opened *after* their canonical counterparts (per each PR's `created_at`) without ever checking. Discarded the local bookkeeping commit (`git reset --hard origin/main`) rather than pushing stale/wrong `actionPrUrl`/`actionLog` values over the already-correct ones. Read each canonical PR's actual body/diff to confirm genuine equivalence (all four matched closely), posted a duplicate-comment + closed all four of this session's own PRs (#102-#105), and — since three of the four canonical PRs (#89/#93/#87) explicitly said in their own "Verification" sections that no live check was done, while this session had done real live verification for exactly those three (tooltip opacity timing, officer-field save+reload round-trip, main-image reorder+header-thumb-update) — posted that verification as a comment on each canonical PR instead of letting it go to waste.
+
+Also hit, independently, the same "throwaway `.env`/dev-user testing dirties `data/mock/`" gotcha documented in the new standing-rule entry above (this session is the one that added it) — caught via `git status`/`git diff` after each live test and reverted before pushing, so no throwaway data leaked into any of the four PRs.
+
+Net effect: zero new merged work (all four were duplicates of already-correct fixes), but the two live-verification comments and this log entry are real, non-duplicate contributions from an otherwise fully-redundant run. Nothing to add to "the actual fix" the entry above already named — this is simply one more data point for it: a session that hadn't yet internalized the lesson from reading this log, independently rediscovering the exact same gap by hitting it directly.
