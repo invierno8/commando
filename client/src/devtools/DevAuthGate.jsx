@@ -133,6 +133,16 @@ export default function DevAuthGate({ route, devFabProps }) {
     () => (localStorage.getItem(TOOLBAR_ORIENTATION_KEY) === "vertical" ? "vertical" : "horizontal")
   );
   const [toolbarOrder, setToolbarOrder] = useState(loadToolbarOrder);
+  // jynx-mtj8qgdyw7u2: "when clicked the move to vertical is laggy please
+  // animate and fix" — toggleOrientation() below causes two separate abrupt
+  // jumps with no transition at all: the flex-direction flip itself (instant
+  // reflow) and, two rAFs later, nudgePos()'s right-offset correction (also
+  // instant). Together those read as "laggy" rather than as one deliberate
+  // move. This flag turns on a CSS transition on .dev-fab-toolbar for exactly
+  // the duration of the toggle, then off again — scoped so live dragging
+  // (which also updates right/bottom every pointer-move) never inherits the
+  // transition and starts feeling delayed/floaty under the cursor.
+  const [orientationAnimating, setOrientationAnimating] = useState(false);
   // תמונת-מצב יחידה, לא מחסנית-undo מלאה — "צעד אחד אחורה" בכוונה (ראו
   // הבקשה המקורית), לא undo/redo כללי.
   const [undoOrder, setUndoOrder] = useState(null);
@@ -207,12 +217,14 @@ export default function DevAuthGate({ route, devFabProps }) {
     if (toolbarFab.consumeWasDragged()) return;
     const el = toolbarFab.sizeRef.current;
     const oldWidth = el?.offsetWidth || 0;
+    setOrientationAnimating(true);
     setOrientation(toolbarOrientation === "horizontal" ? "vertical" : "horizontal");
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const newWidth = el?.offsetWidth || 0;
         const delta = newWidth - oldWidth;
         if (delta) toolbarFab.nudgePos(-delta / 2);
+        setTimeout(() => setOrientationAnimating(false), 200);
       });
     });
   }
@@ -502,7 +514,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       {toolbarOpen ? (
         <div
           ref={toolbarFab.sizeRef}
-          className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "")}
+          className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "") + (orientationAnimating ? " orientation-animating" : "")}
           style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom, "--jynx-icon-scale": iconScale }}
           data-jynx-dock-zone=""
           onDragOver={(e) => e.preventDefault()}
@@ -660,6 +672,12 @@ const CSS = `
 }
 .dev-fab-toolbar:active{ cursor:grabbing; }
 .dev-fab-toolbar.vertical{ flex-direction:column; align-items:stretch; }
+/* jynx-mtj8qgdyw7u2: transition only while toggleOrientation()'s reflow +
+   recenter is in flight (see orientationAnimating above) — never during a
+   live drag, or the toolbar would visibly lag behind the pointer. */
+.dev-fab-toolbar.orientation-animating{
+  transition:right .2s ease, bottom .2s ease, width .2s ease, height .2s ease;
+}
 /* הידית עצמה עכשיו כפתור אמיתי (מחליף אופקי/אנכי) — לא רק "אזור-גרירה
    שיושב שם", אז צריך רמז ברור שהיא לחיצה: קצת יותר גדולה מכל שאר האייקונים
    ותוחם עדין (border) כדי לא "להיבלע" בתוך פס-הכלים כמו לפני. */
