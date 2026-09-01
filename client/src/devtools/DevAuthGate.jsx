@@ -720,10 +720,16 @@ const CSS = `
 .jynx-draw-swatch.active{ border-color:var(--text); box-shadow:0 0 0 2px var(--panel), 0 0 0 3px var(--text); }
 
 .dev-fab-mock-toggle-row{ display:flex; margin-bottom:6px; }
+.mock-toggle-wrap{ display:flex; flex-direction:column; gap:4px; }
 .mock-toggle{
   display:inline-flex; align-items:center; gap:6px; border-radius:20px; padding:6px 12px; border:1px solid var(--jynx);
   background:var(--panel); font-family:var(--font-mono); font-size:11px; font-weight:700; cursor:pointer;
 }
+.mock-toggle:disabled{ opacity:.6; cursor:wait; }
 .mock-toggle-mock{ color:var(--jynx); }
 .mock-toggle-live{ color:var(--green); border-color:var(--green); }
+.mock-toggle-error{
+  font-size:10.5px; color:var(--red); font-family:var(--font-sans); padding:0 4px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px;
+}
 `;
