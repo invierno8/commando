@@ -3,7 +3,7 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell,
 } from "recharts";
 import {
-  Boxes, ClipboardList, Activity, TrendingUp, ChevronLeft, ListTree, Gauge, ShieldCheck, Timer,
+  Boxes, ClipboardList, Activity, TrendingUp, ChevronLeft, ChevronDown, ChevronUp, ListTree, Gauge, ShieldCheck, Timer,
   PieChart as PieChartIcon, History, EyeOff, Plus, RotateCcw, Wrench, Wallet, LayoutGrid,
 } from "lucide-react";
 import UnitEmblem from "../components/UnitEmblem.jsx";
@@ -168,6 +168,7 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
   const [openItem, setOpenItem] = useState(null);
   const [loaded, setLoaded] = useState(null);
   const [equipQuery, setEquipQuery] = useState("");
+  const [expandedRepairId, setExpandedRepairId] = useState(null);
   const [reqQuery, setReqQuery] = useState("");
   const [reqStatusFilter, setReqStatusFilter] = useState("all");
   const [layout, setLayout] = useState(() => defaultLayout(role));
@@ -551,18 +552,43 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
           </div>
           {repairBoard.map((r) => {
             const fullItem = catalog.find((it) => it.id === r.id);
+            const isOpen = expandedRepairId === r.id;
             return (
-              <button
-                type="button"
-                className="repair-board-row"
-                key={r.id}
-                onClick={() => fullItem && setOpenItem(fullItem)}
-                disabled={!fullItem}
-              >
-                <span className="repair-board-name">{r.name}<span className="repair-board-id">{r.id}</span></span>
-                <span className="repair-board-qty">{r.qty ?? "—"}</span>
-                <span className="repair-board-count">{r.count} תקלות</span>
-              </button>
+              <div className="repair-board-item" key={r.id}>
+                <div className="repair-board-row">
+                  <button
+                    type="button"
+                    className="repair-board-main"
+                    onClick={() => fullItem && setOpenItem(fullItem)}
+                    disabled={!fullItem}
+                  >
+                    <span className="repair-board-name">{r.name}<span className="repair-board-id">{r.id}</span></span>
+                    <span className="repair-board-qty">{r.qty ?? "—"}</span>
+                    <span className="repair-board-count">{r.count} תקלות</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="repair-board-expand-btn"
+                    onClick={() => setExpandedRepairId(isOpen ? null : r.id)}
+                    aria-label={isOpen ? "כווץ רובריקת תקלות" : "הצג רובריקת תקלות"}
+                    aria-expanded={isOpen}
+                  >
+                    {isOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                  </button>
+                </div>
+                {isOpen && (
+                  <div className="repair-board-detail">
+                    {r.repairs.map((rep) => (
+                      <div className="repair-board-detail-row" key={rep.id}>
+                        <span className="repair-board-detail-date">{rep.submittedAt || "—"}</span>
+                        <span className="repair-board-detail-unit">{rep.unit || "—"}</span>
+                        <span className="repair-board-detail-desc">{rep.desc || "אין תיאור"}</span>
+                        <StatusPill status={rep.status} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
@@ -899,21 +925,56 @@ ${SCOPE_PICKER_CSS}
 .response-time-sub{ font-size:11px; color:var(--text-dim); }
 
 .repair-board{ display:flex; flex-direction:column; gap:8px; }
+.repair-board-item{ display:flex; flex-direction:column; }
+/* flex, not the original grid-template-columns:1fr auto auto — once the
+   name/qty/count cells live inside one .repair-board-main button (so the
+   whole row is clickable, see below) plus a separate expand-btn, they're
+   no longer 3 direct grid children of .repair-board-row, so the 3-column
+   grid can't line up with them without display:contents on the button
+   (a real accessibility footgun for a click target). .repair-board-head's
+   3 labels use the same flex/gap so they still line up closely above the
+   row content, even though this isn't pixel-perfect grid alignment. */
 .repair-board-row{
-  display:grid; grid-template-columns:1fr auto auto; align-items:center; gap:12px; width:100%;
+  display:flex; align-items:center; gap:10px; width:100%;
   background:var(--panel-raised); border:1px solid var(--line); border-radius:var(--radius-md); padding:10px 13px;
-  cursor:pointer; font-family:var(--font-sans); text-align:right; transition:border-color var(--t-fast) ease;
+  font-family:var(--font-sans); transition:border-color var(--t-fast) ease;
 }
 .repair-board-row:hover:not(:disabled){ border-color:var(--accent); }
 .repair-board-row:disabled{ cursor:default; }
 .repair-board-head{
-  background:none; border:none; padding:0 13px; cursor:default;
+  display:flex; align-items:center; gap:10px; background:none; border:none; padding:0 13px; cursor:default;
   font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em;
 }
-.repair-board-name{ display:flex; flex-direction:column; gap:2px; font-size:13.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.repair-board-head span:first-child{ flex:1; }
+.repair-board-main{
+  display:flex; align-items:center; gap:10px; flex:1; min-width:0;
+  background:none; border:none; padding:0; margin:0; font-family:inherit; text-align:right; cursor:pointer;
+}
+.repair-board-main:hover:not(:disabled) .repair-board-name{ color:var(--accent); }
+.repair-board-main:disabled{ cursor:default; }
+.repair-board-name{ display:flex; flex-direction:column; gap:2px; flex:1; min-width:0; font-size:13.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .repair-board-id{ font-family:var(--font-mono); font-size:11px; color:var(--text-dim); font-weight:400; }
 .repair-board-qty{ font-family:var(--font-mono); font-size:12.5px; color:var(--text-dim); white-space:nowrap; }
 .repair-board-count{ font-size:12px; font-weight:700; color:var(--red); background:color-mix(in srgb, var(--red) 12%, transparent); border-radius:var(--radius-lg); padding:3px 10px; white-space:nowrap; }
+.repair-board-expand-btn{
+  display:flex; align-items:center; justify-content:center; background:none; border:1px solid var(--line);
+  border-radius:var(--radius-md); color:var(--text-dim); cursor:pointer; width:26px; height:26px; padding:0;
+  transition:border-color var(--t-fast) ease, color var(--t-fast) ease;
+}
+.repair-board-expand-btn:hover{ border-color:var(--accent); color:var(--accent); }
+.repair-board-detail{
+  display:flex; flex-direction:column; gap:6px; margin-top:6px; padding:10px 13px;
+  background:var(--panel); border:1px dashed var(--line); border-radius:var(--radius-md);
+  opacity:0; animation:fadeSlideUp var(--t-fast) ease forwards;
+}
+.repair-board-detail-row{
+  display:grid; grid-template-columns:auto auto 1fr auto; align-items:center; gap:10px;
+  font-size:11.5px; padding:4px 0; border-bottom:1px solid var(--line);
+}
+.repair-board-detail-row:last-child{ border-bottom:none; }
+.repair-board-detail-date{ font-family:var(--font-mono); color:var(--text-dim); white-space:nowrap; }
+.repair-board-detail-unit{ color:var(--text-dim); white-space:nowrap; }
+.repair-board-detail-desc{ color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
 
 .procurement-cost-inner{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:18px 0; text-align:center; }
 .procurement-cost-big{ font-family:var(--font-mono); font-size:32px; font-weight:800; color:var(--accent); }
