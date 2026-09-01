@@ -148,6 +148,8 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [roleDocked, setRoleDocked] = useState(
     () => localStorage.getItem(ROLE_DOCKED_KEY) !== "false"
   );
+  // jynx-mtj8qgdyw7u2 — see toggleOrientation below.
+  const [orientSwitching, setOrientSwitching] = useState(false);
   function dockRole() {
     setRoleDocked(true);
     try { localStorage.setItem(ROLE_DOCKED_KEY, "true"); } catch { /* ignore */ }
@@ -208,6 +210,14 @@ export default function DevAuthGate({ route, devFabProps }) {
     const el = toolbarFab.sizeRef.current;
     const oldWidth = el?.offsetWidth || 0;
     setOrientation(toolbarOrientation === "horizontal" ? "vertical" : "horizontal");
+    // jynx-mtj8qgdyw7u2: "the move to vertical is laggy please animate and
+    // fix" — flex-direction itself can't be CSS-transitioned, so the row↔
+    // column reflow used to just snap instantly. .orientation-switching (see
+    // CSS below) plays a brief scale/opacity settle on the whole bar instead,
+    // toggled off after the animation's own duration so a rapid re-click
+    // still restarts it cleanly.
+    setOrientSwitching(true);
+    setTimeout(() => setOrientSwitching(false), 180);
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const newWidth = el?.offsetWidth || 0;
@@ -502,7 +512,7 @@ export default function DevAuthGate({ route, devFabProps }) {
       {toolbarOpen ? (
         <div
           ref={toolbarFab.sizeRef}
-          className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "")}
+          className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "") + (orientSwitching ? " orientation-switching" : "")}
           style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom, "--jynx-icon-scale": iconScale }}
           data-jynx-dock-zone=""
           onDragOver={(e) => e.preventDefault()}
@@ -660,6 +670,14 @@ const CSS = `
 }
 .dev-fab-toolbar:active{ cursor:grabbing; }
 .dev-fab-toolbar.vertical{ flex-direction:column; align-items:stretch; }
+/* flex-direction itself can't be transitioned, so the row↔column reflow on
+   orientation toggle used to snap instantly — this class (toggled briefly
+   from toggleOrientation) plays a settle animation on the whole bar instead. */
+.dev-fab-toolbar.orientation-switching{ animation:jynxToolbarOrientationSwitch .18s ease; }
+@keyframes jynxToolbarOrientationSwitch{
+  0%{ transform:scale(.94); opacity:.6; }
+  100%{ transform:scale(1); opacity:1; }
+}
 /* הידית עצמה עכשיו כפתור אמיתי (מחליף אופקי/אנכי) — לא רק "אזור-גרירה
    שיושב שם", אז צריך רמז ברור שהיא לחיצה: קצת יותר גדולה מכל שאר האייקונים
    ותוחם עדין (border) כדי לא "להיבלע" בתוך פס-הכלים כמו לפני. */
