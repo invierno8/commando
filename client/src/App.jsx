@@ -435,7 +435,7 @@ export default function App() {
               <button
                 key={n.key}
                 className={"sidebar-btn" + (view === n.key ? " active" : "")}
-                title={n.label}
+                data-tooltip={n.label}
                 onClick={() => setView(n.key)}
               >
                 <span className="sidebar-btn-icon-wrap">
