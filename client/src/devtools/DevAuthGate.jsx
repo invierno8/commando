@@ -274,7 +274,7 @@ export default function DevAuthGate({ route, devFabProps }) {
         overlay: () => setOverlayOn((v) => !v),
         draw: () => setDrawMode((v) => !v),
         comments: () => setCommentsOn((v) => !v),
-        markers: isAdmin ? () => setMarkersOn((v) => !v) : null,
+        markers: (isAdmin || canJynxComment) ? () => setMarkersOn((v) => !v) : null,
         admin: () => setAdminOpen(true),
       };
       const keyableIds = toolbarOrder.filter((id) => actions[id]);
@@ -283,7 +283,7 @@ export default function DevAuthGate({ route, devFabProps }) {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [devName, toolbarOpen, toolbarOrder, isAdmin, roleDocked, devFabProps.setOpen]);
+  }, [devName, toolbarOpen, toolbarOrder, isAdmin, canJynxComment, roleDocked, devFabProps.setOpen]);
 
   async function login() {
     setError("");
@@ -407,7 +407,7 @@ export default function DevAuthGate({ route, devFabProps }) {
         <MessageSquare size={13} />
       </button>
     ),
-    markers: isAdmin ? (
+    markers: (isAdmin || canJynxComment) ? (
       <button type="button" className={"dev-toolbar-icon-btn" + (markersOn ? " active" : "")} data-devblock="dev-toolbar-markers-toggle" onClick={() => setMarkersOn((v) => !v)} title={markersOn ? "Hide comment status dots on the page" : "Show comment status dots on the page"}>
         <Target size={13} />
       </button>
