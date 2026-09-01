@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Zap, Loader2, GitPullRequest, CheckCircle2, XCircle } from "lucide-react";
-import { fetchAnnotations, requestAnnotationAction } from "../devApi.js";
+import { fetchDevAnnotations, requestAnnotationAction } from "../devApi.js";
 import { useKeepInViewport } from "../useKeepInViewport.js";
 import { openUserProfile } from "../openUserProfile.js";
 import { getStickyChromeRects, isCoveredBySticky } from "./stickyChromeBounds.js";
@@ -64,7 +64,13 @@ export default function AdminAnnotationMarkers({ isAdmin, canView, active, route
     // כל ההערות על המסך הזה, לא רק הפתוחות — כדי שגם הערות שנסגרו יישארו
     // כנקודת-היסטוריה קטנה (ראו קיבוץ groupStatus/allResolved למטה), לא
     // ייעלמו לגמרי ברגע שהן resolved.
-    fetchAnnotations().then((all) => {
+    // תוקן (בדיקה חיה גילתה): fetchAnnotations() קורא ל-/admin/annotations
+    // (requireAdmin) — עד כאן זה עבד רק כי הקומפוננטה הזו הייתה admin-only.
+    // מאז jynx-mth4g9g5xnga (canView במקום isAdmin) משתמש-פיתוח לא-מנהל עם
+    // canJynxComment יכול לראות את הקומפוננטה, אבל הקריאה נשארה admin-only
+    // ונכשלה עם 401 בשקט — הנקודות פשוט לא הופיעו לו. /dev/annotations
+    // (requireDevUser) הוא ה-endpoint הנכון, כבר מסנן לפי route בשרת.
+    fetchDevAnnotations(route).then((all) => {
       if (cancelled) return;
       setItems(all.filter((a) => a.route === route && a.targetLabel));
     });
