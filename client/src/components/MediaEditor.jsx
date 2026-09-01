@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { X, ImagePlus, Video, Play } from "lucide-react";
+import { X, ImagePlus, Video, Play, Star } from "lucide-react";
 
 /* ================================================================== */
 /* LEGO BLOCK — MediaEditor: add/remove/caption the photos and videos   */
@@ -34,6 +34,11 @@ export default function MediaEditor({ media, onChange }) {
   function removeAt(idx) {
     onChange(media.filter((_, i) => i !== idx));
   }
+  function setMain(idx) {
+    if (idx === 0) return;
+    const item = media[idx];
+    onChange([item, ...media.filter((_, i) => i !== idx)]);
+  }
 
   return (
     <div className="media-editor">
@@ -55,6 +60,15 @@ export default function MediaEditor({ media, onChange }) {
                 onChange={(e) => updateCaption(idx, e.target.value)}
                 placeholder="כיתוב (אופציונלי)"
               />
+              {idx === 0 ? (
+                <span className="media-editor-main-badge" title="זהו הפריט שמוצג כתמונה הראשית">
+                  <Star size={12} /> ראשי
+                </span>
+              ) : (
+                <button type="button" className="media-editor-set-main" onClick={() => setMain(idx)} title="הגדרה כפריט הראשי">
+                  <Star size={13} />
+                </button>
+              )}
               <button type="button" className="media-editor-remove" onClick={() => removeAt(idx)} title="הסרה">
                 <X size={13} />
               </button>

@@ -726,6 +726,15 @@ const CSS = `
   cursor:pointer; display:flex; transition:color var(--t-fast) ease, border-color var(--t-fast) ease;
 }
 .media-editor-remove:hover{ color:var(--red); border-color:var(--red); }
+.media-editor-set-main{
+  flex:none; background:none; border:1px solid transparent; color:var(--text-dim); border-radius:var(--radius-md); padding:6px;
+  cursor:pointer; display:flex; transition:color var(--t-fast) ease, border-color var(--t-fast) ease;
+}
+.media-editor-set-main:hover{ color:var(--accent); border-color:var(--accent); }
+.media-editor-main-badge{
+  flex:none; display:flex; align-items:center; gap:3px; color:var(--accent); font-size:11px; font-weight:600;
+  padding:4px 8px; border-radius:999px; background:color-mix(in srgb, var(--accent) 14%, transparent);
+}
 .media-editor-actions{ display:flex; gap:8px; }
 .media-editor-add{
   display:inline-flex; align-items:center; gap:6px; background:var(--panel-raised); border:1px dashed var(--line);
