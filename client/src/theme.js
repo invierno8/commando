@@ -210,6 +210,18 @@ h1,h2,h3{ font-family:var(--font-sans); font-weight:700; letter-spacing:-.015em;
 .app-sidebar.expanded .sidebar-btn{ width:100%; justify-content:flex-start; padding-inline:11px; }
 .sidebar-btn:hover{ background:var(--panel-raised); color:var(--text); }
 .sidebar-btn.active{ background:var(--accent); color:var(--accent-ink); }
+/* Custom, fast hover tooltip — replaces the native "title" attribute, whose
+   browser-default show delay (700ms+ in Chrome, longer elsewhere) read as
+   sluggish on the icon-only collapsed sidebar. Only shown collapsed — once
+   expanded, .sidebar-btn-label already renders the same text inline. */
+.app-sidebar:not(.expanded) .sidebar-btn[data-tooltip]{ position:relative; }
+.app-sidebar:not(.expanded) .sidebar-btn[data-tooltip]::after{
+  content:attr(data-tooltip); position:absolute; right:calc(100% + 10px); top:50%; transform:translateY(-50%);
+  background:var(--panel-raised); color:var(--text); border:1px solid var(--line); border-radius:var(--radius-md);
+  padding:5px 10px; font-size:12.5px; font-weight:600; white-space:nowrap; box-shadow:var(--shadow-md);
+  opacity:0; pointer-events:none; transition:opacity .08s ease; transition-delay:.08s; z-index:5;
+}
+.app-sidebar:not(.expanded) .sidebar-btn[data-tooltip]:hover::after{ opacity:1; }
 .sidebar-btn-label{ display:none; font-weight:600; font-size:13.5px; white-space:nowrap; align-items:center; gap:7px; }
 .app-sidebar.expanded .sidebar-btn-label{ display:inline-flex; }
 .sidebar-btn-dev-dot{
