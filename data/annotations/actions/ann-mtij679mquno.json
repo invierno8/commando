@@ -1,0 +1,11 @@
+{
+  "id": "ann-mtij679mquno",
+  "route": "catalog",
+  "targetLabel": "dossier-grid",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "text field should be editable",
+  "authorName": "אילאיל",
+  "requestedAt": "2026-09-01T22:27:35.573Z",
+  "requestedBy": "admin"
+}
