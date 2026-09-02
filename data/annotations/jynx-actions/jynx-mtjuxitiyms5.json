@@ -1,0 +1,8 @@
+{
+  "id": "jynx-mtjuxitiyms5",
+  "route": "tickets",
+  "targetLabel": "jynx-hotkey-hint",
+  "secondaryTargets": [],
+  "comment": "put this in line, and not two lines make it take less space, and also, the point of clicking the current hotkey, is then to chose \"detect new hot key\" so when i click anything it becomes the hot key with a reset to defulte option also why when clicking it there is this weird list?",
+  "requestedAt": "2026-09-02T08:51:49.728Z"
+}
