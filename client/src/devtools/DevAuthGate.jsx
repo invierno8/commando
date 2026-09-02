@@ -6,6 +6,7 @@ import DevGreetingMenu from "./DevGreetingMenu.jsx";
 import DevAdminPanel from "./DevAdminPanel.jsx";
 import DevOverlay from "./overlay/DevOverlay.jsx";
 import CommentsPanel from "./overlay/CommentsPanel.jsx";
+import { JynxTutorialOverlay, JynxHelpHoverBubble } from "./JynxTutorial.jsx";
 import MentionsBell from "./MentionsBell.jsx";
 import JynxBubbleContent from "./JynxBubbleContent.jsx";
 import UserProfileCard from "./UserProfileCard.jsx";
@@ -43,6 +44,16 @@ function loadOverlayOn() {
     const raw = localStorage.getItem(OVERLAY_ON_KEY);
     return raw === null ? true : raw === "true";
   } catch { return true; }
+}
+
+// jynx-mtjv4sponizo: the "? " in the Hi menu — off by default (a first-time
+// dev user hasn't run the tour yet), persisted the same way overlayOn is so
+// it survives a reload once someone has actually turned it on, either by
+// finishing the tour or by skipping it (see JynxTutorial.jsx/DevGreetingMenu.jsx —
+// both count as "done with the tutorial" per the request).
+const HELP_MODE_KEY = "jynx-help-mode-on";
+function loadHelpModeOn() {
+  try { return localStorage.getItem(HELP_MODE_KEY) === "true"; } catch { return false; }
 }
 
 // The comment-hotkey display, requested by the admin dev user directly: a
@@ -145,6 +156,21 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [adminOpen, setAdminOpen] = useState(false);
   const [overlayOn, setOverlayOn] = useState(loadOverlayOn);
   useEffect(() => { try { localStorage.setItem(OVERLAY_ON_KEY, String(overlayOn)); } catch { /* ignore */ } }, [overlayOn]);
+  const [helpModeOn, setHelpModeOn] = useState(loadHelpModeOn);
+  useEffect(() => { try { localStorage.setItem(HELP_MODE_KEY, String(helpModeOn)); } catch { /* ignore */ } }, [helpModeOn]);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+  // Off already-on turns hover-help straight back off (per the request:
+  // clicking ? again just turns it off, no replay); off-and-not-touring
+  // starts the tour instead — the tour itself is what flips helpModeOn on
+  // once it finishes or is skipped, see finishTutorial below.
+  function toggleHelpMode() {
+    if (helpModeOn) { setHelpModeOn(false); return; }
+    setTutorialOpen(true);
+  }
+  function finishTutorial() {
+    setTutorialOpen(false);
+    setHelpModeOn(true);
+  }
   const [hotkeyModifier, setHotkeyModifierState] = useState(loadHotkeyModifier);
   const [hotkeyPickerOpen, setHotkeyPickerOpen] = useState(false);
   function setHotkeyModifier(next) {
@@ -529,6 +555,8 @@ export default function DevAuthGate({ route, devFabProps }) {
       <style>{CSS}</style>
       <DevOverlay active={overlayOn || drawMode} hoverOn={overlayOn} route={route} isAdmin={isAdmin} canJynxChrome={isAdmin || canJynxComment} markersOn={markersOn} drawMode={drawMode} drawColor={drawColor} />
       <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} isAdmin={isAdmin} canJynxComment={canJynxComment} />
+      <JynxTutorialOverlay active={tutorialOpen} onFinish={finishTutorial} />
+      <JynxHelpHoverBubble active={helpModeOn && !tutorialOpen} />
       {drawMode && (
         <div
           ref={drawPaletteFab.sizeRef}
@@ -590,7 +618,7 @@ export default function DevAuthGate({ route, devFabProps }) {
             </div>
             );
           })}
-          <DevGreetingMenu devName={devName} onOpenSettings={() => setAdminOpen(true)} onLogout={logout} shortcuts={keyboardShortcuts} />
+          <DevGreetingMenu devName={devName} onOpenSettings={() => setAdminOpen(true)} onLogout={logout} shortcuts={keyboardShortcuts} helpModeOn={helpModeOn} onToggleHelp={toggleHelpMode} />
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-collapse-btn" onClick={toggleToolbarOpen} title="Collapse to the Jynx bubble">
             <X size={13} />
           </button>
@@ -599,7 +627,7 @@ export default function DevAuthGate({ route, devFabProps }) {
               toolbar-wrap's fixed right/bottom anchor corner in both
               orientations, so it's the one thing in the bar that barely
               moves when you click it. */}
-          <button type="button" className="dev-toolbar-grip" onClick={toggleOrientation} title={`Switch to ${toolbarOrientation === "horizontal" ? "vertical" : "horizontal"} menu (click here — drag anywhere else on the bar to move it)`}>
+          <button type="button" className="dev-toolbar-grip" data-devblock="dev-toolbar-grip" onClick={toggleOrientation} title={`Switch to ${toolbarOrientation === "horizontal" ? "vertical" : "horizontal"} menu (click here — drag anywhere else on the bar to move it)`}>
             {toolbarOrientation === "vertical" ? <GripHorizontal size={15} /> : <GripVertical size={15} />}
           </button>
         </div>

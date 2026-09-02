@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Settings2, LogOut } from "lucide-react";
+import { Settings2, LogOut, CircleHelp } from "lucide-react";
 import { useKeepInViewport } from "./useKeepInViewport.js";
 
 /* ================================================================== */
@@ -14,7 +14,7 @@ import { useKeepInViewport } from "./useKeepInViewport.js";
 /* "Logout". Same open/click-outside/viewport-clamp shape as             */
 /* MentionsBell.jsx, the sibling toolbar dropdown right next to this one.*/
 /* ================================================================== */
-export default function DevGreetingMenu({ devName, onOpenSettings, onLogout, shortcuts }) {
+export default function DevGreetingMenu({ devName, onOpenSettings, onLogout, shortcuts, helpModeOn, onToggleHelp }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -40,7 +40,25 @@ export default function DevGreetingMenu({ devName, onOpenSettings, onLogout, sho
       </button>
       {open && (
         <div ref={dropdownRef} className="dev-greeting-dropdown jynx-ui">
-          <div className="dev-greeting-dropdown-head">Hi, {devName}</div>
+          <div className="dev-greeting-dropdown-head-row">
+            <div className="dev-greeting-dropdown-head">Hi, {devName}</div>
+            {/* jynx-mtjv4sponizo: "add a ? icon inside the 'HI' menu item ...
+                when the user is done with the tutorial the ? icon stays on
+                ... until he goes back to hi menu item and clicks on ? to
+                turn it off" — off: starts the interactive tour (see
+                JynxTutorial.jsx); already on: turns hover-help straight back
+                off without replaying the tour, exactly as asked. The tour
+                itself is what flips this "on" once it finishes/is skipped —
+                this button never sets helpModeOn directly when it's off. */}
+            <button
+              type="button"
+              className={"dev-greeting-help-btn" + (helpModeOn ? " active" : "")}
+              onClick={() => { setOpen(false); onToggleHelp(); }}
+              title={helpModeOn ? "Turn off field explanations" : "Start the Jynx tour"}
+            >
+              <CircleHelp size={14} />
+            </button>
+          </div>
           {/* jynx-mth50gvydy9j: "the hotkey is not clearly stated to the
               user and they cannot change it ... under 'hi' menu" — lists
               the number key each toolbar button currently answers to
@@ -99,10 +117,20 @@ const CSS = `
   border-radius:10px; padding:6px; display:flex; flex-direction:column; gap:2px; box-shadow:var(--shadow-md);
   animation:devAnnotateIn .12s ease; z-index:1;
 }
-.dev-greeting-dropdown-head{
-  font-family:var(--font-mono); font-size:11.5px; font-weight:700; color:var(--jynx); padding:6px 8px 8px;
-  border-bottom:1px solid var(--line); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+.dev-greeting-dropdown-head-row{
+  display:flex; align-items:center; justify-content:space-between; gap:6px; padding:6px 8px 8px;
+  border-bottom:1px solid var(--line); margin-bottom:4px;
 }
+.dev-greeting-dropdown-head{
+  font-family:var(--font-mono); font-size:11.5px; font-weight:700; color:var(--jynx);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.dev-greeting-help-btn{
+  flex:none; display:flex; align-items:center; justify-content:center; width:20px; height:20px;
+  background:none; border:1px solid var(--line); border-radius:6px; color:var(--text-dim); cursor:pointer; padding:0;
+}
+.dev-greeting-help-btn:hover{ border-color:var(--jynx); color:var(--jynx); }
+.dev-greeting-help-btn.active{ background:var(--jynx); border-color:var(--jynx); color:#fff; }
 .dev-greeting-shortcuts{
   display:flex; flex-direction:column; gap:3px; padding:4px 8px 8px; margin-bottom:2px;
   border-bottom:1px solid var(--line);
