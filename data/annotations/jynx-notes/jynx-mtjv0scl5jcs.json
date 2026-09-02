@@ -1,0 +1,24 @@
+{
+  "id": "jynx-mtjv0scl5jcs",
+  "authorId": "admin",
+  "authorName": "Admin",
+  "createdAt": "2026-09-02T08:54:20.037Z",
+  "route": "tickets",
+  "targetLabel": "dev-toolbar-grip",
+  "secondaryTargets": [],
+  "comment": "the animation still sucks, to laggy and goes the wrong way, make the toolbar grip the center of movement, so the menu will rotate to the left and the toolbar grip will always be at the buttom in one flawless motion",
+  "resolved": false,
+  "resolvedAt": null,
+  "resolutionNote": null,
+  "actionStatus": "queued",
+  "actionRequestedAt": "2026-09-02T08:54:20.037Z",
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
