@@ -270,7 +270,14 @@ const CSS = `
 .dev-annotate-popover-jynx .dev-annotate-btn-primary{ background:var(--dev); }
 .dev-annotate-popover textarea{
   width:100%; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:7px 9px;
-  font-size:12.5px; font-family:var(--font-sans); color:var(--text); resize:vertical;
+  /* ann-mtihhb0g8r01: "text is far too small ... use ux best practices" —
+     12.5px on the one field you're actively typing into was smaller than
+     most of the read-only metadata text around it. The field you're
+     typing in should read at least as easily as the text you're reading,
+     so this goes up a real step, not a token nudge — same bump applied to
+     CommentsPanel.jsx's edit box and reply input, the same 12.5px value
+     copy-pasted into every Jynx text-entry field, not just this one. */
+  font-size:14px; line-height:1.4; font-family:var(--font-sans); color:var(--text); resize:vertical;
 }
 .dev-annotate-popover textarea:focus{ outline:none; border-color:var(--dev); }
 .dev-annotate-popover-actions{ display:flex; justify-content:flex-end; gap:8px; }

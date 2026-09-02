@@ -934,7 +934,9 @@ const CSS_TEXT = `
 .comments-edit-box{ display:flex; flex-direction:column; gap:5px; margin:3px 0; }
 .comments-edit-box textarea{
   width:100%; background:var(--bg); border:1px solid var(--jynx); border-radius:7px; padding:6px 8px;
-  font-size:12.5px; font-family:var(--font-sans); color:var(--text); resize:vertical;
+  /* ann-mtihhb0g8r01: same fix as AnnotationPopover's composer textarea —
+     see the comment there. */
+  font-size:14px; line-height:1.4; font-family:var(--font-sans); color:var(--text); resize:vertical;
 }
 .comments-edit-actions{ display:flex; justify-content:flex-end; gap:6px; }
 .comments-edit-actions button{
@@ -1030,7 +1032,10 @@ const CSS_TEXT = `
 .comments-mention-dropdown button:hover{ background:color-mix(in srgb, var(--jynx) 12%, transparent); color:var(--jynx); }
 .comments-thread-input{ display:flex; gap:5px; }
 .comments-thread-input input{
-  flex:1; background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:5px 8px; font-size:11.5px; color:var(--text);
+  /* ann-mtihhb0g8r01: same fix as the composer/edit-box textareas — the
+     one field you're actively typing a reply into shouldn't read smaller
+     than the metadata around it. */
+  flex:1; background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:5px 8px; font-size:14px; color:var(--text);
 }
 .comments-thread-input button{
   background:var(--jynx); color:#fff; border:none; border-radius:7px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;
@@ -1060,7 +1065,8 @@ const CSS_TEXT = `
 }
 .comments-jynx-composer textarea{
   width:100%; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:6px 8px;
-  font-size:12px; font-family:var(--font-sans); color:var(--text); resize:vertical;
+  /* ann-mtihhb0g8r01: same fix as every other Jynx text-entry field. */
+  font-size:14px; line-height:1.4; font-family:var(--font-sans); color:var(--text); resize:vertical;
 }
 .comments-jynx-composer textarea:focus{ outline:none; border-color:var(--dev); }
 .comments-jynx-composer-actions{ display:flex; justify-content:flex-end; gap:6px; }

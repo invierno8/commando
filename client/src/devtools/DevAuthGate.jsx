@@ -45,6 +45,38 @@ function loadOverlayOn() {
   } catch { return true; }
 }
 
+// The comment-hotkey display, requested by the admin dev user directly: a
+// visible "hold this and click" hint, plus a way to say which modifier is
+// "yours" instead of the toolbar silently accepting both forever. This is
+// display/labeling only, not enforcement — DevOverlay.jsx's own click
+// handler already checks `e.ctrlKey || e.metaKey` and keeps accepting
+// BOTH regardless of this setting. Deliberately not making it exclusive:
+// someone used to the other key (e.g. a Windows user who occasionally
+// borrows a Mac) shouldn't lose the ability to Ctrl/Cmd+click just because
+// a preference was set once. "auto" (the default) picks a sensible label
+// from the platform instead of guessing at a fixed default that's wrong
+// for half of all users.
+const HOTKEY_MODIFIER_KEY = "jynx-hotkey-modifier";
+const HOTKEY_OPTIONS = {
+  cmd: { symbol: "⌘", label: "Cmd" },
+  ctrl: { symbol: "Ctrl", label: "Ctrl" },
+};
+function detectPlatformModifier() {
+  try {
+    const platform = navigator.userAgentData?.platform || navigator.platform || navigator.userAgent || "";
+    return /mac|iphone|ipad/i.test(platform) ? "cmd" : "ctrl";
+  } catch { return "ctrl"; }
+}
+function loadHotkeyModifier() {
+  try {
+    const raw = localStorage.getItem(HOTKEY_MODIFIER_KEY);
+    return raw === "cmd" || raw === "ctrl" ? raw : "auto";
+  } catch { return "auto"; }
+}
+function resolveHotkeyOption(pref) {
+  return HOTKEY_OPTIONS[pref === "auto" ? detectPlatformModifier() : pref];
+}
+
 // 4-swatch draw-color palette (added 2026-08-23, per QA feedback asking for
 // one whenever the draw tool is turned on) — Jynx's own accent purple stays
 // the default so the drawing feature keeps looking like Jynx out of the box,
@@ -113,6 +145,12 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [adminOpen, setAdminOpen] = useState(false);
   const [overlayOn, setOverlayOn] = useState(loadOverlayOn);
   useEffect(() => { try { localStorage.setItem(OVERLAY_ON_KEY, String(overlayOn)); } catch { /* ignore */ } }, [overlayOn]);
+  const [hotkeyModifier, setHotkeyModifierState] = useState(loadHotkeyModifier);
+  const [hotkeyPickerOpen, setHotkeyPickerOpen] = useState(false);
+  function setHotkeyModifier(next) {
+    setHotkeyModifierState(next);
+    try { localStorage.setItem(HOTKEY_MODIFIER_KEY, next); } catch { /* ignore */ }
+  }
   const [commentsOn, setCommentsOn] = useState(false);
   // סימוני-מנהל הקבועים על העמוד (AdminAnnotationMarkers.jsx) — נפרד בכוונה
   // מ-overlayOn (שרק שולט על הילת-hover, לא על הנקודות הקבועות). דלוק
@@ -203,18 +241,34 @@ export default function DevAuthGate({ route, devFabProps }) {
   // ותיקון right כך שהמרכז הגיאומטרי (לא הקצה) יישאר במקום — ראו
   // useDraggableFab.js's nudgePos. double rAF כדי לוודא שהדפדפן כבר סיים
   // layout עם המחלקה/הכיוון החדשים לפני המדידה השנייה.
+  // jynx-mtj8qgdyw7u2: "when clicked the move to vertical is laggy please
+  // animate and fix" — flex-direction itself can't be CSS-transitioned (the
+  // row→column reflow always happens in one instant frame), which is what
+  // read as "laggy": a hard snap, then — once the nudge above lands — a
+  // second, separate snap. Can't literally animate the un-animatable
+  // property, so this crossfades through it instead: fade+shrink slightly,
+  // swap orientation (and re-measure/nudge, unchanged from before) while
+  // barely visible, then fade back in — the reflow itself still happens in
+  // one frame, but it happens during the low-opacity moment instead of in
+  // full view. The .dev-fab-toolbar-flipping class only sets opacity/scale;
+  // the transition (including for the position nudge's right/bottom) lives
+  // on the base class so it's active for both directions.
   function toggleOrientation() {
     if (toolbarFab.consumeWasDragged()) return;
     const el = toolbarFab.sizeRef.current;
     const oldWidth = el?.offsetWidth || 0;
-    setOrientation(toolbarOrientation === "horizontal" ? "vertical" : "horizontal");
-    requestAnimationFrame(() => {
+    el?.classList.add("dev-fab-toolbar-flipping");
+    setTimeout(() => {
+      setOrientation(toolbarOrientation === "horizontal" ? "vertical" : "horizontal");
       requestAnimationFrame(() => {
-        const newWidth = el?.offsetWidth || 0;
-        const delta = newWidth - oldWidth;
-        if (delta) toolbarFab.nudgePos(-delta / 2);
+        requestAnimationFrame(() => {
+          const newWidth = el?.offsetWidth || 0;
+          const delta = newWidth - oldWidth;
+          if (delta) toolbarFab.nudgePos(-delta / 2);
+          el?.classList.remove("dev-fab-toolbar-flipping");
+        });
       });
-    });
+    }, 140);
   }
   function setOrientation(next) {
     setToolbarOrientation(next);
@@ -500,10 +554,11 @@ export default function DevAuthGate({ route, devFabProps }) {
         </div>
       )}
       {toolbarOpen ? (
+        <div className="dev-fab-toolbar-wrap" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
         <div
           ref={toolbarFab.sizeRef}
           className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "")}
-          style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom, "--jynx-icon-scale": iconScale }}
+          style={{ "--jynx-icon-scale": iconScale }}
           data-jynx-dock-zone=""
           onDragOver={(e) => e.preventDefault()}
           {...toolbarFab.dragHandlers}
@@ -546,6 +601,43 @@ export default function DevAuthGate({ route, devFabProps }) {
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-collapse-btn" onClick={toggleToolbarOpen} title="Collapse to the Jynx bubble">
             <X size={13} />
           </button>
+        </div>
+        {/* Direct founder request (chat, not the annotation queue): a small
+            hint under the menu once it's open, saying to hold the hotkey and
+            click any element to comment — plus a clickable "current hotkey"
+            label that opens a way to change it between Cmd/Ctrl. See the
+            HOTKEY_MODIFIER_KEY comment above for why this only changes the
+            label, not what's actually accepted. */}
+        <div className="jynx-hotkey-hint jynx-chrome jynx-ui">
+          <span className="jynx-hotkey-hint-text">
+            {resolveHotkeyOption(hotkeyModifier).symbol}+click any element to comment
+          </span>
+          <button
+            type="button" className="jynx-hotkey-current"
+            onClick={() => setHotkeyPickerOpen((v) => !v)}
+          >
+            {/* Ctrl has no separate glyph the way ⌘ does — symbol and label
+                are literally the same string for it, so showing both would
+                read as "Ctrl Ctrl". Only show the symbol when it's actually
+                a distinct symbol, not a repeat of the word. */}
+            Current hotkey: {resolveHotkeyOption(hotkeyModifier).symbol !== resolveHotkeyOption(hotkeyModifier).label
+              ? `${resolveHotkeyOption(hotkeyModifier).symbol} ${resolveHotkeyOption(hotkeyModifier).label}`
+              : resolveHotkeyOption(hotkeyModifier).label}
+          </button>
+          {hotkeyPickerOpen && (
+            <div className="jynx-hotkey-picker">
+              <button type="button" className={hotkeyModifier === "auto" ? "active" : ""} onClick={() => { setHotkeyModifier("auto"); setHotkeyPickerOpen(false); }}>
+                Auto ({resolveHotkeyOption("auto").label} — detected)
+              </button>
+              <button type="button" className={hotkeyModifier === "cmd" ? "active" : ""} onClick={() => { setHotkeyModifier("cmd"); setHotkeyPickerOpen(false); }}>
+                ⌘ Command (Mac)
+              </button>
+              <button type="button" className={hotkeyModifier === "ctrl" ? "active" : ""} onClick={() => { setHotkeyModifier("ctrl"); setHotkeyPickerOpen(false); }}>
+                Ctrl Control (Windows/Linux)
+              </button>
+            </div>
+          )}
+        </div>
         </div>
       ) : (
         <div className="dev-fab-wrap jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
@@ -595,6 +687,8 @@ export default function DevAuthGate({ route, devFabProps }) {
             onSetIconScale: setIconScale,
             roleDocked,
             onSetRoleDocked: (docked) => (docked ? dockRole() : undockRole()),
+            hotkeyModifier,
+            onSetHotkeyModifier: setHotkeyModifier,
           }}
         />
       )}
@@ -654,12 +748,45 @@ const CSS = `
    .jynx-logo-error רק משנה צבע, לא צריך מסגרת/זנב/מיקום נפרדים יותר. */
 .jynx-logo-error{ background:none; -webkit-background-clip:initial; background-clip:initial; color:var(--red); }
 
+/* position:fixed + the right/bottom-nudge transition now live on this wrap,
+   not .dev-fab-toolbar itself — the toolbar bar gained a sibling (the
+   hotkey hint below it) that also needs to sit under the same fixed
+   anchor, so the anchor moved up one level. */
+.dev-fab-toolbar-wrap{
+  position:fixed; z-index:79; display:flex; flex-direction:column; align-items:flex-end; gap:6px;
+  transition:right .22s var(--ease-io), bottom .22s var(--ease-io);
+}
 .dev-fab-toolbar{
-  position:fixed; z-index:79; display:flex; align-items:center; gap:6px;
+  display:flex; align-items:center; gap:6px;
   cursor:grab; touch-action:none;
+  transition:opacity .14s ease, transform .14s ease;
 }
 .dev-fab-toolbar:active{ cursor:grabbing; }
 .dev-fab-toolbar.vertical{ flex-direction:column; align-items:stretch; }
+.dev-fab-toolbar-flipping{ opacity:.35; transform:scale(.94); }
+@media (prefers-reduced-motion: reduce){ .dev-fab-toolbar-wrap, .dev-fab-toolbar{ transition:none; } }
+
+.jynx-hotkey-hint{
+  display:flex; flex-direction:column; align-items:flex-end; gap:3px; position:relative;
+  font-family:var(--font-sans); max-width:220px; text-align:end;
+}
+.jynx-hotkey-hint-text{ font-size:10.5px; color:var(--text-dim); }
+.jynx-hotkey-current{
+  background:none; border:none; color:var(--jynx); font-size:10.5px; font-weight:700; cursor:pointer;
+  padding:0; text-decoration:underline; text-underline-offset:2px; font-family:var(--font-mono);
+}
+.jynx-hotkey-current:hover{ color:var(--dev); }
+.jynx-hotkey-picker{
+  position:absolute; top:100%; margin-top:4px; right:0; min-width:190px; background:var(--panel);
+  border:1px solid var(--jynx); border-radius:10px; padding:6px; display:flex; flex-direction:column; gap:2px;
+  box-shadow:var(--shadow-md); animation:devAnnotateIn .12s ease; z-index:1;
+}
+.jynx-hotkey-picker button{
+  display:flex; align-items:center; gap:6px; background:none; border:none; border-radius:6px; padding:7px 8px;
+  font-family:var(--font-sans); font-size:12px; font-weight:600; color:var(--text); cursor:pointer; text-align:start;
+}
+.jynx-hotkey-picker button:hover{ background:var(--panel-raised); color:var(--jynx); }
+.jynx-hotkey-picker button.active{ background:var(--jynx); color:#fff; }
 /* הידית עצמה עכשיו כפתור אמיתי (מחליף אופקי/אנכי) — לא רק "אזור-גרירה
    שיושב שם", אז צריך רמז ברור שהיא לחיצה: קצת יותר גדולה מכל שאר האייקונים
    ותוחם עדין (border) כדי לא "להיבלע" בתוך פס-הכלים כמו לפני. */

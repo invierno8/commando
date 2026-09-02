@@ -16,6 +16,17 @@ const ICON_SCALE_OPTIONS = [
   { key: "large", label: "Large", value: 1.75 },
 ];
 
+// Same detection DevAuthGate.jsx's toolbar hint uses for "Auto" — kept as
+// a small, self-contained duplicate here rather than a shared import, the
+// same "every component owns its own CSS/small helpers" convention this
+// file already follows elsewhere (see the file-level note below).
+function detectPlatformModifierLabel() {
+  try {
+    const platform = navigator.userAgentData?.platform || navigator.platform || navigator.userAgent || "";
+    return /mac|iphone|ipad/i.test(platform) ? "Cmd" : "Ctrl";
+  } catch { return "Ctrl"; }
+}
+
 /* ================================================================== */
 /* LEGO BLOCK — everything about how the Jynx toolbar itself looks/     */
 /* behaves, pulled OUT of the live toolbar into its own popup. Previous */
@@ -57,7 +68,7 @@ const ITEM_LABELS = {
 export function JynxMenuSettingsFields({
   orientation, onSetOrientation, order, defaultOrder, availableIds,
   onReorder, onReset, onUndo, canUndo, iconScale, onSetIconScale,
-  roleDocked, onSetRoleDocked,
+  roleDocked, onSetRoleDocked, hotkeyModifier, onSetHotkeyModifier,
 }) {
   const [dragId, setDragId] = useState(null);
   // יעד-שחרור נוכחי בזמן גרירה — משמש רק להדגשה ויזואלית (ראו
@@ -109,6 +120,27 @@ export function JynxMenuSettingsFields({
           <button type="button" className={!roleDocked ? "active" : ""} onClick={() => onSetRoleDocked(false)}>Detached</button>
         </div>
       </div>
+
+      {/* Direct founder request: a way to say which modifier is "yours" for
+          the comment hotkey (Ctrl/Cmd+click) — display/labeling only, both
+          keys keep working regardless of this choice, see the matching
+          comment in DevAuthGate.jsx next to HOTKEY_MODIFIER_KEY. */}
+      {hotkeyModifier != null && (
+        <div className="jynx-settings-section">
+          <span className="jynx-settings-label">Comment hotkey</span>
+          <div className="jynx-settings-toggle-row">
+            <button type="button" className={hotkeyModifier === "auto" ? "active" : ""} onClick={() => onSetHotkeyModifier("auto")}>
+              Auto ({detectPlatformModifierLabel()})
+            </button>
+            <button type="button" className={hotkeyModifier === "cmd" ? "active" : ""} onClick={() => onSetHotkeyModifier("cmd")}>
+              ⌘ Cmd
+            </button>
+            <button type="button" className={hotkeyModifier === "ctrl" ? "active" : ""} onClick={() => onSetHotkeyModifier("ctrl")}>
+              Ctrl
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="jynx-settings-section">
         <span className="jynx-settings-label">Icon size</span>
