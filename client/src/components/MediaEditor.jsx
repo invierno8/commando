@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { X, ImagePlus, Video, Play } from "lucide-react";
+import { X, ImagePlus, Video, Play, Star } from "lucide-react";
 
 /* ================================================================== */
 /* LEGO BLOCK — MediaEditor: add/remove/caption the photos and videos   */
@@ -34,13 +34,18 @@ export default function MediaEditor({ media, onChange }) {
   function removeAt(idx) {
     onChange(media.filter((_, i) => i !== idx));
   }
+  function setAsMain(idx) {
+    if (idx === 0) return;
+    const chosen = media[idx];
+    onChange([chosen, ...media.filter((_, i) => i !== idx)]);
+  }
 
   return (
     <div className="media-editor">
       {media.length > 0 && (
         <div className="media-editor-list">
           {media.map((m, idx) => (
-            <div className="media-editor-item" key={idx}>
+            <div className={"media-editor-item" + (idx === 0 ? " is-main" : "")} key={idx}>
               <div className="media-editor-thumb">
                 {m.type === "video" ? (
                   m.poster ? <img src={m.poster} alt="" /> : <Video size={16} />
@@ -49,6 +54,15 @@ export default function MediaEditor({ media, onChange }) {
                 )}
                 {m.type === "video" && <span className="media-editor-thumb-play"><Play size={9} /></span>}
               </div>
+              <button
+                type="button"
+                className={"media-editor-main-btn" + (idx === 0 ? " is-main" : "")}
+                onClick={() => setAsMain(idx)}
+                disabled={idx === 0}
+                title={idx === 0 ? "התמונה הראשית" : "הפיכה לתמונה ראשית"}
+              >
+                <Star size={13} fill={idx === 0 ? "currentColor" : "none"} />
+              </button>
               <input
                 className="media-editor-caption"
                 value={m.caption || ""}
