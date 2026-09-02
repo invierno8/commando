@@ -4,7 +4,7 @@ import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, Mess
 import {
   fetchDevAnnotations, replyToAnnotation, editMyAnnotation, reactToAnnotation, requestAnnotationAction,
   fetchJynxFeedback, fetchMyJynxFeedback, replyToJynxFeedback, reactToJynxFeedback, submitJynxFeedback,
-  resolveAnnotation, resolveJynxFeedback, deleteAnnotation,
+  resolveAnnotation, resolveJynxFeedback, deleteAnnotation, deleteMyAnnotation, deleteMyJynxFeedback,
 } from "../devApi.js";
 import { useDraggableFab } from "../useDraggableFab.js";
 import DrawingOverlay from "./DrawingOverlay.jsx";
@@ -386,10 +386,13 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     else await resolveAnnotation(a.id, false);
     reload();
   }
-  // מחיקה — רק kind:"app" (אין DELETE ל-jynx-feedback, ראו data/routes/
-  // jynx-feedback.js).
+  // מחיקת מנהל (כל הערה, כל kind מ-2026-09-02) מול מחיקה עצמית
+  // (jynx-mth5347s3eil: "for dev user - allow deleting their own
+  // comments") — שני נתיבים נפרדים בשרת, נבחר כאן לפי מי בעצם לוחץ.
   async function confirmDelete(a) {
-    await deleteAnnotation(a.id);
+    if (isAdmin) await deleteAnnotation(a.id);
+    else if (a.kind === "jynx") await deleteMyJynxFeedback(a.id);
+    else await deleteMyAnnotation(a.id);
     setDeletingId(null);
     reload();
   }
@@ -580,6 +583,12 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                 // "app"/undefined) שאתה בעצמך כתבת — לא על משוב Jynx (תור
                 // נפרד, אין לו endpoint עריכה מקביל, וממילא רק מנהל כותב שם).
                 const canEdit = a.kind !== "jynx" && a.authorId === currentDevUserId;
+                // jynx-mth5347s3eil: dev users (not admin — admin already has
+                // its own full delete button below) can delete their OWN
+                // comment, either kind, as long as nobody's replied yet (a
+                // reply is someone else's visible content riding on this
+                // comment — that case stays admin-only).
+                const canDeleteSelf = !isAdmin && a.authorId === currentDevUserId && replies.length === 0;
                 // Once a comment has a PR or is marked done, "editing" it
                 // becomes "reopening" it instead (jynx-mt3djr6idsg1) — see
                 // saveReopen() above.
@@ -633,6 +642,15 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                               onClick={(e) => { e.stopPropagation(); setEditingId(a.id); setEditText(isProcessed ? "" : a.comment); }}
                             >
                               {isProcessed ? <RotateCcw size={11} /> : <Pencil size={11} />}
+                            </button>
+                          )}
+                          {canDeleteSelf && (
+                            <button
+                              type="button" className="comments-edit-btn comments-delete-self-btn"
+                              title="Delete your comment"
+                              onClick={(e) => { e.stopPropagation(); setDeletingId(a.id); }}
+                            >
+                              <Trash2 size={11} />
                             </button>
                           )}
                         </p>
@@ -696,7 +714,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                           </div>
                         </div>
                       )}
-                      {isAdmin && deletingId === a.id && (
+                      {(isAdmin || canDeleteSelf) && deletingId === a.id && (
                         <div className="comments-delete-confirm" onClick={(e) => e.stopPropagation()}>
                           <span>Delete this comment permanently?</span>
                           <div className="comments-delete-confirm-actions">
@@ -931,6 +949,7 @@ const CSS_TEXT = `
   color:var(--text-dim); cursor:pointer; padding:0 0 0 6px; vertical-align:middle;
 }
 .comments-edit-btn:hover{ color:var(--jynx); }
+.comments-delete-self-btn:hover{ color:var(--red); }
 .comments-edit-box{ display:flex; flex-direction:column; gap:5px; margin:3px 0; }
 .comments-edit-box textarea{
   width:100%; background:var(--bg); border:1px solid var(--jynx); border-radius:7px; padding:6px 8px;

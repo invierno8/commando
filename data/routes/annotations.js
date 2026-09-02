@@ -354,6 +354,25 @@ router.delete("/admin/annotations/:id", requireAdmin, asyncRoute(async (req, res
   res.json({ ok: true });
 }));
 
+// jynx-mth5347s3eil: "for dev user - allow deleting their own comments" —
+// same ownership pattern as PATCH /dev/annotations/:id above (self-edit),
+// just delete instead of edit. Deliberately not extended to an item that
+// already has replies from other people or that's been actioned — those
+// have visible consequences for someone else, so they stay admin-only via
+// DELETE /admin/annotations/:id above.
+router.delete("/dev/annotations/:id", requireDevUser, asyncRoute(async (req, res) => {
+  const found = readAll().find((a) => a.id === req.params.id);
+  if (!found) return res.status(404).json({ error: "לא נמצא" });
+  if (found.authorId !== req.devUser.id) {
+    return res.status(403).json({ error: "אפשר למחוק רק הערות שכתבת בעצמך" });
+  }
+  if ((found.replies || []).length > 0) {
+    return res.status(409).json({ error: "לא ניתן למחוק הערה עם תגובות — פנה/י למנהל" });
+  }
+  await deleteNote(found.id, `comment deleted by author — ${found.id}`);
+  res.json({ ok: true });
+}));
+
 // מנהל בלבד — מסמן הערה קיימת (שכתב מישהו אחר) כפריט עבודה.
 router.post("/admin/annotations/:id/action", requireAdmin, asyncRoute(async (req, res) => {
   const found = readAll().find((a) => a.id === req.params.id);

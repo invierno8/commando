@@ -28,7 +28,7 @@ import { requireDevUser } from "../middleware/auth.js";
 import { resolveSession } from "../lib/sessions.js";
 import { readDevUsers } from "../lib/devUsers.js";
 import { asyncRoute, requireFields } from "../middleware/validate.js";
-import { commitFileToGithub, githubPersistEnabled, listDirFromGithub, readFileFromGithub } from "../lib/githubPersist.js";
+import { commitFileToGithub, deleteFileFromGithub, githubPersistEnabled, listDirFromGithub, readFileFromGithub } from "../lib/githubPersist.js";
 import { parseMentionedUsers, hasJynxMention, addMention } from "../lib/mentions.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -62,6 +62,13 @@ async function persistNote(note, message) {
   writeLocalNote(note.id, note);
   if (githubPersistEnabled()) {
     await commitFileToGithub(`${GITHUB_NOTES_DIR}/${note.id}.json`, JSON.stringify(note, null, 2) + "\n", message);
+  }
+}
+
+async function deleteNote(id, message) {
+  try { fs.unlinkSync(path.join(NOTES_DIR, `${id}.json`)); } catch { /* כבר לא קיים מקומית — ננסה עדיין למחוק ב-GitHub */ }
+  if (githubPersistEnabled()) {
+    await deleteFileFromGithub(`${GITHUB_NOTES_DIR}/${id}.json`, message);
   }
 }
 
@@ -154,6 +161,24 @@ router.get("/dev/jynx-feedback/mine", requireDevUser, (req, res) => {
   }
   res.json(readAll().filter((a) => a.authorId === req.devUser.id));
 });
+
+// jynx-mth5347s3eil: "for dev user - allow deleting their own comments" —
+// same ownership pattern as GET .../mine above and PATCH /dev/annotations/:id
+// in routes/annotations.js. Not extended to a note with replies from
+// someone else — that has a visible consequence for another person, so it
+// stays admin-only via a future admin-panel delete if ever needed.
+router.delete("/dev/jynx-feedback/:id", requireDevUser, asyncRoute(async (req, res) => {
+  const found = readAll().find((a) => a.id === req.params.id);
+  if (!found) return res.status(404).json({ error: "לא נמצא" });
+  if (found.authorId !== req.devUser.id) {
+    return res.status(403).json({ error: "אפשר למחוק רק הערות שכתבת בעצמך" });
+  }
+  if ((found.replies || []).length > 0) {
+    return res.status(409).json({ error: "לא ניתן למחוק הערה עם תגובות — פנה/י למנהל" });
+  }
+  await deleteNote(found.id, `Jynx feedback deleted by author — ${found.id}`);
+  res.json({ ok: true });
+}));
 
 // גם resolve/reopen (כמו קודם) וגם, מ-2026-08-21, עריכת טקסט ההערה עצמה
 // (comment) — ראו הכפתור-עיפרון ב-JynxFeedbackScreen.jsx. השדות בלתי-תלויים

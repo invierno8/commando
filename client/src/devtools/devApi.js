@@ -54,6 +54,13 @@ export async function editMyAnnotation(id, comment) {
 export async function reactToAnnotation(id, emoji) {
   return http.post(`/dev/annotations/${id}/react`, { emoji });
 }
+// jynx-mth5347s3eil: מחיקה עצמית של הערה על ידי מי שכתב אותה בלבד (403
+// מהשרת אם זה לא אתה, 409 אם יש לה תגובות) — שונה מ-deleteAnnotation
+// (מנהל, למטה), בדיוק כמו editMyAnnotation מול editAnnotationComment.
+export async function deleteMyAnnotation(id) {
+  await http.delete(`/dev/annotations/${id}`);
+  return true;
+}
 
 // משוב על Jynx עצמו — תור נפרד לגמרי, מנהל בלבד (ראו data/routes/jynx-feedback.js).
 export async function submitJynxFeedback(data) {
@@ -66,6 +73,12 @@ export async function fetchJynxFeedback() {
 // data/routes/jynx-feedback.js), עבור CommentsPanel.jsx.
 export async function fetchMyJynxFeedback() {
   return http.get(`/dev/jynx-feedback/mine`);
+}
+// jynx-mth5347s3eil: אותו הגיון בדיוק כמו deleteMyAnnotation למעלה, עבור
+// תור משוב ה-Jynx הנפרד.
+export async function deleteMyJynxFeedback(id) {
+  await http.delete(`/dev/jynx-feedback/${id}`);
+  return true;
 }
 export async function resolveJynxFeedback(id, resolved, resolutionNote) {
   return http.patch(`/admin/jynx-feedback/${id}`, { resolved, resolutionNote });
