@@ -550,7 +550,7 @@ export default function DevAuthGate({ route, devFabProps }) {
         </div>
       )}
       {toolbarOpen ? (
-        <div className="dev-fab-toolbar-wrap" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
+        <div className="dev-fab-toolbar-wrap jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
         <div
           ref={toolbarFab.sizeRef}
           className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "")}
