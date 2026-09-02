@@ -13,7 +13,7 @@ import {
 } from "../api-client/brigadeStore.js";
 import { pushNotification, NOTIFICATION_TYPES } from "../api-client/notificationStore.js";
 import { STRUCTURAL_ROLES } from "../roles.js";
-import { CATALOG_ORIGINS, CATALOG_ORIGIN_LABELS, PROCUREMENT_STAGE_LABELS, ProcurementStagePill } from "../opsData.jsx";
+import { CATALOG_ORIGINS, CATALOG_ORIGIN_LABELS } from "../opsData.jsx";
 import { requiresTeamLeadApproval } from "../api-client/teamStore.js";
 
 /* תפריט סינון לפי מקור/אחריות — לא FilterSelect רגיל (select) בכוונה:    */
@@ -25,8 +25,6 @@ const ORIGIN_FILTER_OPTIONS = [
   { value: CATALOG_ORIGINS.INDUSTRY, label: CATALOG_ORIGIN_LABELS.industry },
   { value: CATALOG_ORIGINS.IN_HOUSE, label: CATALOG_ORIGIN_LABELS.in_house },
 ];
-
-const PROCUREMENT_STAGE_FILTER_OPTIONS = Object.entries(PROCUREMENT_STAGE_LABELS).map(([value, label]) => ({ value, label }));
 
 function OriginFilterMenu({ value, onChange }) {
   const [open, setOpen] = useState(false);
@@ -110,7 +108,6 @@ export default function Catalog({ brigadeId, role, persona, officerUnit, userId,
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [originFilter, setOriginFilter] = useState("all");
-  const [procurementStageFilter, setProcurementStageFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(24);
   const [tab, setTab] = useState("catalog");
@@ -138,7 +135,6 @@ export default function Catalog({ brigadeId, role, persona, officerUnit, userId,
     setQuery("");
     setCategory("all");
     setOriginFilter("all");
-    setProcurementStageFilter("all");
     setItem(null);
     setPage(1);
     setTab("catalog");
@@ -231,12 +227,11 @@ export default function Catalog({ brigadeId, role, persona, officerUnit, userId,
       (it) =>
         (tab !== "catalog" || category === "all" || it.category === category) &&
         (tab !== "catalog" || originFilter === "all" || it.origin === originFilter) &&
-        (tab !== "catalog" || procurementStageFilter === "all" || it.procurementStage === procurementStageFilter) &&
         matchesSearch([it.name, it.id, it.category, it.desc, it.responsibleName, it.responsibleRank], query)
     );
-  }, [listForTab, query, category, originFilter, procurementStageFilter, tab]);
+  }, [listForTab, query, category, originFilter, tab]);
 
-  useEffect(() => { setPage(1); }, [query, category, originFilter, procurementStageFilter, pageSize, tab]);
+  useEffect(() => { setPage(1); }, [query, category, originFilter, pageSize, tab]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pagedItems = useMemo(
@@ -302,15 +297,6 @@ export default function Catalog({ brigadeId, role, persona, officerUnit, userId,
   // "הבעת עניין" — לא הרשאה, לא זרימת אישור, רק אינדיקציה קלה של תחושת
   // עבודה משותפת: מי עוד ביחידה/בחטיבה עשוי לרצות את הפריט הזה, כדי שקצין
   // אמל״ח יידע מראש אם שווה להזמין כמות גדולה יותר לפני שדרישות בפועל מגיעות.
-  // עדכון מצב ההזמנה (שלב הרכש/אספקה הפיזי) של פריט קטלוג — עצמאי משדה
-  // status (אישור ההצעה) ומ-progressStatus של דרישה; ראו התיעוד ב-opsData.jsx.
-  async function setProcurementStage(id, stage) {
-    const target = catalog.find((it) => it.id === id);
-    if (!target) return;
-    const procurementStage = stage || null;
-    await updateCatalogItem(brigadeId, id, { procurementStage });
-    setCatalog((prev) => prev.map((it) => (it.id === id ? { ...it, procurementStage } : it)));
-  }
   async function toggleInterest(id) {
     const target = catalog.find((it) => it.id === id);
     if (!target) return;
@@ -422,7 +408,6 @@ export default function Catalog({ brigadeId, role, persona, officerUnit, userId,
         <SearchBar value={query} onChange={setQuery} placeholder="חיפוש לפי שם, מק״ט, קטגוריה או אחראי...">
           <FilterSelect value={category} onChange={setCategory} options={categoryFilterOptions} allLabel="כל הקטגוריות" ariaLabel="סינון לפי קטגוריה" />
           <OriginFilterMenu value={originFilter} onChange={setOriginFilter} />
-          <FilterSelect value={procurementStageFilter} onChange={setProcurementStageFilter} options={PROCUREMENT_STAGE_FILTER_OPTIONS} allLabel="כל מצבי ההזמנה" ariaLabel="סינון לפי מצב הזמנה" />
         </SearchBar>
       )}
       {tab !== "catalog" && (
@@ -465,22 +450,7 @@ export default function Catalog({ brigadeId, role, persona, officerUnit, userId,
                 ) : (
                   <div className="prod-submitted-by">הוצע ע״י {it.addedBy}</div>
                 )}
-                {tab === "catalog" && it.status === CATALOG_STATUS.ACTIVE && <ProcurementStagePill stage={it.procurementStage} />}
               </button>
-              {tab === "catalog" && editable && it.status === CATALOG_STATUS.ACTIVE && (
-                <select
-                  className="procurement-stage-select"
-                  value={it.procurementStage || ""}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => setProcurementStage(it.id, e.target.value)}
-                  aria-label="עדכון מצב הזמנה"
-                >
-                  <option value="">לא הוגדר מצב הזמנה</option>
-                  {PROCUREMENT_STAGE_FILTER_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              )}
               {decidable && (
                 <CatalogDecideRow onApprove={() => decide(it.id, CATALOG_STATUS.ACTIVE)} onReject={(reason) => decide(it.id, CATALOG_STATUS.REJECTED, reason)} />
               )}
@@ -564,12 +534,6 @@ const CSS = `
 .prod-qty{ font-size:12.5px; color:var(--text-dim); display:flex; align-items:center; gap:5px; }
 .prod-qty-dot{ width:5px; height:5px; border-radius:50%; background:var(--green); }
 .prod-submitted-by{ font-size:11.5px; color:var(--text-dim); }
-.procurement-stage-select{
-  width:100%; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-md);
-  padding:6px 8px; font-family:var(--font-sans); font-size:11.5px; color:var(--text-dim); cursor:pointer;
-  transition:border-color var(--t-fast) ease;
-}
-.procurement-stage-select:hover, .procurement-stage-select:focus{ border-color:var(--accent); color:var(--text); outline:none; }
 .prod-card-decide{ display:flex; gap:8px; }
 .prod-card-decide button{
   flex:1; display:inline-flex; align-items:center; justify-content:center; gap:5px; border:none; border-radius:var(--radius-md);
