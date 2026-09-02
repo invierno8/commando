@@ -234,41 +234,58 @@ export default function DevAuthGate({ route, devFabProps }) {
   // גרירה) עליה מחליף אופקי/אנכי. אותה בדיקת consumeWasDragged בדיוק כמו שאר
   // הכפתורים בסרגל הזה, כי הידית עדיין חלק מהאזור שגורר את כל הסרגל.
   // jynx-mth59kjpe6wk: "make it the center of movement, currently it flips to
-  // the right side" — הסרגל ממוקם עם right/bottom קבועים, אז מעבר אופקי↔אנכי
-  // (שמשנה דרמטית את הרוחב — שורה רחבה מול עמודה צרה) הזיז בפועל רק את
-  // הקצה השמאלי, כי הקצה הימני (המעוגן) נשאר קבוע; מה שהמשתמש חווה כ"הכל
-  // קופץ ימינה/שמאלה" בכל לחיצה. פותר על ידי מדידת הרוחב לפני/אחרי המעבר
-  // ותיקון right כך שהמרכז הגיאומטרי (לא הקצה) יישאר במקום — ראו
-  // useDraggableFab.js's nudgePos. double rAF כדי לוודא שהדפדפן כבר סיים
-  // layout עם המחלקה/הכיוון החדשים לפני המדידה השנייה.
+  // the right side" — see the .dev-toolbar-grip order:1 rule below: the grip
+  // is now pinned to the same physical corner (the wrap's fixed right/bottom
+  // anchor) in both orientations, instead of the whole bar's geometric
+  // midpoint being re-centered after the fact.
   // jynx-mtj8qgdyw7u2: "when clicked the move to vertical is laggy please
   // animate and fix" — flex-direction itself can't be CSS-transitioned (the
-  // row→column reflow always happens in one instant frame), which is what
-  // read as "laggy": a hard snap, then — once the nudge above lands — a
-  // second, separate snap. Can't literally animate the un-animatable
-  // property, so this crossfades through it instead: fade+shrink slightly,
-  // swap orientation (and re-measure/nudge, unchanged from before) while
-  // barely visible, then fade back in — the reflow itself still happens in
-  // one frame, but it happens during the low-opacity moment instead of in
-  // full view. The .dev-fab-toolbar-flipping class only sets opacity/scale;
-  // the transition (including for the position nudge's right/bottom) lives
-  // on the base class so it's active for both directions.
+  // row→column reflow always happens in one instant frame). The original fix
+  // for that crossfaded through the reflow (fade+shrink, swap while barely
+  // visible, fade back in).
+  // jynx-mtjv0scl5jcs: "still laggy, goes the wrong way... make the grip the
+  // center of movement... one flawless motion" — the crossfade read as two
+  // separate snaps (fade-out, then fade-in), not one motion, and re-centering
+  // the bar's midpoint fought against the grip's own corner instead of
+  // matching it (the grip is the toolbar's FIRST child, which put it on the
+  // FAR side from the anchor in both orientations — the row's left end in
+  // horizontal, the column's top end in vertical — "the wrong way"). Fixed
+  // both at once:
+  // - CSS: order:1 on the grip (see .dev-toolbar-grip below) moves it to the
+  //   end of the visual flex order in both orientations at once, landing it
+  //   at the anchored corner every time. Nothing needs re-centering any
+  //   more, so nudgePos is no longer called here. (A separate, related fix:
+  //   .dev-fab-toolbar-wrap itself now carries jynx-chrome/jynx-ui too, so
+  //   its own align-items:flex-end resolves to the physical right edge
+  //   instead of silently inheriting the page's RTL — see that div below.)
+  // - Animation: FLIP (First-Last-Invert-Play) instead of a whole-bar
+  //   crossfade — capture every child's on-screen rect before the swap, let
+  //   React/CSS re-lay-out instantly to the new orientation, then play each
+  //   child from its old rect to its new one via Element.animate(). That's a
+  //   real, single continuous slide per icon (the grip barely moves at all,
+  //   everything else visibly sweeps into its new spot) instead of a fade.
   function toggleOrientation() {
     if (toolbarFab.consumeWasDragged()) return;
     const el = toolbarFab.sizeRef.current;
-    const oldWidth = el?.offsetWidth || 0;
-    el?.classList.add("dev-fab-toolbar-flipping");
-    setTimeout(() => {
-      setOrientation(toolbarOrientation === "horizontal" ? "vertical" : "horizontal");
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const children = !reduceMotion && el?.animate ? Array.from(el.children) : [];
+    const firstRects = children.map((c) => c.getBoundingClientRect());
+    setOrientation(toolbarOrientation === "horizontal" ? "vertical" : "horizontal");
+    if (!children.length) return;
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const newWidth = el?.offsetWidth || 0;
-          const delta = newWidth - oldWidth;
-          if (delta) toolbarFab.nudgePos(-delta / 2);
-          el?.classList.remove("dev-fab-toolbar-flipping");
+        children.forEach((c, i) => {
+          const after = c.getBoundingClientRect();
+          const dx = firstRects[i].left - after.left;
+          const dy = firstRects[i].top - after.top;
+          if (!dx && !dy) return;
+          c.animate(
+            [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }],
+            { duration: 220, easing: "cubic-bezier(.2,0,0,1)" }
+          );
         });
       });
-    }, 140);
+    });
   }
   function setOrientation(next) {
     setToolbarOrientation(next);
@@ -553,8 +570,21 @@ export default function DevAuthGate({ route, devFabProps }) {
           ))}
         </div>
       )}
+      {/* jynx-mtjv0scl5jcs: this wrap never carried jynx-chrome/jynx-ui
+          itself (only its two children, .dev-fab-toolbar and
+          .jynx-hotkey-hint, did) — so it stayed RTL-inherited from the
+          page's own dir="rtl", while align-items:flex-end below silently
+          resolved to the physical LEFT instead of the anchored right edge.
+          Invisible while the bar was about as wide as the wrap (horizontal
+          mode, or a short vertical bar next to a similarly narrow hint),
+          but very visible once the vertical bar (one icon wide) sits next
+          to a wider sibling: the bar drifted left, away from the real
+          right-anchored corner. Adding the same classes here (matching the
+          collapsed-bubble wrap in the branch below, which already has
+          them) makes flex-end resolve to physical right like every other
+          Jynx-chrome surface. */}
       {toolbarOpen ? (
-        <div className="dev-fab-toolbar-wrap" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
+        <div className="dev-fab-toolbar-wrap jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
         <div
           ref={toolbarFab.sizeRef}
           className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "")}
@@ -759,12 +789,10 @@ const CSS = `
 .dev-fab-toolbar{
   display:flex; align-items:center; gap:6px;
   cursor:grab; touch-action:none;
-  transition:opacity .14s ease, transform .14s ease;
 }
 .dev-fab-toolbar:active{ cursor:grabbing; }
 .dev-fab-toolbar.vertical{ flex-direction:column; align-items:stretch; }
-.dev-fab-toolbar-flipping{ opacity:.35; transform:scale(.94); }
-@media (prefers-reduced-motion: reduce){ .dev-fab-toolbar-wrap, .dev-fab-toolbar{ transition:none; } }
+@media (prefers-reduced-motion: reduce){ .dev-fab-toolbar-wrap{ transition:none; } }
 
 .jynx-hotkey-hint{
   display:flex; flex-direction:column; align-items:flex-end; gap:3px; position:relative;
@@ -790,9 +818,23 @@ const CSS = `
 /* הידית עצמה עכשיו כפתור אמיתי (מחליף אופקי/אנכי) — לא רק "אזור-גרירה
    שיושב שם", אז צריך רמז ברור שהיא לחיצה: קצת יותר גדולה מכל שאר האייקונים
    ותוחם עדין (border) כדי לא "להיבלע" בתוך פס-הכלים כמו לפני. */
+/* order:1 — jynx-mtjv0scl5jcs: the grip must sit at the same anchored
+   screen corner (bottom-right — see .dev-fab-toolbar-wrap's fixed
+   right/bottom above) in BOTH orientations, not just "the bottom" in
+   vertical mode alone. The bar itself is LTR (.jynx-ui), so the grip being
+   the DOM-first child already put it at the row's LEFT end in horizontal
+   mode and the column's TOP end in vertical mode — the far side from the
+   anchor in both cases. order (not flex-direction/reverse, which only
+   ever affects one of the two orientations) moves the grip to the end of
+   the visual flex order in both directions at once: the row's right end
+   and the column's bottom end — exactly where the wrap's fixed corner is,
+   so nothing needs nudging/re-centering after a swap any more (see
+   toggleOrientation above). Every other child keeps the default order:0,
+   so their relative order — and the key-number badges, which come from
+   toolbarOrder's own array order, not CSS order — is untouched. */
 .dev-toolbar-grip{
   display:flex; align-items:center; justify-content:center; width:22px; height:30px; color:var(--text-dim);
-  flex:none; align-self:center; background:none; border:1px dashed color-mix(in srgb, var(--jynx) 40%, transparent); border-radius:6px;
+  flex:none; align-self:center; order:1; background:none; border:1px dashed color-mix(in srgb, var(--jynx) 40%, transparent); border-radius:6px;
   padding:0; cursor:pointer; transition:color .12s, border-color .12s;
 }
 .dev-toolbar-grip:hover{ color:var(--jynx); border-color:var(--jynx); }
