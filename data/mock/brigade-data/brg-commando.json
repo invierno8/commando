@@ -76,7 +76,8 @@
         }
       ],
       "teamLeadGate": null,
-      "gateTeamId": null
+      "gateTeamId": null,
+      "procurementStage": "in_process"
     },
     {
       "id": "VHF-07",
