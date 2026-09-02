@@ -4,7 +4,7 @@ import { MessageSquare, ChevronDown, ChevronUp, GripVertical, CheckCircle2, Mess
 import {
   fetchDevAnnotations, replyToAnnotation, editMyAnnotation, reactToAnnotation, requestAnnotationAction,
   fetchJynxFeedback, fetchMyJynxFeedback, replyToJynxFeedback, reactToJynxFeedback, submitJynxFeedback,
-  resolveAnnotation, resolveJynxFeedback, deleteAnnotation, deleteMyAnnotation, deleteMyJynxFeedback,
+  resolveAnnotation, resolveJynxFeedback, deleteAnnotation, deleteMyAnnotation, deleteMyJynxFeedback, devLogin,
 } from "../devApi.js";
 import { useDraggableFab } from "../useDraggableFab.js";
 import DrawingOverlay from "./DrawingOverlay.jsx";
@@ -125,6 +125,37 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   const [deletingId, setDeletingId] = useState(null);
   const [collapsed, setCollapsed] = useState(false);
   const [tick, setTick] = useState(0);
+  // jynx-mtihenhmc7hh: "because i need to login every time i send a
+  // comment ... allow bulk sending instead" — traced this to a real bug,
+  // not a genuine bulk-send request: every write action below (reply,
+  // edit, the Jynx composer, delete) had NO error handling at all, so a
+  // session that expired mid-use (dev sessions live in an in-memory Map —
+  // any Render free-tier idle spin-down silently drops them, independent
+  // of the 7-day TTL) failed with an uncaught rejection and zero visible
+  // feedback. That reads exactly like "I have to log in again" with no
+  // obvious way to do so short of navigating elsewhere — this mirrors
+  // AnnotationPopover.jsx's own older reloginOpen/relogin() pattern
+  // (jynx-mth55ybetlt5) so the same graceful "log in again without losing
+  // what you typed" recovery exists here too, not just on the Ctrl/Cmd+
+  // click composer.
+  const [sendError, setSendError] = useState("");
+  const [reloginOpen, setReloginOpen] = useState(false);
+  const [reloginPassword, setReloginPassword] = useState("");
+  const [reloggingIn, setReloggingIn] = useState(false);
+  async function relogin() {
+    if (!reloginPassword.trim() || reloggingIn) return;
+    setReloggingIn(true);
+    try {
+      await devLogin(reloginPassword.trim());
+      setReloginOpen(false);
+      setReloginPassword("");
+      setSendError("");
+    } catch (e) {
+      setSendError(e.message || "Login failed");
+    } finally {
+      setReloggingIn(false);
+    }
+  }
   // "+ Feedback about Jynx" — הרכבה מינימלית inline, לא שימוש חוזר
   // ב-AnnotationPopover.jsx (שממוקם לפי קואורדינטות x/y של קליק, שלא
   // רלוונטיות כאן). מנהל, וגם משתמש-פיתוח עם canJynxComment (ראו
@@ -336,8 +367,14 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
 
   async function sendReply(a) {
     if (!replyText.trim()) return;
-    if (a.kind === "jynx") await replyToJynxFeedback(a.id, replyText.trim(), replyAsJynx);
-    else await replyToAnnotation(a.id, replyText.trim(), replyAsJynx);
+    setSendError("");
+    try {
+      if (a.kind === "jynx") await replyToJynxFeedback(a.id, replyText.trim(), replyAsJynx);
+      else await replyToAnnotation(a.id, replyText.trim(), replyAsJynx);
+    } catch (e) {
+      setSendError(e.message || "Failed to send, please try again");
+      return; // replyText intentionally left in place — nothing typed is lost
+    }
     setReplyText("");
     setReplyAsJynx(false);
     reload();
@@ -345,7 +382,13 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
 
   async function saveEdit(a) {
     if (!editText.trim()) return;
-    await editMyAnnotation(a.id, editText.trim());
+    setSendError("");
+    try {
+      await editMyAnnotation(a.id, editText.trim());
+    } catch (e) {
+      setSendError(e.message || "Failed to save, please try again");
+      return;
+    }
     setEditingId(null);
     setEditText("");
     reload();
@@ -360,7 +403,13 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   // exactly the "revisit the text, not the whole thinking process" ask.
   async function saveReopen(a) {
     if (!editText.trim()) return;
-    await replyToAnnotation(a.id, `@jynx ${editText.trim()}`);
+    setSendError("");
+    try {
+      await replyToAnnotation(a.id, `@jynx ${editText.trim()}`);
+    } catch (e) {
+      setSendError(e.message || "Failed to save, please try again");
+      return;
+    }
     setEditingId(null);
     setEditText("");
     reload();
@@ -407,6 +456,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
   async function submitJynxComposer() {
     if (!jynxComposerText.trim() || jynxComposerSending) return;
     setJynxComposerSending(true);
+    setSendError("");
     try {
       // אין צורך ב-targetLabel/סיכת מיקום — משוב כללי על Jynx עצמו, לא
       // מוצמד לאלמנט ספציפי (הבקאנד כבר מקבל targetLabel:null, ראו
@@ -416,6 +466,10 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
       setJynxComposerText("");
       setJynxComposerOpen(false);
       reload();
+    } catch (e) {
+      // jynx-mtihenhmc7hh: draft deliberately left in place on failure —
+      // see the sendError state comment above.
+      setSendError(e.message || "Failed to send, please try again");
     } finally {
       setJynxComposerSending(false);
     }
@@ -491,6 +545,26 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
             {collapsed ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
           </button>
         </div>
+        {!collapsed && sendError && (
+          <div className="comments-send-error">
+            {sendError}{" "}
+            <button type="button" className="comments-send-error-relogin-link" onClick={() => setReloginOpen((v) => !v)}>
+              Log in again
+            </button>
+            {reloginOpen && (
+              <div className="comments-send-error-relogin-box">
+                <input
+                  type="password" autoFocus placeholder="Password" value={reloginPassword} disabled={reloggingIn}
+                  onChange={(e) => setReloginPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && relogin()}
+                />
+                <button type="button" onClick={relogin} disabled={!reloginPassword.trim() || reloggingIn}>
+                  {reloggingIn ? "..." : "Sign in"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         {!collapsed && (isAdmin || canJynxComment) && (
           <div className="comments-jynx-composer-wrap">
             {!jynxComposerOpen ? (
@@ -1070,6 +1144,27 @@ const CSS_TEXT = `
 .comments-reaction-btn.active{ background:color-mix(in srgb, var(--jynx) 16%, transparent); border-color:var(--jynx); }
 .comments-reaction-count{ font-family:var(--font-mono); font-size:10px; color:var(--text-dim); }
 .comments-reaction-btn.active .comments-reaction-count{ color:var(--jynx); }
+
+/* jynx-mtihenhmc7hh: same visual language as AnnotationPopover.jsx's own
+   .dev-login-error/.dev-annotate-relogin-* (see DevOverlay.jsx) — kept as
+   its own small block here rather than a shared import, same convention
+   as every other CSS block in this file. */
+.comments-send-error{ padding:6px 10px 0; font-size:11.5px; color:var(--red); }
+.comments-send-error-relogin-link{
+  background:none; border:none; color:var(--dev); font-weight:700; font-size:11px; text-decoration:underline;
+  cursor:pointer; padding:0;
+}
+.comments-send-error-relogin-box{ display:flex; gap:6px; margin-top:5px; }
+.comments-send-error-relogin-box input{
+  flex:1; background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:6px 8px;
+  font-size:12px; color:var(--text); font-family:var(--font-sans);
+}
+.comments-send-error-relogin-box input:focus{ outline:none; border-color:var(--dev); }
+.comments-send-error-relogin-box button{
+  border:none; border-radius:7px; padding:6px 12px; font-family:var(--font-sans); font-weight:700; font-size:12px;
+  cursor:pointer; background:var(--dev); color:#fff;
+}
+.comments-send-error-relogin-box button:disabled{ opacity:.5; cursor:not-allowed; }
 
 .comments-jynx-composer-wrap{ padding:8px 10px 0; }
 .comments-jynx-composer-toggle{
