@@ -632,13 +632,45 @@ flagged for later on purpose.
   `git diff` `data/mock/` and `data/config/dev-users.json` after any
   live-mode test session that used a throwaway admin login, and revert
   before pushing.
-- The dev-fab role/brigade/identity switcher (now behind `DevAuthGate.jsx`
-  — log in as the seeded `Demo Dev` / `hangar-demo-2026` account first, see
-  `README.md`) requires clicking `.dev-fab`
-  to open `.dev-fab-panel` first; it does **not** auto-close after a
-  selection (by design, so it can be reused for several picks in a row) —
-  guard any helper that opens it with an `isVisible()` check first, since
-  clicking `.dev-fab` again while already open **toggles it closed**.
+- The dev-fab role/brigade/identity switcher (behind `DevAuthGate.jsx`)
+  requires clicking `.dev-fab` to open `.dev-fab-panel` first; it does
+  **not** auto-close after a selection (by design, so it can be reused for
+  several picks in a row) — guard any helper that opens it with an
+  `isVisible()` check first, since clicking `.dev-fab` again while already
+  open **toggles it closed**.
+- **The seeded `Demo Dev` / `hangar-demo-2026` dev-user this section and
+  `README.md` used to point at for a quick test login no longer exists —
+  confirmed 2026-09-02, `data/config/dev-users.json` currently holds 4 real
+  named users (created through the admin panel over time), none with a
+  known plaintext password (bcrypt hashes only).** Both docs had been
+  silently stale about this for an unknown stretch (same class of gap as
+  the Design System section's staleness, corrected 2026-09-01 above) —
+  `README.md`'s own line has been corrected to point back here instead of
+  repeating the dead credential. To actually log in for a one-off local
+  Playwright check: generate a bcrypt hash for a throwaway password with
+  `data/`'s own `bcryptjs` dependency (`require('bcryptjs').hashSync('testpass123', 10)`
+  from inside `data/`, already installed — no need to add a package),
+  append one throwaway entry to `data/config/dev-users.json` with that
+  hash, run the check, then **revert the file**
+  (`git checkout -- data/config/dev-users.json`) before doing anything
+  else — never commit/push a throwaway credential. Confirmed working
+  end-to-end (`npm install` at repo root + `client/` + `data/`, `npm run
+  dev` from the root, dev-mode login via the throwaway user, a full
+  Playwright session driving the app) in a Claude Code Remote sandbox on
+  2026-09-02 — see the log entry below for what this specifically verified
+  and the `.dev-fab`-is-still-animating actionability gotcha it hit
+  (`{ force: true }` on that one click).
+- Playwright itself does not need installing in a Claude Code Remote
+  sandbox — it's already globally available at
+  `/opt/node22/lib/node_modules/playwright`, and a Chromium build is
+  pre-installed at `/opt/pw-browsers/chromium-<rev>/chrome-linux/chrome`
+  (glob for the exact revision — it changes) — no `npx playwright install`
+  needed, and that command may not even be reachable (network-restricted).
+  Launch with `chromium.launch({ executablePath: '<that path>', args:
+  ['--no-sandbox'] })`. This contradicts an actual PR (#114) that claimed
+  "no live/Playwright check was possible in this environment" — that
+  claim was wrong for *this* sandbox at least; don't repeat it without
+  checking first.
 - **`.dev-fab` (fixed bottom-right) visually overlaps `.sidebar-toggle`** at
   the bottom of the sidebar at common viewport sizes — a real,
   pre-existing layout detail (not caused by any one feature), not worth
@@ -2064,3 +2096,18 @@ Both were implemented fully (branches `jynx-inline-hotkey-detect-tiyms5`/PR #112
 Worth recording precisely because #113 wasn't a pure re-derivation: live-measuring the grip's on-screen position before/after toggling orientation (not just reading the CSS) surfaced a second, independent bug in the same area that #107's fix — and the two attempts before it (`jynx-mth59kjpe6wk`/PR #85, `jynx-mtj8qgdyw7u2`/PR #94) — never touched: `.dev-fab-toolbar-wrap` (the shared `position:fixed` container for the toolbar bar and the hotkey hint) never carried the `jynx-chrome`/`jynx-ui` classes its own two children do, so it stayed RTL-inherited from the page's `dir="rtl"` and its `align-items:flex-end` silently resolved to the physical **left** instead of the anchored right edge — invisible whenever the bar and hint are close in width, which is why three straight fix attempts missed it, and only exposed once the vertical bar (~30px) sits next to the two-line hint (~140-180px). Checked out #107's actual branch and measured it directly rather than asserting from a read of the diff: **161px** of horizontal drift remained on toggling to vertical, even with #107's grip-reordering fix applied. Posted the measurement, root cause, and one-line fix (add `jynx-chrome jynx-ui` to the wrap's `className`) as a PR comment on #107 rather than silently dropping it, per the standing "verify and comment on a real gap found in someone else's PR" pattern used elsewhere in this file. Did not reopen #113 or push the fix there myself — #107 is the canonical PR now, and it's a maintainer call whether to land it as a follow-up commit there or a fresh PR; left #108 (the other still-open, previously-flagged duplicate of #107) untouched for the same reason a prior entry above gave for not closing it.
 
 No note/queue-file bookkeeping needed from this session for either jynx item — both notes were already correctly updated (`actionStatus:"pr_opened"`, `actionPrUrl`→#106/#107, `resolved:true` per `autoResolveOnPrOpened:true`) by the sessions that opened the canonical PRs, and both queue files were already deleted before this session's own bookkeeping step ran. This log entry is the only push this session made to `main`.
+
+### 2026-09-02 — Two more duplicate-PR races (`ann-mtjve2ftxs41`→PR #109, `jynx-mtjv4sponizo`→PR #114), both caught pre-push; a genuinely stale `Demo Dev` test-login credential found and corrected; a false "no live check possible" claim on #114 corrected with a working recipe
+Step zero found 5 items: `ann-mt5p5xzokc1i`/`ann-mt8oh01ruh3b` (re-checked, byte-for-byte unchanged from every prior confirmation above — left untouched, no commit, no notification, per the standing guardrail), `ann-mtjve2ftxs41` (new — "remove the procurement-stage/מצב הזמנה field from the catalog, don't need it right now"), `jynx-mtjv0scl5jcs`, and `jynx-mtjv4sponizo` (the last two are exactly the pair the entry two above deliberately left unpicked for "whichever run owns them" — this was that run).
+
+By the time this session read `jynx-mtjv0scl5jcs`'s code, a sibling had already bookkept it against **PR #107** (`origin/main` had moved) — confirmed via `git fetch` before touching that item at all, so no implementation attempt was made for it here.
+
+Implemented `ann-mtjve2ftxs41` (removed `PROCUREMENT_STAGE`/`ProcurementStagePill`/the catalog filter+per-item select entirely from `opsData.jsx`/`Catalog.jsx` — confirmed via grep it wasn't referenced anywhere else), built clean, ran `search_pull_requests` immediately before pushing per the standing "check right before push" lesson — **PR #109** already existed, opened moments earlier by a sibling session. Diffed it: byte-for-byte identical to this session's own local diff. Discarded the local branch without pushing (`git reset --hard origin/main`).
+
+Implemented `jynx-mtjv4sponizo` ("? icon in the Hi menu starts a tutorial, then hover-bubble help mode until toggled off") as a new `JynxHelpTour.jsx` (a static step-carousel modal, content read directly off the toolbar's existing `title=` strings, not invented copy) plus a `data-tooltip`/`::after` hover-bubble CSS pattern gated by a `helpMode` toggle threaded into `DevGreetingMenu.jsx`'s "Hi" dropdown. Unlike a quick build-check, this one got a **full live Playwright verification** before pushing — see the new "Testing / verification workflow" bullets above for the recipe (throwaway bcrypt-hashed dev-user, `npm install` at all three levels, Playwright already global at `/opt/node22`, Chromium pre-installed at `/opt/pw-browsers`, `{force:true}` needed on the still-`jynx-breathe`-animating login FAB). Confirmed working end-to-end: tour modal opens/steps/Prev-Next-boundary-disable/Skip all correct, the toggle's on-state persists and shows in the dropdown after closing, hover bubbles appear near the right buttons only while help mode is on and disappear immediately once toggled off, zero console errors from the feature. Ran the pre-push duplicate check immediately before `create_pull_request` (not just before the initial implementation) — **PR #114** already existed, opened by a sibling session moments earlier. Unlike the `ann-mtjve2ftxs41` case, #114 is **not** a byte-identical duplicate: it's a materially different, more capable implementation (`JynxHelpMode.jsx` — live DOM-highlight spotlight tour instead of a static carousel, and a broader `.jynx-chrome`/`.jynx-ui`-scoped hover mechanism that swaps any element's native `title` rather than being limited to a fixed toolbar-button list). Read its full diff, confirmed it genuinely satisfies the same request, and stood down without opening a competing PR (discarded the local branch, never pushed) — same "same work item already resolved, don't duplicate effort" call as every prior race in this log, even though the code shape differs this time.
+
+#114's own "Verification" section claimed "no live/Playwright check was possible in this environment." That was false for this session's identical sandbox — posted a comment on #114 with the full working recipe, noting explicitly that this session's live test covered an equivalent *mechanism* (built from this session's own, different implementation) rather than #114's actual diff, so a real click-through against #114's own branch is still worth doing before merging.
+
+Separately, while assembling that recipe, found this file's own "Testing / verification workflow" section (and `README.md`) still pointed at a seeded `Demo Dev`/`hangar-demo-2026` dev-user for test logins — that account does not exist in the current `data/config/dev-users.json` (4 real named users, no known plaintext password for any). Unknown how long this had been stale; corrected both docs in place (see the "Testing / verification workflow" section above and `README.md`'s "משתמש-פיתוח לדוגמה" section) rather than just noting it here, per this file's own standing rule that a section describing current state has to stay accurate, not just accumulate log entries that contradict it.
+
+Net result: zero new merged code from this session (both real implementation attempts were independently-arrived-at duplicates of sibling sessions' already-open PRs), but three non-duplicate contributions: the live-verification comment on #114, the stale-credential correction in `README.md`/this file, and this log entry — batched into one commit.
