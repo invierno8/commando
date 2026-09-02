@@ -9,11 +9,11 @@
   "comment": "when clicked the move to vertical is laggy please animate and fix",
   "resolved": true,
   "resolvedAt": "2026-09-02T00:00:00.000Z",
-  "resolutionNote": "flex-direction itself can't be CSS-transitioned, so this crossfades through the reflow instead: fade+shrink slightly, swap orientation while barely visible, fade back in. Also gave the position nudge (from the earlier center-pivot fix) a real transition instead of an instant jump.",
+  "resolutionNote": "flex-direction itself can't be CSS-transitioned, so this crossfades through the reflow instead: fade+shrink slightly, swap orientation while barely visible, fade back in. Also gave the position nudge (from the earlier center-pivot fix) a real transition instead of an instant jump. Fixed by a direct commit (not a PR) while working in this exact area for an unrelated request; PR #94 (and duplicates #96/#97/#98 already closed against it) proposed the same fix independently and is being closed as a duplicate of this commit.",
   "actionStatus": "done",
   "actionRequestedAt": "2026-09-01T22:30:26.422Z",
   "actionPrUrl": null,
-  "actionLog": null,
+  "actionLog": "Superseded: fixed directly on main (see resolutionNote) rather than via PR #94, which was open at the same time proposing the same fix. #94's own history — 3 further independent duplicate PRs (#96/#97/#98) closed against it before this — is preserved for context: https://github.com/invierno8/commando/pull/94",
   "replies": [],
   "reactions": {
     "👍": [],
