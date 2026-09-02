@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Settings2, LogOut } from "lucide-react";
 import { useKeepInViewport } from "./useKeepInViewport.js";
+import { JynxHelpButton } from "./JynxHelpMode.jsx";
 
 /* ================================================================== */
 /* LEGO BLOCK — the "Hi, {name}" account menu, lives in the Jynx toolbar */
@@ -14,7 +15,7 @@ import { useKeepInViewport } from "./useKeepInViewport.js";
 /* "Logout". Same open/click-outside/viewport-clamp shape as             */
 /* MentionsBell.jsx, the sibling toolbar dropdown right next to this one.*/
 /* ================================================================== */
-export default function DevGreetingMenu({ devName, onOpenSettings, onLogout, shortcuts }) {
+export default function DevGreetingMenu({ devName, onOpenSettings, onLogout, shortcuts, helpMode, onToggleHelp }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -64,6 +65,9 @@ export default function DevGreetingMenu({ devName, onOpenSettings, onLogout, sho
                 Reorder in Settings to change which number does what
               </button>
             </div>
+          )}
+          {onToggleHelp && (
+            <JynxHelpButton mode={helpMode} onToggle={() => { setOpen(false); onToggleHelp(); }} />
           )}
           <button
             type="button" className="dev-greeting-dropdown-item"

@@ -7,6 +7,7 @@ import DevAdminPanel from "./DevAdminPanel.jsx";
 import DevOverlay from "./overlay/DevOverlay.jsx";
 import CommentsPanel from "./overlay/CommentsPanel.jsx";
 import MentionsBell from "./MentionsBell.jsx";
+import JynxHelpMode from "./JynxHelpMode.jsx";
 import JynxBubbleContent from "./JynxBubbleContent.jsx";
 import UserProfileCard from "./UserProfileCard.jsx";
 import { useOpenUserProfileListener } from "./openUserProfile.js";
@@ -152,6 +153,17 @@ export default function DevAuthGate({ route, devFabProps }) {
     try { localStorage.setItem(HOTKEY_MODIFIER_KEY, next); } catch { /* ignore */ }
   }
   const [commentsOn, setCommentsOn] = useState(false);
+  // jynx-mtjv4sponizo: "? icon ... start an on screen tutorial ... when
+  // done the ? icon stays on ... hover ... bubble ... until he ... clicks
+  // on ? to turn it off" — one toggle in the "Hi" menu (see JynxHelpMode.jsx)
+  // cycling "off" -> "tour" -> (tour end/skip) -> "hover" -> (toggle) -> "off".
+  // Deliberately session-only (not persisted to localStorage) — the request
+  // describes a single sitting ("go through the site"), not a setting that
+  // should silently still be on days later after a page reload.
+  const [helpMode, setHelpMode] = useState("off");
+  function toggleHelpMode() {
+    setHelpMode((m) => (m === "off" ? "tour" : "off"));
+  }
   // סימוני-מנהל הקבועים על העמוד (AdminAnnotationMarkers.jsx) — נפרד בכוונה
   // מ-overlayOn (שרק שולט על הילת-hover, לא על הנקודות הקבועות). דלוק
   // כברירת מחדל, אבל למי שמוצא אותם מפריעים על מסך עמוס יש עכשיו כפתור
@@ -597,7 +609,7 @@ export default function DevAuthGate({ route, devFabProps }) {
             </div>
             );
           })}
-          <DevGreetingMenu devName={devName} onOpenSettings={() => setAdminOpen(true)} onLogout={logout} shortcuts={keyboardShortcuts} />
+          <DevGreetingMenu devName={devName} onOpenSettings={() => setAdminOpen(true)} onLogout={logout} shortcuts={keyboardShortcuts} helpMode={helpMode} onToggleHelp={toggleHelpMode} />
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-collapse-btn" onClick={toggleToolbarOpen} title="Collapse to the Jynx bubble">
             <X size={13} />
           </button>
@@ -693,6 +705,7 @@ export default function DevAuthGate({ route, devFabProps }) {
         />
       )}
       {profileUserId && <UserProfileCard userId={profileUserId} onClose={() => setProfileUserId(null)} />}
+      <JynxHelpMode mode={helpMode} onModeChange={setHelpMode} />
     </>
   );
 }
