@@ -233,40 +233,30 @@ export default function DevAuthGate({ route, devFabProps }) {
   // הידית (⋮/⋯, ראו TOOLBAR_ITEM_NODES) עצמה עכשיו גם כפתור — קליק "נקי" (לא
   // גרירה) עליה מחליף אופקי/אנכי. אותה בדיקת consumeWasDragged בדיוק כמו שאר
   // הכפתורים בסרגל הזה, כי הידית עדיין חלק מהאזור שגורר את כל הסרגל.
-  // jynx-mth59kjpe6wk: "make it the center of movement, currently it flips to
-  // the right side" — הסרגל ממוקם עם right/bottom קבועים, אז מעבר אופקי↔אנכי
-  // (שמשנה דרמטית את הרוחב — שורה רחבה מול עמודה צרה) הזיז בפועל רק את
-  // הקצה השמאלי, כי הקצה הימני (המעוגן) נשאר קבוע; מה שהמשתמש חווה כ"הכל
-  // קופץ ימינה/שמאלה" בכל לחיצה. פותר על ידי מדידת הרוחב לפני/אחרי המעבר
-  // ותיקון right כך שהמרכז הגיאומטרי (לא הקצה) יישאר במקום — ראו
-  // useDraggableFab.js's nudgePos. double rAF כדי לוודא שהדפדפן כבר סיים
-  // layout עם המחלקה/הכיוון החדשים לפני המדידה השנייה.
-  // jynx-mtj8qgdyw7u2: "when clicked the move to vertical is laggy please
-  // animate and fix" — flex-direction itself can't be CSS-transitioned (the
-  // row→column reflow always happens in one instant frame), which is what
-  // read as "laggy": a hard snap, then — once the nudge above lands — a
-  // second, separate snap. Can't literally animate the un-animatable
-  // property, so this crossfades through it instead: fade+shrink slightly,
-  // swap orientation (and re-measure/nudge, unchanged from before) while
-  // barely visible, then fade back in — the reflow itself still happens in
-  // one frame, but it happens during the low-opacity moment instead of in
-  // full view. The .dev-fab-toolbar-flipping class only sets opacity/scale;
-  // the transition (including for the position nudge's right/bottom) lives
-  // on the base class so it's active for both directions.
+  // jynx-mth59kjpe6wk/jynx-mtj8qgdyw7u2 (היסטוריה): הגרסאות הקודמות של התיקון
+  // הזה שמרו על "מרכז הכובד" הגיאומטרי של הסרגל במקום על ידי מדידת הרוחב
+  // לפני/אחרי המעבר ותיקון right בהתאם (nudgePos) — אבל right/bottom של
+  // .dev-fab-toolbar-wrap כבר מעוגנים תמיד לאותה פינה קבועה במסך בלי קשר
+  // לתוכן, אז מה שבאמת זז בין אופקי↔אנכי הוא איזה פריט-בדיוק יושב צמוד לפינה
+  // הזאת. jynx-mtjv0scl5jcs: "still laggy, wrong way, make the grip the
+  // center of movement, grip always at the bottom" — הידית הייתה הפריט
+  // *הראשון* ב-flex (בשורה: הקצה השמאלי הרחוק מהעיגון; בעמודה: למעלה, גם
+  // הרחוק ביותר), כך שדווקא היא זזה הכי הרבה בכל היפוך. הועברה למטה (ראו
+  // ה-JSX) כך שתהיה הפריט *האחרון* — צמודה תמיד לפינה המעוגנת עצמה — ולכן אין
+  // יותר צורך לחשב/לתקן שום דבר ב-right כדי לשמור עליה קבועה; שאר הסרגל הוא
+  // זה ש"מסתובב שמאלה" ממנה. זה גם מסיר שכבת מדידה+תיקון מיותרת מהאנימציה
+  // (פחות "laggy"). ה-double-rAF/nudge שהיו כאן בעבר לא נחוצים יותר.
+  // flex-direction עצמו לא ניתן ל-CSS-transition (המעבר שורה↔עמודה תמיד קורה
+  // בפריים אחד), אז זה עדיין עובר crossfade: דהייה+כיווץ קל, החלפת כיוון, ואז
+  // דהייה חזרה — ה-reflow עדיין קורה בפריים אחד, אבל בזמן שהאלמנט כמעט שקוף.
   function toggleOrientation() {
     if (toolbarFab.consumeWasDragged()) return;
     const el = toolbarFab.sizeRef.current;
-    const oldWidth = el?.offsetWidth || 0;
     el?.classList.add("dev-fab-toolbar-flipping");
     setTimeout(() => {
       setOrientation(toolbarOrientation === "horizontal" ? "vertical" : "horizontal");
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const newWidth = el?.offsetWidth || 0;
-          const delta = newWidth - oldWidth;
-          if (delta) toolbarFab.nudgePos(-delta / 2);
-          el?.classList.remove("dev-fab-toolbar-flipping");
-        });
+        el?.classList.remove("dev-fab-toolbar-flipping");
       });
     }, 140);
   }
@@ -563,9 +553,6 @@ export default function DevAuthGate({ route, devFabProps }) {
           onDragOver={(e) => e.preventDefault()}
           {...toolbarFab.dragHandlers}
         >
-          <button type="button" className="dev-toolbar-grip" onClick={toggleOrientation} title={`Switch to ${toolbarOrientation === "horizontal" ? "vertical" : "horizontal"} menu (click here — drag anywhere else on the bar to move it)`}>
-            {toolbarOrientation === "vertical" ? <GripHorizontal size={15} /> : <GripVertical size={15} />}
-          </button>
           {toolbarOrder.map((id) => {
             if (!TOOLBAR_ITEM_NODES[id]) return null;
             const isKeyable = KEYABLE_IDS.includes(id);
@@ -600,6 +587,14 @@ export default function DevAuthGate({ route, devFabProps }) {
           <DevGreetingMenu devName={devName} onOpenSettings={() => setAdminOpen(true)} onLogout={logout} shortcuts={keyboardShortcuts} />
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-collapse-btn" onClick={toggleToolbarOpen} title="Collapse to the Jynx bubble">
             <X size={13} />
+          </button>
+          {/* jynx-mtjv0scl5jcs: last in the DOM order on purpose — see the
+              toggleOrientation comment above. Being last means it's always the
+              item closest to .dev-fab-toolbar-wrap's anchored (right/bottom)
+              corner in both orientations, so its own on-screen position never
+              moves — everything else grows away from it ("rotates left"). */}
+          <button type="button" className="dev-toolbar-grip" onClick={toggleOrientation} title={`Switch to ${toolbarOrientation === "horizontal" ? "vertical" : "horizontal"} menu (click here — drag anywhere else on the bar to move it)`}>
+            {toolbarOrientation === "vertical" ? <GripHorizontal size={15} /> : <GripVertical size={15} />}
           </button>
         </div>
         {/* Direct founder request (chat, not the annotation queue): a small
