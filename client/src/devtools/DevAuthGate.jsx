@@ -146,11 +146,35 @@ export default function DevAuthGate({ route, devFabProps }) {
   const [overlayOn, setOverlayOn] = useState(loadOverlayOn);
   useEffect(() => { try { localStorage.setItem(OVERLAY_ON_KEY, String(overlayOn)); } catch { /* ignore */ } }, [overlayOn]);
   const [hotkeyModifier, setHotkeyModifierState] = useState(loadHotkeyModifier);
-  const [hotkeyPickerOpen, setHotkeyPickerOpen] = useState(false);
+  // jynx-mtjuxitiyms5: "the point of clicking the current hotkey, is then to
+  // choose 'detect new hot key'... why when clicking it there is this weird
+  // list?" — replaces the old 3-option picker (Auto/Cmd/Ctrl list) with a
+  // press-to-detect flow: clicking the label arms a one-shot keydown listener,
+  // the next Cmd/Ctrl press sets it directly. Still only ever stores "cmd" or
+  // "ctrl" (or "auto") — this label is display-only, not real key-binding
+  // enforcement (see resolveHotkeyOption above and its own comment), so any
+  // other key just cancels listening instead of being silently accepted as a
+  // value nothing would ever actually match against.
+  const [hotkeyListening, setHotkeyListening] = useState(false);
   function setHotkeyModifier(next) {
     setHotkeyModifierState(next);
     try { localStorage.setItem(HOTKEY_MODIFIER_KEY, next); } catch { /* ignore */ }
   }
+  useEffect(() => {
+    if (!hotkeyListening) return;
+    function onKeyDown(e) {
+      // Swallow the very next key entirely (not just observe it) — the whole
+      // point of "detect" mode is that this one keypress is consumed for
+      // setting the hotkey, not also double-fired as e.g. a toolbar shortcut.
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === "Meta") setHotkeyModifier("cmd");
+      else if (e.key === "Control") setHotkeyModifier("ctrl");
+      setHotkeyListening(false);
+    }
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [hotkeyListening]);
   const [commentsOn, setCommentsOn] = useState(false);
   // סימוני-מנהל הקבועים על העמוד (AdminAnnotationMarkers.jsx) — נפרד בכוונה
   // מ-overlayOn (שרק שולט על הילת-hover, לא על הנקודות הקבועות). דלוק
@@ -612,30 +636,27 @@ export default function DevAuthGate({ route, devFabProps }) {
           <span className="jynx-hotkey-hint-text">
             {resolveHotkeyOption(hotkeyModifier).symbol}+click any element to comment
           </span>
-          <button
-            type="button" className="jynx-hotkey-current"
-            onClick={() => setHotkeyPickerOpen((v) => !v)}
-          >
-            {/* Ctrl has no separate glyph the way ⌘ does — symbol and label
-                are literally the same string for it, so showing both would
-                read as "Ctrl Ctrl". Only show the symbol when it's actually
-                a distinct symbol, not a repeat of the word. */}
-            Current hotkey: {resolveHotkeyOption(hotkeyModifier).symbol !== resolveHotkeyOption(hotkeyModifier).label
-              ? `${resolveHotkeyOption(hotkeyModifier).symbol} ${resolveHotkeyOption(hotkeyModifier).label}`
-              : resolveHotkeyOption(hotkeyModifier).label}
-          </button>
-          {hotkeyPickerOpen && (
-            <div className="jynx-hotkey-picker">
-              <button type="button" className={hotkeyModifier === "auto" ? "active" : ""} onClick={() => { setHotkeyModifier("auto"); setHotkeyPickerOpen(false); }}>
-                Auto ({resolveHotkeyOption("auto").label} — detected)
-              </button>
-              <button type="button" className={hotkeyModifier === "cmd" ? "active" : ""} onClick={() => { setHotkeyModifier("cmd"); setHotkeyPickerOpen(false); }}>
-                ⌘ Command (Mac)
-              </button>
-              <button type="button" className={hotkeyModifier === "ctrl" ? "active" : ""} onClick={() => { setHotkeyModifier("ctrl"); setHotkeyPickerOpen(false); }}>
-                Ctrl Control (Windows/Linux)
-              </button>
-            </div>
+          {hotkeyListening ? (
+            <span className="jynx-hotkey-current jynx-hotkey-listening">Press ⌘ or Ctrl… (any other key cancels)</span>
+          ) : (
+            <button
+              type="button" className="jynx-hotkey-current"
+              onClick={() => setHotkeyListening(true)}
+              title="Click, then press ⌘ or Ctrl to set it as your hotkey"
+            >
+              {/* Ctrl has no separate glyph the way ⌘ does — symbol and label
+                  are literally the same string for it, so showing both would
+                  read as "Ctrl Ctrl". Only show the symbol when it's actually
+                  a distinct symbol, not a repeat of the word. */}
+              {resolveHotkeyOption(hotkeyModifier).symbol !== resolveHotkeyOption(hotkeyModifier).label
+                ? `${resolveHotkeyOption(hotkeyModifier).symbol} ${resolveHotkeyOption(hotkeyModifier).label}`
+                : resolveHotkeyOption(hotkeyModifier).label}
+            </button>
+          )}
+          {!hotkeyListening && hotkeyModifier !== "auto" && (
+            <button type="button" className="jynx-hotkey-reset" onClick={() => setHotkeyModifier("auto")} title="Reset to the auto-detected default">
+              reset
+            </button>
           )}
         </div>
         </div>
@@ -766,9 +787,11 @@ const CSS = `
 .dev-fab-toolbar-flipping{ opacity:.35; transform:scale(.94); }
 @media (prefers-reduced-motion: reduce){ .dev-fab-toolbar-wrap, .dev-fab-toolbar{ transition:none; } }
 
+/* jynx-mtjuxitiyms5: "put this in line, and not two lines make it take less
+   space" — row instead of column, one line, no wrap. */
 .jynx-hotkey-hint{
-  display:flex; flex-direction:column; align-items:flex-end; gap:3px; position:relative;
-  font-family:var(--font-sans); max-width:220px; text-align:end;
+  display:flex; flex-direction:row; align-items:center; gap:6px; position:relative;
+  font-family:var(--font-sans); white-space:nowrap;
 }
 .jynx-hotkey-hint-text{ font-size:10.5px; color:var(--text-dim); }
 .jynx-hotkey-current{
@@ -776,17 +799,14 @@ const CSS = `
   padding:0; text-decoration:underline; text-underline-offset:2px; font-family:var(--font-mono);
 }
 .jynx-hotkey-current:hover{ color:var(--dev); }
-.jynx-hotkey-picker{
-  position:absolute; top:100%; margin-top:4px; right:0; min-width:190px; background:var(--panel);
-  border:1px solid var(--jynx); border-radius:10px; padding:6px; display:flex; flex-direction:column; gap:2px;
-  box-shadow:var(--shadow-md); animation:devAnnotateIn .12s ease; z-index:1;
+.jynx-hotkey-listening{
+  color:var(--dev); font-weight:700; font-family:var(--font-mono); cursor:default; animation:devAnnotateIn .12s ease;
 }
-.jynx-hotkey-picker button{
-  display:flex; align-items:center; gap:6px; background:none; border:none; border-radius:6px; padding:7px 8px;
-  font-family:var(--font-sans); font-size:12px; font-weight:600; color:var(--text); cursor:pointer; text-align:start;
+.jynx-hotkey-reset{
+  background:none; border:none; color:var(--text-dim); font-size:10px; cursor:pointer; padding:0;
+  text-decoration:underline; text-underline-offset:2px; font-family:var(--font-sans);
 }
-.jynx-hotkey-picker button:hover{ background:var(--panel-raised); color:var(--jynx); }
-.jynx-hotkey-picker button.active{ background:var(--jynx); color:#fff; }
+.jynx-hotkey-reset:hover{ color:var(--jynx); }
 /* הידית עצמה עכשיו כפתור אמיתי (מחליף אופקי/אנכי) — לא רק "אזור-גרירה
    שיושב שם", אז צריך רמז ברור שהיא לחיצה: קצת יותר גדולה מכל שאר האייקונים
    ותוחם עדין (border) כדי לא "להיבלע" בתוך פס-הכלים כמו לפני. */
