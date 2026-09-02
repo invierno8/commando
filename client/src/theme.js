@@ -210,6 +210,14 @@ h1,h2,h3{ font-family:var(--font-sans); font-weight:700; letter-spacing:-.015em;
 .app-sidebar.expanded .sidebar-btn{ width:100%; justify-content:flex-start; padding-inline:11px; }
 .sidebar-btn:hover{ background:var(--panel-raised); color:var(--text); }
 .sidebar-btn.active{ background:var(--accent); color:var(--accent-ink); }
+.sidebar-btn::after{
+  content:attr(data-tooltip); position:absolute; inset-inline-end:100%; top:50%; transform:translateY(-50%);
+  margin-inline-end:8px; background:var(--panel-raised); color:var(--text); border:1px solid var(--line);
+  padding:5px 10px; border-radius:var(--radius-md); font-size:12px; font-weight:600; white-space:nowrap;
+  box-shadow:var(--shadow-sm); opacity:0; pointer-events:none; transition:opacity .05s ease;
+}
+.sidebar-btn:hover::after{ opacity:1; transition-delay:.05s; }
+.app-sidebar.expanded .sidebar-btn::after{ display:none; }
 .sidebar-btn-label{ display:none; font-weight:600; font-size:13.5px; white-space:nowrap; align-items:center; gap:7px; }
 .app-sidebar.expanded .sidebar-btn-label{ display:inline-flex; }
 .sidebar-btn-dev-dot{
