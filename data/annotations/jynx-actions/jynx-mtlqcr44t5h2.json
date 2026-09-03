@@ -1,8 +1,0 @@
-{
-  "id": "jynx-mtlqcr44t5h2",
-  "route": "catalog",
-  "targetLabel": "comments-sidebar",
-  "secondaryTargets": [],
-  "comment": "when needing to relogin anywhere on jynx, make all the jynx ui blurred other then the login massage, so nothing is functional and everything else is blurred so the user sees the login conflict",
-  "requestedAt": "2026-09-03T16:19:14.019Z"
-}
