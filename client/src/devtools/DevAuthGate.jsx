@@ -233,40 +233,36 @@ export default function DevAuthGate({ route, devFabProps }) {
   // הידית (⋮/⋯, ראו TOOLBAR_ITEM_NODES) עצמה עכשיו גם כפתור — קליק "נקי" (לא
   // גרירה) עליה מחליף אופקי/אנכי. אותה בדיקת consumeWasDragged בדיוק כמו שאר
   // הכפתורים בסרגל הזה, כי הידית עדיין חלק מהאזור שגורר את כל הסרגל.
-  // jynx-mth59kjpe6wk: "make it the center of movement, currently it flips to
-  // the right side" — הסרגל ממוקם עם right/bottom קבועים, אז מעבר אופקי↔אנכי
-  // (שמשנה דרמטית את הרוחב — שורה רחבה מול עמודה צרה) הזיז בפועל רק את
-  // הקצה השמאלי, כי הקצה הימני (המעוגן) נשאר קבוע; מה שהמשתמש חווה כ"הכל
-  // קופץ ימינה/שמאלה" בכל לחיצה. פותר על ידי מדידת הרוחב לפני/אחרי המעבר
-  // ותיקון right כך שהמרכז הגיאומטרי (לא הקצה) יישאר במקום — ראו
-  // useDraggableFab.js's nudgePos. double rAF כדי לוודא שהדפדפן כבר סיים
-  // layout עם המחלקה/הכיוון החדשים לפני המדידה השנייה.
-  // jynx-mtj8qgdyw7u2: "when clicked the move to vertical is laggy please
-  // animate and fix" — flex-direction itself can't be CSS-transitioned (the
-  // row→column reflow always happens in one instant frame), which is what
-  // read as "laggy": a hard snap, then — once the nudge above lands — a
-  // second, separate snap. Can't literally animate the un-animatable
-  // property, so this crossfades through it instead: fade+shrink slightly,
-  // swap orientation (and re-measure/nudge, unchanged from before) while
-  // barely visible, then fade back in — the reflow itself still happens in
-  // one frame, but it happens during the low-opacity moment instead of in
-  // full view. The .dev-fab-toolbar-flipping class only sets opacity/scale;
-  // the transition (including for the position nudge's right/bottom) lives
-  // on the base class so it's active for both directions.
+  // jynx-mth59kjpe6wk / jynx-mtj8qgdyw7u2 / jynx-mtjv0scl5jcs — three rounds
+  // of feedback on this one gesture, converging here: the toolbar-wrap's
+  // right/bottom CSS offsets anchor its bottom-right CORNER on screen,
+  // unconditionally, no matter how wide/tall the bar is. Earlier attempts
+  // (measuring the width delta after an orientation flip and nudging `right`
+  // by half of it via useDraggableFab.js's nudgePos) tried to keep the BOX'S
+  // CENTER visually fixed instead — which meant the grip itself (rendered
+  // first, i.e. at whichever end is farthest from that anchored corner: the
+  // left end when horizontal, the top end when vertical) still jumped a
+  // large, asymmetric distance on every click, still felt laggy/"wrong way".
+  // Fixed properly now by making the grip the LAST child (see its new
+  // position in the JSX below) so it always renders right next to the
+  // already-fixed anchor corner in both orientations — no measurement, no
+  // compensation, nothing to get wrong: the grip barely moves at all, and
+  // the rest of the menu is what visibly grows/shrinks away from it (to the
+  // left when horizontal, upward when vertical, since it's anchored at the
+  // bottom). This makes nudgePos dead code (removed from useDraggableFab.js).
+  // The instant flex-direction reflow (row↔column can't be CSS-transitioned)
+  // still can't be literally animated, so this still crossfades through it —
+  // fade the MENU ITEMS only (not the grip, which needs to stay visible and
+  // still throughout — see `.dev-fab-toolbar-flipping` below), swap
+  // orientation while barely visible, then fade back in.
   function toggleOrientation() {
     if (toolbarFab.consumeWasDragged()) return;
     const el = toolbarFab.sizeRef.current;
-    const oldWidth = el?.offsetWidth || 0;
     el?.classList.add("dev-fab-toolbar-flipping");
     setTimeout(() => {
       setOrientation(toolbarOrientation === "horizontal" ? "vertical" : "horizontal");
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const newWidth = el?.offsetWidth || 0;
-          const delta = newWidth - oldWidth;
-          if (delta) toolbarFab.nudgePos(-delta / 2);
-          el?.classList.remove("dev-fab-toolbar-flipping");
-        });
+        el?.classList.remove("dev-fab-toolbar-flipping");
       });
     }, 140);
   }
@@ -554,7 +550,7 @@ export default function DevAuthGate({ route, devFabProps }) {
         </div>
       )}
       {toolbarOpen ? (
-        <div className="dev-fab-toolbar-wrap" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
+        <div className="dev-fab-toolbar-wrap jynx-chrome jynx-ui" style={{ right: toolbarFab.pos.right, bottom: toolbarFab.pos.bottom }}>
         <div
           ref={toolbarFab.sizeRef}
           className={"dev-fab-toolbar jynx-chrome jynx-ui" + (toolbarOrientation === "vertical" ? " vertical" : "")}
@@ -563,9 +559,6 @@ export default function DevAuthGate({ route, devFabProps }) {
           onDragOver={(e) => e.preventDefault()}
           {...toolbarFab.dragHandlers}
         >
-          <button type="button" className="dev-toolbar-grip" onClick={toggleOrientation} title={`Switch to ${toolbarOrientation === "horizontal" ? "vertical" : "horizontal"} menu (click here — drag anywhere else on the bar to move it)`}>
-            {toolbarOrientation === "vertical" ? <GripHorizontal size={15} /> : <GripVertical size={15} />}
-          </button>
           {toolbarOrder.map((id) => {
             if (!TOOLBAR_ITEM_NODES[id]) return null;
             const isKeyable = KEYABLE_IDS.includes(id);
@@ -600,6 +593,14 @@ export default function DevAuthGate({ route, devFabProps }) {
           <DevGreetingMenu devName={devName} onOpenSettings={() => setAdminOpen(true)} onLogout={logout} shortcuts={keyboardShortcuts} />
           <button type="button" className="dev-toolbar-icon-btn" data-devblock="dev-toolbar-collapse-btn" onClick={toggleToolbarOpen} title="Collapse to the Jynx bubble">
             <X size={13} />
+          </button>
+          {/* jynx-mtjv0scl5jcs: LAST child on purpose — see the comment above
+              toggleOrientation. This keeps the grip right next to the
+              toolbar-wrap's fixed right/bottom anchor corner in both
+              orientations, so it's the one thing in the bar that barely
+              moves when you click it. */}
+          <button type="button" className="dev-toolbar-grip" onClick={toggleOrientation} title={`Switch to ${toolbarOrientation === "horizontal" ? "vertical" : "horizontal"} menu (click here — drag anywhere else on the bar to move it)`}>
+            {toolbarOrientation === "vertical" ? <GripHorizontal size={15} /> : <GripVertical size={15} />}
           </button>
         </div>
         {/* Direct founder request (chat, not the annotation queue): a small
@@ -759,11 +760,15 @@ const CSS = `
 .dev-fab-toolbar{
   display:flex; align-items:center; gap:6px;
   cursor:grab; touch-action:none;
-  transition:opacity .14s ease, transform .14s ease;
 }
 .dev-fab-toolbar:active{ cursor:grabbing; }
 .dev-fab-toolbar.vertical{ flex-direction:column; align-items:stretch; }
-.dev-fab-toolbar-flipping{ opacity:.35; transform:scale(.94); }
+/* jynx-mtjv0scl5jcs: transition/fade lives on the menu items, not the grip
+   (now excluded via :not()) — the grip is the fixed pivot the bar reflows
+   around (see toggleOrientation above) and should stay fully visible and
+   still through the whole flip, not flicker along with everything else. */
+.dev-fab-toolbar > *:not(.dev-toolbar-grip){ transition:opacity .14s ease, transform .14s ease; }
+.dev-fab-toolbar-flipping > *:not(.dev-toolbar-grip){ opacity:.35; transform:scale(.94); }
 @media (prefers-reduced-motion: reduce){ .dev-fab-toolbar-wrap, .dev-fab-toolbar{ transition:none; } }
 
 .jynx-hotkey-hint{
