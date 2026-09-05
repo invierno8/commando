@@ -1,0 +1,13 @@
+{
+  "id": "ann-mtoje2c1atts",
+  "route": "dashboard",
+  "targetLabel": "מדדים כלליים — כלל החטיבה — סה״כ דרישות",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "מדדים כלליים — כלל החטיבה — סורבו"
+  ],
+  "comment": "שומע אחי תשנה בבקשה את הצבע של המספר באלמנט לתבע של [→ מדדים כלליים — כלל החטיבה — סורבו]",
+  "authorName": "עמיחי",
+  "requestedAt": "2026-09-05T15:30:07.063Z",
+  "requestedBy": "admin"
+}
