@@ -1,0 +1,35 @@
+{
+  "id": "ann-mtoje2c1atts",
+  "authorId": "dev-mt2xeqvc5tlp",
+  "authorName": "עמיחי",
+  "createdAt": "2026-09-05T15:27:34.993Z",
+  "route": "dashboard",
+  "targetLabel": "מדדים כלליים — כלל החטיבה — סה״כ דרישות",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "מדדים כלליים — כלל החטיבה — סורבו"
+  ],
+  "comment": "שומע אחי תשנה בבקשה את הצבע של המספר באלמנט לתבע של [→ מדדים כלליים — כלל החטיבה — סורבו]",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
