@@ -534,7 +534,7 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
       {/* שורת-תגובה בפנים ממשיך לעבוד רגיל, רק תזוזה אמיתית (4px+) גוררת.     */}
       <div
         ref={panelFab.sizeRef}
-        className="comments-sidebar jynx-chrome jynx-ui"
+        className={"comments-sidebar jynx-chrome jynx-ui" + (reloginOpen ? " comments-sidebar-relogin-pending" : "")}
         style={{ left: panelFab.pos.left, bottom: panelFab.pos.bottom }}
         {...panelFab.dragHandlers}
       >
@@ -962,6 +962,18 @@ const CSS_TEXT = `
   position:fixed; width:280px; max-height:calc(100vh - 100px); z-index:79;
   background:var(--panel); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow-md);
   display:flex; flex-direction:column; overflow:hidden;
+}
+/* jynx-mtlqcr44t5h2: same shape as DevAdminPanel.jsx's
+   ".dev-admin-reauth-pending" rule (itself modeled on ProductDossier.jsx's
+   ".dossier-draft-pending") — while the relogin box below is open, every
+   direct child of the sidebar except the head (drag handle + collapse,
+   left live as an escape hatch, same reasoning as the admin panel's close
+   button) and the send-error block carrying the login message itself is
+   dimmed, blurred and unclickable, so nothing else in the panel can be
+   actioned (and fail on the same expired session again) until sign-in
+   succeeds. */
+.comments-sidebar-relogin-pending > *:not(.comments-sidebar-head):not(.comments-send-error){
+  opacity:.35; pointer-events:none; filter:blur(1px);
 }
 .comments-sidebar-head{ padding:8px 10px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:6px; cursor:grab; touch-action:none; }
 .comments-sidebar-head:active{ cursor:grabbing; }
