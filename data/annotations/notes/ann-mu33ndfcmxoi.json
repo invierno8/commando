@@ -1,0 +1,33 @@
+{
+  "id": "ann-mu33ndfcmxoi",
+  "authorId": "dev-mu33gqnzdkc1",
+  "authorName": "amos",
+  "createdAt": "2026-09-15T20:03:28.056Z",
+  "route": "catalog",
+  "targetLabel": "Catalog — item: אוהל שטח 6 מקומות (TNT-06)",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "האוהל מסוכן ל 6 אנשים, צריך לעדכן את כמות  האנשים ל 4",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
