@@ -286,6 +286,11 @@ export default function ProductDossier({
                       {media.length > 1 ? `${media.length} קבצי מדיה בתיק` : "תמונה בתיק"}
                     </button>
                   )}
+                  {view.productUrl && (
+                    <a className="drawer-tag dossier-photo-tag" href={view.productUrl} target="_blank" rel="noreferrer">
+                      <ArrowUpRight size={12} /> מוצר מקורי
+                    </a>
+                  )}
                 </>
               )}
             </div>
