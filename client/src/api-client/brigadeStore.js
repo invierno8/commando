@@ -33,6 +33,12 @@ export async function fetchBrigadeRoster(brigadeId) {
 export async function fetchBrigadeDashboard(brigadeId) {
   return http.get(`/brigades/${brigadeId}/dashboard`);
 }
+// עדכון איש/אישה קיימ/ת במרשם — שם, הרשאת קטלוג/דרישות (ראו
+// PermissionsDashboard.jsx). kind ("staff"/"unit"/"officer") ו-unit
+// אומרים לשרת איזו משלוש אוספי-הרשומות לעדכן, לא חלק מהעדכון עצמו.
+export async function updateRosterPerson(brigadeId, personId, kind, unit, patch) {
+  return http.patch(`/brigades/${brigadeId}/roster/person/${personId}`, { kind, unit, ...patch });
+}
 
 // כתיבה-חוזרת מאשף ההתקנה. יחידות/מרשם בלבד — קטלוג/דרישות/דשבורד נשארים
 // כפי שהיו (או ריקים לחטיבה חדשה).

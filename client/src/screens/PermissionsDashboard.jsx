@@ -14,7 +14,7 @@ import FilterSelect from "../components/FilterSelect.jsx";
 import Pagination from "../components/Pagination.jsx";
 import { matchesSearch } from "../search.js";
 import { STRUCTURAL_ROLES } from "../roles.js";
-import { fetchBrigadeUnits, fetchBrigadeRoster, fetchBrigadeTickets, fetchBrigadeCatalog } from "../api-client/brigadeStore.js";
+import { fetchBrigadeUnits, fetchBrigadeRoster, fetchBrigadeTickets, fetchBrigadeCatalog, updateRosterPerson } from "../api-client/brigadeStore.js";
 import { StatusPill } from "../opsData.jsx";
 import { parseStamp } from "../analytics.js";
 import { fetchBlockedList, blockUser, unblockUser, BLOCK_SCOPE } from "../api-client/blockStore.js";
@@ -648,7 +648,7 @@ function TeamsSection({ brigadeId, unit, unitPeople, onChanged, actorLabel }) {
 /* Unit officer dashboard — reduced scope: only their own unit          */
 /* ================================================================== */
 
-function UnitRoster({ unit, unitPeople, setUnitPeople, unitLogos, onOpenPerson, blockedNumbers }) {
+function UnitRoster({ unit, unitPeople, setUnitPeople, unitLogos, onOpenPerson, blockedNumbers, brigadeId }) {
   const people = unitPeople[unit] || [];
   const [query, setQuery] = useState("");
   const [accessFilter, setAccessFilter] = useState("all");
@@ -670,6 +670,9 @@ function UnitRoster({ unit, unitPeople, setUnitPeople, unitLogos, onOpenPerson, 
       ...prev,
       [unit]: prev[unit].map((p) => (p.id === updated.id ? updated : p)),
     }));
+    updateRosterPerson(brigadeId, updated.id, "unit", unit, {
+      name: updated.name, catalogAccess: updated.catalogAccess, ticketAccess: updated.ticketAccess,
+    });
   }
   function removePerson(id) {
     setUnitPeople((prev) => ({ ...prev, [unit]: prev[unit].filter((p) => p.id !== id) }));
@@ -723,7 +726,7 @@ function UnitPermissionsView({ unit, unitPeople, setUnitPeople, unitLogos, onOpe
         </div>
       </div>
 
-      <UnitRoster unit={unit} unitPeople={unitPeople} setUnitPeople={setUnitPeople} unitLogos={unitLogos} onOpenPerson={onOpenPerson} blockedNumbers={blockedNumbers} />
+      <UnitRoster unit={unit} unitPeople={unitPeople} setUnitPeople={setUnitPeople} unitLogos={unitLogos} onOpenPerson={onOpenPerson} blockedNumbers={blockedNumbers} brigadeId={brigadeId} />
 
       <TeamsSection brigadeId={brigadeId} unit={unit} unitPeople={unitPeople[unit] || []} onChanged={onTeamsChanged} actorLabel={actorLabel} />
     </div>
@@ -756,12 +759,16 @@ function BrigadePermissionsView({
 
   function updateOfficer(id, patch) {
     setUnitOfficers((prev) => prev.map((o) => (o.id === id ? { ...o, ...patch } : o)));
+    updateRosterPerson(brigadeId, id, "officer", null, patch);
   }
   function addStaff(p) {
     setBrigadeStaff((prev) => [...prev, p]);
   }
   function updateStaff(updated) {
     setBrigadeStaff((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    updateRosterPerson(brigadeId, updated.id, "staff", null, {
+      name: updated.name, catalogAccess: updated.catalogAccess, ticketAccess: updated.ticketAccess,
+    });
   }
   function removeStaff(id) {
     setBrigadeStaff((prev) => prev.filter((p) => p.id !== id));
@@ -1108,6 +1115,15 @@ function PersonCardModal({
   const [showAllRequests, setShowAllRequests] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const isOfficer = kind === "officer";
+  // עריכת שם — אותו דפוס בדיוק כמו TeamCard's inline rename (span+עיפרון →
+  // input, שמירה ב-blur/Enter): לפני זה לא הייתה שום דרך לתקן שם של איש/
+  // אישה בכרטיס האישי, רק בטופס ההוספה החד-פעמי.
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState(person.name);
+  function saveName() {
+    if (nameInput.trim() && nameInput.trim() !== person.name) onChange({ ...person, name: nameInput.trim() });
+    setEditingName(false);
+  }
 
   const activity = useMemo(() => simulatedActivity(person), [person.id, person.personalNumber]);
   const requests = useMemo(() => personRequests(person, tickets, catalog), [person, tickets, catalog]);
@@ -1127,7 +1143,20 @@ function PersonCardModal({
         <div className="person-card-head">
           <div className="person-card-avatar"><User size={22} /></div>
           <div>
-            <div className="person-card-name"><span className="person-rank">{person.rank}</span> {person.name}</div>
+            <div className="person-card-name">
+              <span className="person-rank">{person.rank}</span>{" "}
+              {editingName ? (
+                <input
+                  autoFocus className="person-card-name-input" value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  onBlur={saveName} onKeyDown={(e) => e.key === "Enter" && saveName()}
+                />
+              ) : (
+                <span onClick={() => { setNameInput(person.name); setEditingName(true); }} title="לחיצה לעריכת שם">
+                  {person.name} <Pencil size={11} />
+                </span>
+              )}
+            </div>
             {unit && (
               <div className="person-card-unit">
                 <UnitEmblem name={unit} size={15} showRing={false} image={unitLogos?.[unit]} />
@@ -1525,6 +1554,10 @@ export default function PermissionsDashboard({ role, brigadeId, brigadeName, uni
     setSelectedPerson({ person, kind, unit });
   }
 
+  // עדכון אופטימי מקומי (כמו קודם) + כתיבה-חוזרת אמיתית לשרת — עד עכשיו
+  // updateSelectedPerson רק עדכן state מקומי, אז גם שינוי הרשאה דרך
+  // AccessSelect הקיים וגם שם חדש (ראו PersonCardModal) התאפסו ברענון
+  // עמוד; ראו PATCH /brigades/:id/roster/person/:personId.
   function updateSelectedPerson(updated) {
     setSelectedPerson((prev) => (prev ? { ...prev, person: updated } : prev));
     if (selectedPerson?.kind === "staff") {
@@ -1534,6 +1567,11 @@ export default function PermissionsDashboard({ role, brigadeId, brigadeName, uni
       setUnitPeople((prev) => ({ ...prev, [u]: (prev[u] || []).map((p) => (p.id === updated.id ? updated : p)) }));
     } else if (selectedPerson?.kind === "officer") {
       setUnitOfficers((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+    }
+    if (selectedPerson) {
+      updateRosterPerson(brigadeId, updated.id, selectedPerson.kind, selectedPerson.unit, {
+        name: updated.name, catalogAccess: updated.catalogAccess, ticketAccess: updated.ticketAccess,
+      });
     }
   }
 
@@ -2006,6 +2044,8 @@ ${SCOPE_PICKER_CSS}
   display:flex; align-items:center; justify-content:center; flex:none; border:1px solid var(--line);
 }
 .person-card-name{ font-family:var(--font-sans); font-weight:700; font-size:16px; }
+.person-card-name span[title]{ cursor:pointer; }
+.person-card-name-input{ background:var(--bg); border:1px solid var(--accent); border-radius:var(--radius-md); padding:4px 8px; font-size:15px; font-weight:700; font-family:var(--font-sans); color:var(--text); }
 .person-card-unit{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-dim); margin-top:3px; }
 .person-card-meta{ display:flex; flex-direction:column; gap:6px; background:var(--bg); border:1px solid var(--line); border-radius:var(--radius-lg); padding:11px 14px; margin-bottom:20px; }
 .person-card-meta span{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text); font-family:var(--font-mono); }

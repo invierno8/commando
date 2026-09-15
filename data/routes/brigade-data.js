@@ -86,6 +86,36 @@ router.post("/brigades/:id/setup", asyncRoute(async (req, res) => {
   res.json({ ok: true });
 }));
 
+// עדכון פרטי איש/אישה קיימ/ת במרשם (שם, הרשאת קטלוג/דרישות) — עד עכשיו
+// PermissionsDashboard.jsx עדכן רק state מקומי, בלי endpoint שכותב חזרה,
+// אז כל שינוי (כולל דרך AccessSelect הקיים) התאפס ברענון עמוד. kind/unit
+// באים מה-body (הלקוח כבר יודע אותם מ-selectedPerson) כדי לדעת איזו
+// מהשלוש אוספי-רשומות לעדכן; לא חלק מהעדכון עצמו, אז לא נשמרים על הרשומה.
+router.patch("/brigades/:id/roster/person/:personId", asyncRoute(async (req, res) => {
+  const brigadeId = req.params.id;
+  const { kind, unit, ...patch } = req.body;
+  const base = readBrigade(brigadeId);
+  let updated = null;
+  function applyTo(list) {
+    return list.map((p) => {
+      if (p.id !== req.params.personId) return p;
+      updated = { ...p, ...patch };
+      return updated;
+    });
+  }
+  let roster = base.roster;
+  if (kind === "staff") {
+    roster = { ...roster, brigadeStaff: applyTo(roster.brigadeStaff) };
+  } else if (kind === "officer") {
+    roster = { ...roster, unitOfficers: applyTo(roster.unitOfficers) };
+  } else if (kind === "unit" && unit) {
+    roster = { ...roster, unitPeople: { ...roster.unitPeople, [unit]: applyTo(roster.unitPeople[unit] || []) } };
+  }
+  if (!updated) return res.status(404).json({ error: "לא נמצא" });
+  await writeBrigade(brigadeId, { ...base, roster });
+  res.json(updated);
+}));
+
 router.post("/brigades/:id/catalog", asyncRoute(async (req, res) => {
   const brigadeId = req.params.id;
   const base = readBrigade(brigadeId);
