@@ -8,27 +8,6 @@
   ],
   "catalog": [
     {
-      "id": "TNT-07",
-      "name": "אוהל שטח 6 מקומות — דגם בטיחותי",
-      "category": "לוגיסטיקה",
-      "qty": 10,
-      "icon": "tent",
-      "unit": "יחידת מטה",
-      "desc": "אוהל שטח 6 מקומות, דגם עמיד שעבר בדיקות בטיחות ותקינה מלאות ומאושר לשימוש בתפוסה מלאה. הוזמן להחלפת אוהלי TNT-06 שתפוסתם הוגבלה.",
-      "capacity": 6,
-      "origin": "industry",
-      "originCompany": "קמפינג-פרו ציוד שטח בע״מ",
-      "responsibleRank": "סגן",
-      "responsibleName": "טל אשכנזי",
-      "responsiblePersonalNumber": "7578934",
-      "responsiblePhone": "058-5678901",
-      "addedAt": "15/09/2026",
-      "addedBy": "Admin",
-      "updatedAt": "15/09/2026",
-      "updatedBy": "Admin",
-      "media": []
-    },
-    {
       "id": "NEW-9473",
       "name": "בלונים ליומולדת",
       "category": "ציוד אישי",
@@ -758,7 +737,7 @@
           "personalNumber": "7790123",
           "email": "aviv.shemesh@example.mil",
           "catalogAccess": "manager",
-          "ticketAccess": "none"
+          "ticketAccess": "requester"
         }
       ],
       "דובדבן": [
