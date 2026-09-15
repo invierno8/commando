@@ -85,7 +85,7 @@ function renderWithMentions(text, directory) {
 /*     kind item only gets resolve/reopen here, same as before.             */
 /* ================================================================== */
 
-export default function CommentsPanel({ active, route, currentDevUserId, isAdmin, canJynxComment }) {
+export default function CommentsPanel({ active, route, onNavigate, currentDevUserId, isAdmin, canJynxComment }) {
   const userDirectory = useDevUserDirectory();
   const [items, setItems] = useState([]);
   const [statusFilter, setStatusFilter] = useState("open"); // open | done
@@ -353,11 +353,32 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
     setReplyText((prev) => insertMentionText(prev, name));
   }
 
+  // "מצב 'All pages': פריט ממסך אחר" — עד עכשיו קליק על הערה כזו לא עשה
+  // כלום (jumpTo פשוט חזר מוקדם, rectFor אין לו מה למצוא בעמוד הנוכחי).
+  // עכשיו, אם יש onNavigate (App.jsx מזריק את setView שלו), עוברים קודם
+  // למסך של ההערה ואז מחכים שהאלמנט בפועל יופיע ב-DOM — הניווט הוא רינדור
+  // React אסינכרוני, אין ערובה שהאלמנט קיים בפריים הבא, אז פולינג קצר
+  // (לא רק double-rAF כמו במקומות אחרים בקוד הזה) עד שקוראה או שפג הזמן.
   function jumpTo(a) {
-    // מצב "All pages": פריט ממסך אחר — אין לו אלמנט אמיתי כאן, לקפוץ אליו
-    // לא אומר כלום (rectFor כבר מחזיר null עבורו, אבל בודקים גם כאן במפורש
-    // כדי לא לסמוך רק על תופעת-לוואי).
-    if (a?.route && a.route !== route) return;
+    if (a?.route && a.route !== route) {
+      if (!onNavigate) return;
+      onNavigate(a.route);
+      const targetLabel = a.targetLabel;
+      if (!targetLabel) return;
+      const deadline = Date.now() + 2000;
+      const poll = () => {
+        const el = document.querySelector(`[data-devblock="${CSS.escape(targetLabel)}"]`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          setFlashId(a.id);
+          window.setTimeout(() => setFlashId((f) => (f === a.id ? null : f)), 1600);
+        } else if (Date.now() < deadline) {
+          window.setTimeout(poll, 60);
+        }
+      };
+      window.setTimeout(poll, 60);
+      return;
+    }
     const found = rectFor(a);
     if (!found) return;
     found.el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -668,15 +689,18 @@ export default function CommentsPanel({ active, route, currentDevUserId, isAdmin
                 // saveReopen() above.
                 const isProcessed = a.resolved || a.actionStatus === "pr_opened";
                 const isEditing = editingId === a.id;
-                // "All pages" בלבד: פריט ממסך אחר — אין לו אלמנט על העמוד
-                // הזה, אז hover/קליק-לקפיצה לא עושים כלום (ראו rectFor/
-                // jumpTo למעלה) — מסמנים את זה ויזואלית עם תווית ה-route
-                // ו-cursor רגיל במקום pointer, לא שקט לגמרי.
+                // "All pages": פריט ממסך אחר — אין לו אלמנט על העמוד הזה
+                // כרגע, אז אין hover-הדגשה (rectFor אין לו מה למצוא, ראו
+                // למעלה). קליק כן עושה משהו — jumpTo מנווט למסך שלו קודם
+                // (ראו onNavigate) — אז ה-cursor נשאר pointer רק כשיש בכלל
+                // ניווט זמין; בלעדיו (embedding עתידי בלי onNavigate) חוזרים
+                // ל-cursor רגיל, לא שקט לגמרי.
                 const otherPage = scope === "all" && a.route && a.route !== route;
+                const otherPageInert = otherPage && !onNavigate;
                 return (
                   <div key={a.id} className="comments-sidebar-item-wrap">
                     <div
-                      className={"comments-sidebar-item" + (otherPage ? " comments-sidebar-item-other-page" : "")}
+                      className={"comments-sidebar-item" + (otherPageInert ? " comments-sidebar-item-other-page" : "")}
                       onMouseEnter={() => !otherPage && setHoveredListId(a.id)}
                       onMouseLeave={() => setHoveredListId((h) => (h === a.id ? null : h))}
                       onClick={() => !isEditing && jumpTo(a)}

@@ -114,7 +114,7 @@ function loadToolbarOrder() {
 /* "gated, not replaced"). מבקר ללא התחברות רואה בדיוק את מה שהוא רואה    */
 /* היום — MEMBER אקראי, בלי שום כפתור dev גלוי מעבר לנעילה עצמה.          */
 /* ================================================================== */
-export default function DevAuthGate({ route, devFabProps }) {
+export default function DevAuthGate({ route, onNavigate, devFabProps }) {
   const [checking, setChecking] = useState(true);
   const [devName, setDevName] = useState(null); // null = לא מחובר
   const [devUserId, setDevUserId] = useState(null);
@@ -532,7 +532,7 @@ export default function DevAuthGate({ route, devFabProps }) {
     <>
       <style>{CSS}</style>
       <DevOverlay active={overlayOn || drawMode} hoverOn={overlayOn} route={route} isAdmin={isAdmin} canJynxChrome={isAdmin || canJynxComment} markersOn={markersOn} drawMode={drawMode} drawColor={drawColor} />
-      <CommentsPanel active={commentsOn} route={route} currentDevUserId={devUserId} isAdmin={isAdmin} canJynxComment={canJynxComment} />
+      <CommentsPanel active={commentsOn} route={route} onNavigate={onNavigate} currentDevUserId={devUserId} isAdmin={isAdmin} canJynxComment={canJynxComment} />
       {drawMode && (
         <div
           ref={drawPaletteFab.sizeRef}

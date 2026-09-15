@@ -571,6 +571,7 @@ export default function App() {
 
       <DevAuthGate
         route={view}
+        onNavigate={setView}
         devFabProps={{
           open: devPanelOpen, setOpen: setDevPanelOpen,
           role, chooseRole,
