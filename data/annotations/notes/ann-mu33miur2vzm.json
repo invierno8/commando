@@ -1,0 +1,33 @@
+{
+  "id": "ann-mu33miur2vzm",
+  "authorId": "dev-mu33gqnzdkc1",
+  "authorName": "amos",
+  "createdAt": "2026-09-15T20:02:48.435Z",
+  "route": "catalog",
+  "targetLabel": "overlay",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "למה לא מצויין פה לכמה אנשים האוהל מספיק",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
