@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
   X, Camera, Images, ZoomIn, Pencil, Trash2, Check, Ban, Wrench, PackagePlus, AlertTriangle,
-  Building2, UserRound, FolderOpen, ArrowUpRight, Link2, Sparkles, Heart, Save,
+  Building2, UserRound, FolderOpen, ArrowUpRight, Link2, Sparkles, Heart, Save, Users,
 } from "lucide-react";
 import PhotoTile from "../components/PhotoTile.jsx";
 import MediaGallery from "../components/MediaGallery.jsx";
@@ -133,7 +133,11 @@ export default function ProductDossier({
   function save() {
     if (!canSave) { setAttempted(true); return; }
     if (isNew && draftUserId) clearDraft(draftUserId, "catalogItem");
-    onSave({ ...draft, qty: Math.max(0, Number(draft.qty) || 0), updatedAt: nowStamp(), updatedBy: currentActor || "משתמש (הדגמה)" });
+    onSave({
+      ...draft, qty: Math.max(0, Number(draft.qty) || 0),
+      capacity: draft.capacity === null || draft.capacity === "" ? null : Math.max(0, Number(draft.capacity) || 0),
+      updatedAt: nowStamp(), updatedBy: currentActor || "משתמש (הדגמה)",
+    });
     setEditing(false);
     setDraft(null);
     setAttempted(false);
@@ -253,6 +257,13 @@ export default function ProductDossier({
                     <span>במלאי</span>
                     <input type="number" min="0" value={draft.qty} onChange={(e) => patch("qty", e.target.value)} />
                   </label>
+                  <label className="dossier-qty-edit">
+                    <span>תפוסה מקסימלית</span>
+                    <input
+                      type="number" min="0" value={draft.capacity ?? ""} placeholder="—"
+                      onChange={(e) => patch("capacity", e.target.value === "" ? null : e.target.value)}
+                    />
+                  </label>
                   {availableUnits?.length > 0 ? (
                     <select className="dossier-unit-select" value={draft.unit} onChange={(e) => patch("unit", e.target.value)}>
                       {availableUnits.map((u) => <option key={u} value={u}>{u}</option>)}
@@ -266,6 +277,9 @@ export default function ProductDossier({
                   <span className="drawer-tag">{view.category}</span>
                   <span className="drawer-tag dossier-unit-tag">{view.unit}</span>
                   <span className="drawer-tag dossier-qty-tag">במלאי: {view.qty}</span>
+                  {view.capacity != null && view.capacity !== "" && (
+                    <span className="drawer-tag dossier-capacity-tag"><Users size={12} /> תפוסה: {view.capacity}</span>
+                  )}
                   {hasMedia && (
                     <button type="button" className="drawer-tag dossier-photo-tag" onClick={() => setGalleryIndex(0)}>
                       <Camera size={12} />
@@ -622,6 +636,7 @@ const CSS = `
 .drawer-tag svg{ width:12px; height:12px; }
 .dossier-unit-tag{ color:var(--text); border-color:var(--line); background:var(--panel-raised); font-weight:600; }
 .dossier-qty-tag{ color:var(--green); border-color:var(--green); }
+.dossier-capacity-tag{ color:var(--text); border-color:var(--line); background:var(--panel-raised); }
 .dossier-photo-tag{ color:var(--accent); border-color:var(--accent); cursor:pointer; transition:background var(--t-fast) ease; }
 .dossier-photo-tag:hover{ background:color-mix(in srgb, var(--accent) 12%, transparent); }
 .dossier-tag-input, .dossier-tag-select{
