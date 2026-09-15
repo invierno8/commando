@@ -1,0 +1,33 @@
+{
+  "id": "ann-mu341ioiptp0",
+  "authorId": "dev-mu33gqnzdkc1",
+  "authorName": "amos",
+  "createdAt": "2026-09-15T20:14:28.050Z",
+  "route": "permissions",
+  "targetLabel": "Permissions — person: אביב שמש (7790123)",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "תעביר לטוראי אביב שמש את היכולת להזמין איזה אמלח שהוא רואה לנכון שהחטיבה צריכה לשבוע הקרוב, תלמד אותו זה שבוע סופר קריטי",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
