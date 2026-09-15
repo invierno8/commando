@@ -31,5 +31,13 @@
     "active": true,
     "createdAt": "2026-08-31T09:45:56.357Z",
     "canJynxComment": true
+  },
+  {
+    "id": "dev-mu33gqnzdkc1",
+    "name": "amos",
+    "role": "",
+    "passwordHash": "$2a$12$msBD31a51poeV2APX3cCfOvRR4kbB8HIMf./Q0RCO1OShl2yWnegu",
+    "active": true,
+    "createdAt": "2026-09-15T19:58:20.801Z"
   }
 ]
