@@ -1,0 +1,33 @@
+{
+  "id": "ann-mu33q0rxqhdc",
+  "authorId": "dev-mu33gqnzdkc1",
+  "authorName": "amos",
+  "createdAt": "2026-09-15T20:05:31.629Z",
+  "route": "catalog",
+  "targetLabel": "app-main-col",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "תמצא לי אוהל ל 6 אנשים שעבר בדיקות ואינו מסוכן כדי להכניס למלאי",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
