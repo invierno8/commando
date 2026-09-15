@@ -1,0 +1,33 @@
+{
+  "id": "ann-mu33sgrsjjq2",
+  "authorId": "dev-mu33gqnzdkc1",
+  "authorName": "amos",
+  "createdAt": "2026-09-15T20:07:25.672Z",
+  "route": "catalog",
+  "targetLabel": "dossier-origin-detail",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "לפי כל המקורות 6 חיילים באוהל הוא גורם מספר אחד לארוע נפגעים אשר נשען על סטטיסטיקה אמיתית רוחנית, טפל בארוע",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
