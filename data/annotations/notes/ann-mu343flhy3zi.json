@@ -1,0 +1,33 @@
+{
+  "id": "ann-mu343flhy3zi",
+  "authorId": "dev-mu33gqnzdkc1",
+  "authorName": "amos",
+  "createdAt": "2026-09-15T20:15:57.365Z",
+  "route": "permissions",
+  "targetLabel": "Org tree — טוראי אביב שמש",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "\"תחליף לי את השם אביב לשם \"סופר קריטי",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
