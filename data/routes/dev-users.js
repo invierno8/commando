@@ -24,6 +24,9 @@ function publicView(u, onlineIds) {
     // משתמש קיים; מוענקת/מבוטלת דרך PATCH /admin/dev-users/:id הקיים
     // (כבר מקבל שדות שרירותיים, לא נזקק לroute נפרד), ראו DevAdminUsersScreen.jsx.
     canJynxComment: !!u.canJynxComment,
+    // הערה של המשתמש הזה נשלחת אוטומטית לתור הפעולות, בלי טוגל נפרד בלקוח
+    // (ראו routes/annotations.js) — לאורח בהדגמה חיה שצריך "זה קורה מיד".
+    autoAction: !!u.autoAction,
     createdAt: u.createdAt, online: onlineIds.has(u.id),
   };
 }

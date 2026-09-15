@@ -31,6 +31,7 @@ import { requireAdmin, isAdminRequest } from "../middleware/adminAuth.js";
 import { asyncRoute, requireFields } from "../middleware/validate.js";
 import { commitFileToGithub, deleteFileFromGithub, githubPersistEnabled, listDirFromGithub, readFileFromGithub } from "../lib/githubPersist.js";
 import { parseMentionedUsers, hasJynxMention, addMention } from "../lib/mentions.js";
+import { readDevUsers } from "../lib/devUsers.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const NOTES_DIR = path.join(__dirname, "..", "annotations", "notes");
@@ -120,7 +121,12 @@ router.post("/dev/annotations", requireDevUser, asyncRoute(async (req, res) => {
   // actionRequested מגיע מהלקוח רק כשהמשתמש-פיתוח המחובר גם מאומת כמנהל —
   // "כל מה שאני כותב הופך לפעולה" (ראו DevOverlay.jsx). לא נבדק כאן מול
   // עוגיית מנהל בכוונה: זו נוחות דמו, לא גבול אבטחה (בדיוק כמו מתג ה-mock/live).
-  const actionRequested = !!req.body.actionRequested;
+  // autoAction (על רשומת המשתמש-פיתוח ב-dev-users.json, ראו DevAdminUsersScreen.jsx)
+  // עוקף את זה: כל הערה שהמשתמש הזה כותב נשלחת ישר לתור הפעולות, בלי תלות
+  // בטוגל בלקוח בכלל — נועד למשתמש-אורח בהדגמה חיה שכל מה שהוא מסמן צריך
+  // "לקרות" מיד, לא רק אם הוא גם מנהל.
+  const authorRecord = readDevUsers().find((u) => u.id === req.devUser.id);
+  const actionRequested = !!req.body.actionRequested || !!authorRecord?.autoAction;
   const secondaryTargets = Array.isArray(req.body.secondaryTargets)
     ? req.body.secondaryTargets.filter((t) => typeof t === "string" && t.trim()).slice(0, 10)
     : [];

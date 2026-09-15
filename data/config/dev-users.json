@@ -38,6 +38,7 @@
     "role": "",
     "passwordHash": "$2a$12$msBD31a51poeV2APX3cCfOvRR4kbB8HIMf./Q0RCO1OShl2yWnegu",
     "active": true,
-    "createdAt": "2026-09-15T19:58:20.801Z"
+    "createdAt": "2026-09-15T19:58:20.801Z",
+    "autoAction": true
   }
 ]
