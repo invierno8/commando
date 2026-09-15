@@ -732,10 +732,10 @@
         {
           "id": "p-2",
           "rank": "טוראי",
-          "name": "אביב שמש",
+          "name": "סופר קריטי",
           "personalNumber": "7790123",
           "email": "aviv.shemesh@example.mil",
-          "catalogAccess": "read",
+          "catalogAccess": "manager",
           "ticketAccess": "none"
         }
       ],
