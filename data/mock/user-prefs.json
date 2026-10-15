@@ -29,5 +29,19 @@
       "activityLog"
     ],
     "hidden": []
+  },
+  "guest:dashboard-layout:unit_officer": {
+    "order": [
+      "openRequests",
+      "unitSummary",
+      "responseTime",
+      "categoryAnalytics",
+      "ticketTypes",
+      "repairLeaderboard",
+      "trend",
+      "equipment",
+      "activityLog"
+    ],
+    "hidden": []
   }
 }
