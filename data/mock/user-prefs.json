@@ -32,8 +32,8 @@
   },
   "guest:dashboard-layout:unit_officer": {
     "order": [
-      "openRequests",
       "unitSummary",
+      "openRequests",
       "responseTime",
       "categoryAnalytics",
       "ticketTypes",
