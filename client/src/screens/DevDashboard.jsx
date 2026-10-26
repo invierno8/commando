@@ -354,7 +354,7 @@ export default function DevDashboard({ brigadeId, role, userId, officerUnit, uni
   const WIDGET_CONTENT = {
     kpis: () => (
       <div className="dash-kpis">
-        <MiniKpi label="סה״כ דרישות" value={data.total} devblock={`${WIDGET_DEFS.kpis.title} — סה״כ דרישות`} />
+        <MiniKpi label="סה״כ דרישות" value={data.total} tone="red" devblock={`${WIDGET_DEFS.kpis.title} — סה״כ דרישות`} />
         <MiniKpi label="ממתינות" value={data.totals.pending} tone="yellow" devblock={`${WIDGET_DEFS.kpis.title} — ממתינות`} />
         <MiniKpi label="אושרו" value={data.totals.approved} tone="green" devblock={`${WIDGET_DEFS.kpis.title} — אושרו`} />
         <MiniKpi label="סורבו" value={data.totals.rejected} tone="red" devblock={`${WIDGET_DEFS.kpis.title} — סורבו`} />
