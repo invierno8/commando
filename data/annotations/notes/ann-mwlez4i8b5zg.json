@@ -1,0 +1,35 @@
+{
+  "id": "ann-mwlez4i8b5zg",
+  "authorId": "dev-mt7rx6k3ju6s",
+  "authorName": "Vova",
+  "createdAt": "2026-11-18T00:59:47.984Z",
+  "route": "sysadmin",
+  "targetLabel": "app-sidebar",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "brigade-row"
+  ],
+  "comment": "dobav okno CRM + ERP[→ brigade-row]",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
