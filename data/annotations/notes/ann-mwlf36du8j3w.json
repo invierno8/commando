@@ -1,0 +1,33 @@
+{
+  "id": "ann-mwlf36du8j3w",
+  "authorId": "dev-mt7rx6k3ju6s",
+  "authorName": "Vova",
+  "createdAt": "2026-11-18T01:02:57.042Z",
+  "route": "permissions",
+  "targetLabel": "Org tree — אנשי אמל״ח היחידה",
+  "targetSelector": null,
+  "secondaryTargets": [],
+  "comment": "dobav icon",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
