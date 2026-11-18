@@ -1,0 +1,35 @@
+{
+  "id": "ann-mwlf4qqxytej",
+  "authorId": "dev-mt7rx6k3ju6s",
+  "authorName": "Vova",
+  "createdAt": "2026-11-18T01:04:10.089Z",
+  "route": "permissions",
+  "targetLabel": "app-main-col",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "org-node-card"
+  ],
+  "comment": "obnovi grafiku. i dobav na zadnemplane kartu mira v stile B&W[→ org-node-card]",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
