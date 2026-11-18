@@ -16,7 +16,6 @@
   "guest:dashboard-layout:brigade_officer": {
     "order": [
       "kpis",
-      "priority",
       "trend",
       "responseTime",
       "categoryAnalytics",
@@ -28,7 +27,9 @@
       "equipment",
       "activityLog"
     ],
-    "hidden": []
+    "hidden": [
+      "priority"
+    ]
   },
   "guest:dashboard-layout:unit_officer": {
     "order": [
