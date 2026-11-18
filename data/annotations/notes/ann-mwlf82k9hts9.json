@@ -1,0 +1,36 @@
+{
+  "id": "ann-mwlf82k9hts9",
+  "authorId": "dev-mt7rx6k3ju6s",
+  "authorName": "Vova",
+  "createdAt": "2026-11-18T01:06:45.369Z",
+  "route": "dashboard",
+  "targetLabel": "Dashboard — widget: מדדים כלליים — כלל החטיבה",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "Dashboard — main screen",
+    "path"
+  ],
+  "comment": "[→ Dashboard — main screen]  שבורד קצין אמל״ח \n\nizmenit grafi na bolee jivie i ponyatnie [→ path]",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
