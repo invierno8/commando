@@ -1,0 +1,35 @@
+{
+  "id": "ann-mwledht3y44o",
+  "authorId": "dev-mt7rx6k3ju6s",
+  "authorName": "Vova",
+  "createdAt": "2026-11-18T00:42:58.791Z",
+  "route": "wizard",
+  "targetLabel": "wizard-shell",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "app-body"
+  ],
+  "comment": "תוסיך יחידה חדשה 219\n[→ app-body]",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
