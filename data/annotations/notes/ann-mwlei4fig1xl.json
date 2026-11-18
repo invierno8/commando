@@ -1,0 +1,35 @@
+{
+  "id": "ann-mwlei4fig1xl",
+  "authorId": "dev-mt7rx6k3ju6s",
+  "authorName": "Vova",
+  "createdAt": "2026-11-18T00:46:34.734Z",
+  "route": "catalog",
+  "targetLabel": "Catalog — main screen",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "Catalog — item: משקפי מגן בליסטיי (NEW-7714)"
+  ],
+  "comment": "dobav s etogo saita ves katalog http://marom-dolphin.com/collections/platforms?gad_source=1&gad_campaignid=23393488282&gbraid=0AAAAApM9w5L6KJ17cKOF7nMe3RF4vQxKs&gclid=Cj0KCQiAk_DXBhCoARIsAHE-omNzbtwi0tjxQb3kIZEuBd0exSWrcYtclpqc-hfpKLmj9Y_RO6N2S68aAiu1EALw_wcB[→ Catalog — item: משקפי מגן בליסטיי (NEW-7714)]",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
