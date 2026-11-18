@@ -1,0 +1,35 @@
+{
+  "id": "ann-mwlenbq87fxw",
+  "authorId": "dev-mt7rx6k3ju6s",
+  "authorName": "Vova",
+  "createdAt": "2026-11-18T00:50:37.472Z",
+  "route": "permissions",
+  "targetLabel": "app-sidebar",
+  "targetSelector": null,
+  "secondaryTargets": [
+    "div"
+  ],
+  "comment": "Dobav icon MAp[→ div]",
+  "attachment": null,
+  "attachmentName": null,
+  "drawing": null,
+  "resolved": false,
+  "resolvedAt": null,
+  "resolvedBy": null,
+  "resolutionNote": null,
+  "reopenedNote": null,
+  "archived": false,
+  "archivedAt": null,
+  "actionStatus": "none",
+  "actionRequestedAt": null,
+  "actionRequestedBy": null,
+  "actionPrUrl": null,
+  "actionLog": null,
+  "replies": [],
+  "reactions": {
+    "👍": [],
+    "😄": [],
+    "🤔": [],
+    "❤️": []
+  }
+}
